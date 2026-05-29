@@ -32,7 +32,7 @@ const CRAFTING_OUTPUT_SLOT = 227;
 const CRAFTING_INFO_PANEL_SLOT = 228;
 const STORAGE_SLOTS = 110;
 const LORE_DISPLAY = "§r§7- Count: §f";
-const MAX_PAGES = 3;
+const MAX_PAGES = 27;
 const OUTPUT_BLUEPRINT_ITEM = "utilitycraft:blueprint";
 const LOCAL_GRID_SLOTS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 const CONTROL_SLOTS = [
@@ -71,6 +71,57 @@ function scheduleBlueprintTerminalRender(entity) {
 }
 function controlsNeedRender(inv) {
   return Terminal.controlsNeedRender(inv, CONTROL_SLOTS);
+}
+function renderBlueprintTerminalControls(
+  entity,
+  inv,
+  currentPage,
+  pageCount,
+  currentQty,
+  currentCraftQty,
+  currentSort,
+) {
+  const prevItem = new ItemStack("utilitycraft:ui_filler", 1);
+  prevItem.nameTag = `§r§7- Previous Page §f${currentPage + 1}/${pageCount}`;
+  inv.setItem(PREVIOUS_SLOT, prevItem);
+  const nextItem = new ItemStack("utilitycraft:ui_filler", 1);
+  nextItem.nameTag = `§r§7- Next Page §f${currentPage + 1}/${pageCount}`;
+  inv.setItem(NEXT_SLOT, nextItem);
+  const qtyItem = new ItemStack("utilitycraft:ui_filler", 1);
+  qtyItem.nameTag = `§r§7- Quantity: §f${currentQty}`;
+  inv.setItem(QUANTITY_SLOT, qtyItem);
+  const craftQtyItem = new ItemStack("utilitycraft:ui_filler", 1);
+  craftQtyItem.nameTag = `§r§7- Craft Multiplier: §fx${currentCraftQty}`;
+  inv.setItem(CRAFT_QTY_SLOT, craftQtyItem);
+  const sortItem = new ItemStack("utilitycraft:ui_filler", 1);
+  sortItem.nameTag = `§r§7- Sort By: §f${currentSort === "name" ? "Name" : "Count"}`;
+  inv.setItem(SORT_SLOT, sortItem);
+  entity.setDynamicProperty("last_rendered_page", currentPage);
+  entity.setDynamicProperty("last_rendered_page_count", pageCount);
+  entity.setDynamicProperty("last_rendered_qty", currentQty);
+  entity.setDynamicProperty("last_rendered_sort", currentSort);
+}
+function refreshBlueprintTerminalControls(entity) {
+  try {
+    if (!entity || !entity.isValid) return;
+    const inv = entity.getComponent("minecraft:inventory")?.container;
+    if (!inv) return;
+    let currentPage = entity.getDynamicProperty("page") ?? 0;
+    const pageCount = getPageCountForEntity(entity);
+    currentPage = Math.max(0, Math.min(currentPage, pageCount - 1));
+    const currentQty = entity.getDynamicProperty("extract_quantity") ?? 1;
+    const currentCraftQty = entity.getDynamicProperty("craft_qty") ?? 1;
+    const currentSort = entity.getDynamicProperty("sort_mode") ?? "count";
+    renderBlueprintTerminalControls(
+      entity,
+      inv,
+      currentPage,
+      pageCount,
+      currentQty,
+      currentCraftQty,
+      currentSort,
+    );
+  } catch (e) {}
 }
 function canChangePage(entity) {
   return Terminal.canChangePage(entity, PAGE_CHANGE_DELAY_TICKS);
@@ -197,6 +248,10 @@ ButtonManager.registerMachineButton(
   CONTROL_SLOTS,
   ({ entity, slot }) => {
     if (!entity || !entity.isValid) return;
+    if (Terminal.isChunkedRenderActive(entity)) {
+      refreshBlueprintTerminalControls(entity);
+      return;
+    }
     if (entity.getDynamicProperty("is_processing_click")) {
       scheduleBlueprintTerminalRender(entity);
       return;
@@ -371,6 +426,7 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   const isProxy = entity.getDynamicProperty("is_proxy");
   if (isProxy) return;
   if (!entity || !entity.isValid) return;
+  if (Terminal.isChunkedRenderActive(entity)) return;
   const machine = new Terminal(block, settings);
   if (!machine || !machine.valid) return;
   const inv = entity.getComponent("minecraft:inventory").container;
@@ -396,25 +452,15 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
     controlsChanged
   ) {
     pageChanged = true;
-    const prevItem = new ItemStack("utilitycraft:ui_filler", 1);
-    prevItem.nameTag = `§r§7- Previous Page §f${currentPage + 1}/${pageCount}`;
-    inv.setItem(PREVIOUS_SLOT, prevItem);
-    const nextItem = new ItemStack("utilitycraft:ui_filler", 1);
-    nextItem.nameTag = `§r§7- Next Page §f${currentPage + 1}/${pageCount}`;
-    inv.setItem(NEXT_SLOT, nextItem);
-    const qtyItem = new ItemStack("utilitycraft:ui_filler", 1);
-    qtyItem.nameTag = `§r§7- Quantity: §f${currentQty}`;
-    inv.setItem(QUANTITY_SLOT, qtyItem);
-    const craftQtyItem = new ItemStack("utilitycraft:ui_filler", 1);
-    craftQtyItem.nameTag = `§r§7- Craft Multiplier: §fx${currentCraftQty}`;
-    inv.setItem(CRAFT_QTY_SLOT, craftQtyItem);
-    const sortItem = new ItemStack("utilitycraft:ui_filler", 1);
-    sortItem.nameTag = `§r§7- Sort By: §f${currentSort === "name" ? "Name" : "Count"}`;
-    inv.setItem(SORT_SLOT, sortItem);
-    entity.setDynamicProperty("last_rendered_page", currentPage);
-    entity.setDynamicProperty("last_rendered_page_count", pageCount);
-    entity.setDynamicProperty("last_rendered_qty", currentQty);
-    entity.setDynamicProperty("last_rendered_sort", currentSort);
+    renderBlueprintTerminalControls(
+      entity,
+      inv,
+      currentPage,
+      pageCount,
+      currentQty,
+      currentCraftQty,
+      currentSort,
+    );
   }
   let nodes = getConnectedInventories(block);
   let networkRecord = readNetworkRecord(nodes.networkId);
@@ -925,80 +971,22 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
     entity.setDynamicProperty("last_network_state", currentNetworkState);
     syncTerminalNetworkState(entity, networkRecord, networkTotals, networkVersion);
     entity.setDynamicProperty("force_refresh", false);
-    if (hasNetwork) {
-      for (let i = 0; i < itemsPerPage; i++) {
-        let currentSlot = STORAGE_START + i;
-        let existingItem = inv.getItem(currentSlot);
-        if (
-          existingItem &&
-          existingItem.typeId !== "utilitycraft:storage_filler" &&
-          getStoredCount(existingItem) === -1
-        )
-          continue;
-        if (i < pageSlice.length) {
-          let key = pageSlice[i];
-          let virtualItemTest = createItemFromKey(key, 1);
-          let maxStack = virtualItemTest.maxAmount ?? 64;
-          let renderAmount = Math.min(
-            currentQty,
-            networkTotals[key] || 0,
-            maxStack,
-          );
-          let virtualItem = createItemFromKey(key, renderAmount);
-          let currentLore = virtualItem.getLore() || [];
-          applyVirtualLore(
-            virtualItem,
-            [...currentLore, `${LORE_DISPLAY}${networkTotals[key]}`],
-            nodes.networkId,
-            key,
-          );
-          let existingKey = existingItem ? getItemKey(existingItem) : null;
-          if (
-            !existingItem ||
-            existingKey !== key ||
-            getStoredCount(existingItem) !== networkTotals[key] ||
-            existingItem.amount !== renderAmount ||
-            needsVirtualLoreRewrite(existingItem)
-          ) {
-            inv.setItem(currentSlot, virtualItem);
-          }
-        } else {
-          if (
-            !existingItem ||
-            existingItem.typeId !== "utilitycraft:storage_filler" ||
-            existingItem.nameTag !== "§rStorage Slot"
-          ) {
-            let filler = new ItemStack("utilitycraft:storage_filler", 1);
-            filler.nameTag = "§rStorage Slot";
-            inv.setItem(currentSlot, filler);
-          }
-        }
-      }
-    } else {
-      for (let i = STORAGE_START; i <= STORAGE_END; i++) {
-        let item = inv.getItem(i);
-        if (
-          !item ||
-          item.typeId !== "utilitycraft:storage_filler" ||
-          item.nameTag !== "§rStorage Slot"
-        ) {
-          let filler = new ItemStack("utilitycraft:storage_filler", 1);
-          filler.nameTag = "§rStorage Slot";
-          inv.setItem(i, filler);
-        }
-      }
-    }
-  }
-  for (let i = STORAGE_START; i <= STORAGE_END; i++) {
-    let labelSlot = COUNT_LABEL_BASE_SLOT + i;
-    const item = inv.getItem(i);
-    let labelText = " ";
-    if (item && item.typeId !== "utilitycraft:storage_filler") {
-      const count = getStoredCount(item);
-      const valStr = (count !== -1 ? count : item.amount).toString();
-      if (valStr !== "1") labelText = `§r§f${valStr}`;
-    }
-    machine.setLabel(labelText, labelSlot);
+    Terminal.renderVirtualGridChunked({
+      entity,
+      inv,
+      machine,
+      networkId: nodes.networkId,
+      hasNetwork,
+      networkTotals,
+      pageSlice,
+      currentQty,
+      storageStart: STORAGE_START,
+      storageSlots: STORAGE_SLOTS,
+      countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
+      loreDisplay: LORE_DISPLAY,
+      spreadTicks: PAGE_CHANGE_DELAY_TICKS,
+    });
+    return;
   }
 }
 function resolveRecipeAsync(dimension, location, gridItems, entity) {

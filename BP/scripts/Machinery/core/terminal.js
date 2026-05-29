@@ -2,7 +2,11 @@ import { EnchantmentTypes, ItemStack, system } from "@minecraft/server";
 import { BasicMachine, Machine, Rotation } from "DoriosCore/index.js";
 import { getNetworkNodes, updateNetworkAround } from "Machinery/storage/network_manager.js";
 import { addToNetwork, readNetworkRecord, removeFromNetwork } from "Machinery/storage/storage_db.js";
-import { applyVirtualLore, stripHiddenLore } from "Machinery/storage/virtual_item_codec.js";
+import {
+  applyVirtualLore,
+  needsVirtualLoreRewrite,
+  stripHiddenLore,
+} from "Machinery/storage/virtual_item_codec.js";
 
 const DEFAULT_STORAGE_START = 0;
 const DEFAULT_STORAGE_END = 109;
@@ -12,7 +16,7 @@ const DEFAULT_COUNT_LABEL_BASE_SLOT = 110;
 const DEFAULT_STORAGE_FILLER = "utilitycraft:storage_filler";
 const DEFAULT_STORAGE_FILLER_NAME = "§rStorage Slot";
 const DEFAULT_LORE_DISPLAY = "§r§7- Count: §f";
-const DEFAULT_PAGE_CHANGE_DELAY_TICKS = 8;
+const DEFAULT_PAGE_CHANGE_DELAY_TICKS = 16;
 
 /**
  * Shared base class for Digital Storage terminal machines.
@@ -145,6 +149,72 @@ export class Terminal extends BasicMachine {
    */
   static markPageChanged(entity) {
     entity.setDynamicProperty("last_page_change_tick", system.currentTick ?? 0);
+  }
+
+  /**
+   * Checks whether a terminal is already spreading a full grid render over ticks.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal entity.
+   * @returns {boolean} True when a chunked render is in progress.
+   */
+  static isChunkedRenderActive(entity) {
+    return !!entity?.getDynamicProperty?.("chunked_render_active");
+  }
+
+  /**
+   * Starts a chunked render transaction and returns its token.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal entity.
+   * @returns {number} Render token.
+   */
+  static beginChunkedRender(entity) {
+    const token =
+      Math.floor(Number(entity.getDynamicProperty("chunked_render_token") ?? 0)) + 1;
+    entity.setDynamicProperty("chunked_render_token", token);
+    entity.setDynamicProperty("chunked_render_active", true);
+    return token;
+  }
+
+  /**
+   * Checks whether a chunked render token is still the latest one.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal entity.
+   * @param {number} token Render token.
+   * @returns {boolean} True when the render can continue.
+   */
+  static isChunkedRenderCurrent(entity, token) {
+    return (
+      !!entity &&
+      entity.isValid &&
+      Math.floor(Number(entity.getDynamicProperty("chunked_render_token") ?? 0)) === token
+    );
+  }
+
+  /**
+   * Finishes a chunked render transaction.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal entity.
+   * @param {number} token Render token.
+   */
+  static finishChunkedRender(entity, token) {
+    if (Terminal.isChunkedRenderCurrent(entity, token)) {
+      entity.setDynamicProperty("chunked_render_active", false);
+    }
+  }
+
+  /**
+   * Waits between render chunks so a full page render is spread across ticks.
+   *
+   * @param {number} index Current item index.
+   * @param {number} total Total items in this render.
+   * @param {number} spreadTicks Number of ticks to spread across.
+   */
+  static async waitRenderChunk(index, total, spreadTicks) {
+    const chunks = Math.max(1, Math.floor(Number(spreadTicks) || 1));
+    const chunkSize = Math.max(1, Math.ceil(total / chunks));
+    if ((index + 1) % chunkSize === 0 && index + 1 < total) {
+      await system.waitTicks(1);
+    }
   }
 
   /**
@@ -311,6 +381,23 @@ export class Terminal extends BasicMachine {
     if (!loreLine) return -1;
     const match = loreLine.replace(/§./g, "").match(/\d+/g);
     return match ? parseInt(match[match.length - 1]) : 1;
+  }
+
+  /**
+   * Formats large item counts for compact UI labels.
+   *
+   * Values under 1000 stay exact. At 1000 and above the label uses one
+   * decimal place with k, M, or B suffixes.
+   *
+   * @param {number} value Raw item count.
+   * @returns {string} Compact item count.
+   */
+  static formatCountLabel(value) {
+    const amount = Math.max(0, Math.floor(Number(value) || 0));
+    if (amount >= 1000000000) return `${(amount / 1000000000).toFixed(1)}B`;
+    if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M`;
+    if (amount >= 1000) return `${(amount / 1000).toFixed(1)}k`;
+    return amount.toString();
   }
 
   /**
@@ -514,7 +601,7 @@ export class Terminal extends BasicMachine {
     let labelText = " ";
     if (item && item.typeId !== fillerId) {
       const count = Terminal.getStoredCount(item);
-      const valStr = (count !== -1 ? count : item.amount).toString();
+      const valStr = Terminal.formatCountLabel(count !== -1 ? count : item.amount);
       if (valStr !== "1") {
         labelText = `§r§f${valStr}`;
       }
@@ -625,6 +712,106 @@ export class Terminal extends BasicMachine {
       fillerId,
     });
     return true;
+  }
+
+  /**
+   * Renders a full virtual storage grid across multiple ticks.
+   *
+   * This is used only for reload-all cases. Small network deltas should keep
+   * using direct single-slot updates.
+   *
+   * @param {object} options Render options.
+   * @returns {Promise<boolean>} True when the render completed.
+   */
+  static async renderVirtualGridChunked({
+    entity,
+    inv,
+    machine,
+    networkId,
+    hasNetwork,
+    networkTotals,
+    pageSlice,
+    currentQty,
+    storageStart = DEFAULT_STORAGE_START,
+    storageSlots = DEFAULT_STORAGE_SLOTS,
+    countLabelBaseSlot = DEFAULT_COUNT_LABEL_BASE_SLOT,
+    loreDisplay = DEFAULT_LORE_DISPLAY,
+    fillerId = DEFAULT_STORAGE_FILLER,
+    fillerName = DEFAULT_STORAGE_FILLER_NAME,
+    spreadTicks = DEFAULT_PAGE_CHANGE_DELAY_TICKS,
+  }) {
+    if (Terminal.isChunkedRenderActive(entity)) {
+      entity.setDynamicProperty("force_refresh", true);
+      return false;
+    }
+
+    const token = Terminal.beginChunkedRender(entity);
+    try {
+      const safeTotals = networkTotals ?? {};
+      const safePageSlice = Array.isArray(pageSlice) ? pageSlice : [];
+
+      for (let i = 0; i < storageSlots; i++) {
+        if (!Terminal.isChunkedRenderCurrent(entity, token)) return false;
+
+        const currentSlot = storageStart + i;
+        const existingItem = inv.getItem(currentSlot);
+        if (
+          existingItem &&
+          existingItem.typeId !== fillerId &&
+          Terminal.getStoredCount(existingItem) === -1
+        ) {
+          Terminal.setCountLabel(machine, inv, currentSlot, {
+            countLabelBaseSlot,
+            fillerId,
+          });
+          await Terminal.waitRenderChunk(i, storageSlots, spreadTicks);
+          continue;
+        }
+
+        if (hasNetwork && i < safePageSlice.length) {
+          const key = safePageSlice[i];
+          const virtualItemTest = Terminal.createItemFromKey(key, 1);
+          const maxStack = virtualItemTest.maxAmount ?? 64;
+          const renderAmount = Math.min(currentQty, safeTotals[key] || 0, maxStack);
+          const virtualItem = Terminal.createItemFromKey(key, renderAmount);
+          const currentLore = virtualItem.getLore() || [];
+          applyVirtualLore(
+            virtualItem,
+            [...currentLore, `${loreDisplay}${safeTotals[key]}`],
+            networkId,
+            key,
+          );
+          const existingKey = existingItem ? Terminal.getItemKey(existingItem) : null;
+          if (
+            !existingItem ||
+            existingKey !== key ||
+            Terminal.getStoredCount(existingItem) !== safeTotals[key] ||
+            existingItem.amount !== renderAmount ||
+            needsVirtualLoreRewrite(existingItem)
+          ) {
+            inv.setItem(currentSlot, virtualItem);
+          }
+        } else if (
+          !existingItem ||
+          existingItem.typeId !== fillerId ||
+          existingItem.nameTag !== fillerName
+        ) {
+          const filler = new ItemStack(fillerId, 1);
+          filler.nameTag = fillerName;
+          inv.setItem(currentSlot, filler);
+        }
+
+        Terminal.setCountLabel(machine, inv, currentSlot, {
+          countLabelBaseSlot,
+          fillerId,
+        });
+        await Terminal.waitRenderChunk(i, storageSlots, spreadTicks);
+      }
+
+      return true;
+    } finally {
+      Terminal.finishChunkedRender(entity, token);
+    }
   }
 
   /**

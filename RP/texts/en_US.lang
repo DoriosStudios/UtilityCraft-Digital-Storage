@@ -19,10 +19,10 @@ tile.utilitycraft:ds_item_conduit.name=Digital Storage Conduit\n§7- Links digit
 #####################
 
 item.utilitycraft:empty_storage_cell=Empty Storage Cell
-item.utilitycraft:basic_storage_cell=§eBasic Storage Cell
-item.utilitycraft:advanced_storage_cell=§cAdvanced Storage Cell
-item.utilitycraft:expert_storage_cell=§bExpert Storage Cell
-item.utilitycraft:ultimate_storage_cell=§8Ultimate Storage Cell
+item.utilitycraft:basic_storage_cell=§eBasic Storage Cell\n§7- Max Capacity: §f4.1k
+item.utilitycraft:advanced_storage_cell=§cAdvanced Storage Cell\n§7- Max Capacity: §f16.4k
+item.utilitycraft:expert_storage_cell=§bExpert Storage Cell\n§7- Max Capacity: §f65.5k
+item.utilitycraft:ultimate_storage_cell=§8Ultimate Storage Cell\n§7- Max Capacity: §f409.6k
 item.utilitycraft:basic_storage_part=§eBasic Storage Part
 item.utilitycraft:advanced_storage_part=§cAdvanced Storage Part
 item.utilitycraft:expert_storage_part=§bExpert Storage Part

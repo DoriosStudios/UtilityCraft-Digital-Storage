@@ -30,7 +30,7 @@ const QUANTITY_SLOT = 222;
 const PREVIOUS_SLOT = 223;
 const NEXT_SLOT = 224;
 const LORE_DISPLAY = "§r§7- Count: §f";
-const MAX_PAGES = 3;
+const MAX_PAGES = 27;
 const STORAGE_SLOTS = 110;
 const CONTROL_SLOTS = [PREVIOUS_SLOT, NEXT_SLOT, QUANTITY_SLOT, SORT_SLOT];
 const RENDER_SETTINGS = {
@@ -81,6 +81,26 @@ function renderTerminalControls(entity, inv, currentPage, pageCount, currentQty,
   entity.setDynamicProperty("last_rendered_qty", currentQty);
   entity.setDynamicProperty("last_rendered_sort", currentSort);
 }
+function refreshStorageTerminalControls(entity) {
+  try {
+    if (!entity || !entity.isValid) return;
+    const inv = entity.getComponent("minecraft:inventory")?.container;
+    if (!inv) return;
+    let currentPage = entity.getDynamicProperty("page") ?? 0;
+    const pageCount = getPageCountForEntity(entity);
+    currentPage = Math.max(0, Math.min(currentPage, pageCount - 1));
+    const currentQty = entity.getDynamicProperty("extract_quantity") ?? 1;
+    const currentSort = entity.getDynamicProperty("sort_mode") ?? "count";
+    renderTerminalControls(
+      entity,
+      inv,
+      currentPage,
+      pageCount,
+      currentQty,
+      currentSort,
+    );
+  } catch (e) {}
+}
 function canChangePage(entity) {
   return Terminal.canChangePage(entity, PAGE_CHANGE_DELAY_TICKS);
 }
@@ -120,6 +140,10 @@ ButtonManager.registerMachineButton(
   CONTROL_SLOTS,
   ({ entity, slot }) => {
     if (!entity || !entity.isValid) return;
+    if (Terminal.isChunkedRenderActive(entity)) {
+      refreshStorageTerminalControls(entity);
+      return;
+    }
     if (entity.getDynamicProperty("is_processing_click")) {
       scheduleStorageTerminalRender(entity);
       return;
@@ -362,7 +386,7 @@ function applyNetworkDeltas(entity, inv, machine, networkRecord, networkId, curr
 function syncTerminalNetworkState(entity, networkRecord, networkTotals, networkVersion) {
   Terminal.syncNetworkState(entity, networkRecord, networkTotals, networkVersion);
 }
-function renderStorageTerminalPage(
+async function renderStorageTerminalPage(
   entity,
   inv,
   machine,
@@ -376,85 +400,31 @@ function renderStorageTerminalPage(
 ) {
   renderTerminalControls(entity, inv, currentPage, pageCount, currentQty, currentSort);
 
+  let pageSlice = [];
   if (hasNetwork) {
     const sortedTypes = getStableRenderedOrder(entity, networkTotals, currentSort);
     const startIdx = currentPage * STORAGE_SLOTS;
-    const pageSlice = sortedTypes.slice(startIdx, startIdx + STORAGE_SLOTS);
+    pageSlice = sortedTypes.slice(startIdx, startIdx + STORAGE_SLOTS);
     setRenderedSlotMap(entity, pageSlice);
-
-    for (let i = 0; i < STORAGE_SLOTS; i++) {
-      const currentSlot = STORAGE_START + i;
-      const existingItem = inv.getItem(currentSlot);
-      if (
-        existingItem &&
-        existingItem.typeId !== "utilitycraft:storage_filler" &&
-        getStoredCount(existingItem) === -1
-      ) {
-        continue;
-      }
-
-      if (i < pageSlice.length) {
-        const key = pageSlice[i];
-        const virtualItemTest = createItemFromKey(key, 1);
-        const maxStack = virtualItemTest.maxAmount ?? 64;
-        const renderAmount = Math.min(currentQty, networkTotals[key] || 0, maxStack);
-        const virtualItem = createItemFromKey(key, renderAmount);
-        const currentLore = virtualItem.getLore() || [];
-        applyVirtualLore(
-          virtualItem,
-          [...currentLore, `${LORE_DISPLAY}${networkTotals[key]}`],
-          networkId,
-          key,
-        );
-        const existingKey = existingItem ? getItemKey(existingItem) : null;
-        if (
-          !existingItem ||
-          existingKey !== key ||
-          getStoredCount(existingItem) !== networkTotals[key] ||
-          existingItem.amount !== renderAmount ||
-          needsVirtualLoreRewrite(existingItem)
-        ) {
-          inv.setItem(currentSlot, virtualItem);
-        }
-      } else if (
-        !existingItem ||
-        existingItem.typeId !== "utilitycraft:storage_filler" ||
-        existingItem.nameTag !== "§rStorage Slot"
-      ) {
-        const filler = new ItemStack("utilitycraft:storage_filler", 1);
-        filler.nameTag = "§rStorage Slot";
-        inv.setItem(currentSlot, filler);
-      }
-    }
   } else {
     setRenderedSlotMap(entity, []);
-    for (let i = STORAGE_START; i <= STORAGE_END; i++) {
-      const item = inv.getItem(i);
-      if (
-        !item ||
-        item.typeId !== "utilitycraft:storage_filler" ||
-        item.nameTag !== "§rStorage Slot"
-      ) {
-        const filler = new ItemStack("utilitycraft:storage_filler", 1);
-        filler.nameTag = "§rStorage Slot";
-        inv.setItem(i, filler);
-      }
-    }
   }
 
-  for (let i = STORAGE_START; i <= STORAGE_END; i++) {
-    const labelSlot = COUNT_LABEL_BASE_SLOT + i;
-    const item = inv.getItem(i);
-    let labelText = " ";
-    if (item && item.typeId !== "utilitycraft:storage_filler") {
-      const count = getStoredCount(item);
-      const valStr = (count !== -1 ? count : item.amount).toString();
-      if (valStr !== "1") {
-        labelText = `§r§f${valStr}`;
-      }
-    }
-    machine.setLabel(labelText, labelSlot);
-  }
+  await Terminal.renderVirtualGridChunked({
+    entity,
+    inv,
+    machine,
+    networkId,
+    hasNetwork,
+    networkTotals,
+    pageSlice,
+    currentQty,
+    storageStart: STORAGE_START,
+    storageSlots: STORAGE_SLOTS,
+    countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
+    loreDisplay: LORE_DISPLAY,
+    spreadTicks: PAGE_CHANGE_DELAY_TICKS,
+  });
 }
 function runStorageTerminalTick(block, machineEntity, settings) {
   const entity = machineEntity;

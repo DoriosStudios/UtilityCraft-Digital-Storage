@@ -4,10 +4,10 @@ export const CELL_ID_PROPERTY = "ucds_cell_id";
 const NETWORK_CHANGE_LIMIT = 64;
 
 export const CELL_CAPACITIES = {
-  "utilitycraft:basic_storage_cell": 1024,
-  "utilitycraft:advanced_storage_cell": 4096,
-  "utilitycraft:expert_storage_cell": 16384,
-  "utilitycraft:ultimate_storage_cell": 65536,
+  "utilitycraft:basic_storage_cell": 4096,
+  "utilitycraft:advanced_storage_cell": 16384,
+  "utilitycraft:expert_storage_cell": 65536,
+  "utilitycraft:ultimate_storage_cell": 409600,
 };
 
 function readJson(key, fallback) {
@@ -67,12 +67,20 @@ export function ensureCellId(item) {
     item.setDynamicProperty("cell_data", undefined);
   }
 
-  if (!getCellRecord(cellId)) {
+  const existingRecord = getCellRecord(cellId);
+  const capacity = CELL_CAPACITIES[item.typeId];
+  if (!existingRecord) {
     writeCellRecord(cellId, {
       version: 0,
-      capacity: CELL_CAPACITIES[item.typeId],
+      capacity,
       used: 0,
       items: {},
+    });
+  } else if (Math.floor(Number(existingRecord.capacity ?? 0)) !== capacity) {
+    writeCellRecord(cellId, {
+      ...existingRecord,
+      capacity,
+      version: existingRecord.version ?? 0,
     });
   }
 
@@ -128,7 +136,7 @@ export function writeCellData(item, data) {
 
   const cellId = ensureCellId(item);
   writeCellRecord(cellId, {
-    capacity: data?.capacity ?? CELL_CAPACITIES[item.typeId],
+    capacity: CELL_CAPACITIES[item.typeId],
     items: data?.items ?? {},
     version: getCellRecord(cellId)?.version ?? 0,
   });

@@ -18,16 +18,66 @@ export const cellCapacities = {
 export function getCellData(cellItem) {
   return readCellData(cellItem) ?? null;
 }
+
+function formatStorageAmount(value) {
+  const amount = Math.max(0, Math.floor(Number(value) || 0));
+  if (amount >= 1000000000) return `${(amount / 1000000000).toFixed(1)}B`;
+  if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M`;
+  if (amount >= 1000) return `${(amount / 1000).toFixed(1)}k`;
+  return amount.toString();
+}
+
+function formatUsagePercent(used, capacity) {
+  const max = Math.max(0, Number(capacity) || 0);
+  if (max <= 0) return "0.0%";
+  const percent = Math.max(0, Math.min(100, ((Number(used) || 0) / max) * 100));
+  return `${percent.toFixed(1)}%`;
+}
+
+function getCellLore(data) {
+  const used = data?.totalItems ?? data?.used ?? 0;
+  const capacity = data?.capacity ?? 0;
+  const free = Math.max(0, capacity - used);
+  return [
+    `\u00A7r\u00A77- Stored: \u00A7f${formatStorageAmount(used)}`,
+    `\u00A7r\u00A77- Usage: \u00A7f${formatUsagePercent(used, capacity)}`,
+    `\u00A7r\u00A77- Free: \u00A7f${formatStorageAmount(free)}`,
+  ];
+}
+
+function getDiskInfoLore(cells, used, capacity) {
+  const free = Math.max(0, capacity - used);
+  return [
+    ` \u00A7r\u00A77- Cells: \u00A7f${cells}/9`,
+    ` \u00A7r\u00A77- Stored: \u00A7f${formatStorageAmount(used)} \u00A77/ \u00A7f${formatStorageAmount(capacity)}`,
+    ` \u00A7r\u00A77- Usage: \u00A7f${formatUsagePercent(used, capacity)}%`,
+    ` \u00A7r\u00A77- Free: \u00A7f${formatStorageAmount(free)}`,
+  ];
+}
+
+function cellLoreMatches(cellItem, data) {
+  const currentLore = cellItem.getLore() ?? [];
+  const expectedLore = getCellLore(data);
+  return (
+    currentLore.length === expectedLore.length &&
+    currentLore.every((line, index) => line === expectedLore[index])
+  );
+}
+
+function syncCellLore(container, slot, cellItem, data) {
+  if (!cellItem || !data || cellLoreMatches(cellItem, data)) return false;
+  cellItem.setLore(getCellLore(data));
+  container.setItem(slot, cellItem);
+  return true;
+}
+
 export function saveCellData(container, slot, cellItem, dataObj) {
   const saved = writeCellData(cellItem, dataObj);
-  const newTotal = saved?.totalItems ?? 0;
-  const capacity = saved?.capacity ?? dataObj.capacity;
-  cellItem.setLore([`\u00A7r\u00A77- Storage: \u00A7f${newTotal} / ${capacity}`]);
-  container.setItem(slot, cellItem);
+  syncCellLore(container, slot, cellItem, saved ?? dataObj);
   try {
     const entity = container?.entity;
     if (entity) entity.setDynamicProperty("disk_info_state", "");
-  } catch {}
+  } catch { }
 }
 
 DoriosAPI.register.blockComponent("disk_drive", {
@@ -54,13 +104,8 @@ DoriosAPI.register.blockComponent("disk_drive", {
         const inv = entity.getComponent("minecraft:inventory")?.container;
         if (!inv) return;
         let label = new ItemStack("utilitycraft:ui_filler", 1);
-        label.nameTag = "\n§r§bDisk Info:";
-        label.setLore([
-          ` §r§7- Cells: §f0/9`,
-          ` §r§7- Usage:`,
-          ` §r§7 - §f0`,
-          ` §r§7 - §f0`,
-        ]);
+        label.nameTag = "\n\u00A7r\u00A7bDisk Info:";
+        label.setLore(getDiskInfoLore(0, 0, 0));
         inv.setItem(INFO_SLOT, label);
         entity.setDynamicProperty("disk_info_state", "");
         entity.setDynamicProperty("disk_cell_state", "");
@@ -85,7 +130,8 @@ DoriosAPI.register.blockComponent("disk_drive", {
       const previousCellId = getCellId(cell);
       let data = cell ? readCellData(cell, true) : undefined;
       if (data) {
-        if (!previousCellId && data.cellId) inv.setItem(i, cell);
+        const loreUpdated = syncCellLore(inv, i, cell, data);
+        if (!previousCellId && data.cellId && !loreUpdated) inv.setItem(i, cell);
         cells++;
         totalStored += data.totalItems;
         totalCap += data.capacity;
@@ -99,13 +145,8 @@ DoriosAPI.register.blockComponent("disk_drive", {
     if (infoState !== lastInfoState) {
       entity.setDynamicProperty("disk_info_state", infoState);
       let label = new ItemStack("utilitycraft:ui_filler", 1);
-    label.nameTag = "\n§r§bDisk Info:";
-    label.setLore([
-      ` §r§7- Cells: §f${cells}/9`,
-      ` §r§7- Usage:`,
-      ` §r§7 - §f${totalStored}`,
-      ` §r§7 - §f${totalCap}`,
-    ]);
+      label.nameTag = "\n\u00A7r\u00A7bDisk Info:";
+      label.setLore(getDiskInfoLore(cells, totalStored, totalCap));
       inv.setItem(INFO_SLOT, label);
     }
 
