@@ -1,0 +1,162 @@
+{
+  "namespace": "sh",
+  "blueprint_panel": {
+    "type": "collection_panel",
+    "collection_name": "container_items",
+    "$item_collection_name": "container_items",
+    "$output_button_index|default": 0,
+    "$blueprint_index|default": 1,
+    "$output_index|default": 2,
+    "$info_index|default": 3,
+    "size": [ 162, 72 ],
+    "controls": [
+      {
+        "output_quantity_button@uc.machine_button": {
+          "$index": "$output_button_index",
+          "$default_texture": "textures/ui/buttons/output_quantity/button",
+          "$hover_texture": "textures/ui/buttons/output_quantity/selected",
+          "$pressed_texture": "textures/ui/buttons/output_quantity/pressed",
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "offset": [ 0, -18 ],
+          "$button_size": [ 24, 24 ]
+        }
+      },
+      {
+        "arrow_large": {
+          "type": "image",
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "offset": [ 0, 28 ],
+          "size": [ 22, 22 ],
+          "texture": "textures/ui/arrow_large_down"
+        }
+      },
+      {
+        "blueprint_slot@sh.small_slot": {
+          "anchor_from": "top_left",
+          "anchor_to": "top_left",
+          "offset": [ 71, 6 ],
+          "collection_index": "$blueprint_index"
+        }
+      },
+      {
+        "overlay@sh.overlay_image": {
+          "type": "image",
+          "$texture": "textures/ui/overlay/blueprint_overlay",
+          "anchor_from": "top_left",
+          "anchor_to": "top_left",
+          "offset": [ 72, 7 ],
+          "layer": 4
+        }
+      },
+      {
+        "item@sh.prototype_large_slot": {
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "offset": [ 0, 50 ],
+          "collection_index": "$output_index"
+        }
+      },
+      {
+        "crafting_info_panel@uc.text_label": {
+          "collection_index": "$info_index",
+          "anchor_from": "top_left",
+          "anchor_to": "top_left",
+          "$text_scale": 0.55,
+          "offset": [ 14, 12 ]
+        }
+      },
+      {
+        "info_panel_background@uc.machine_small_screen": {}
+      }
+    ]
+  },
+  "crafting_panel": {
+    "type": "collection_panel",
+    "collection_name": "container_items",
+    "$item_collection_name": "container_items",
+    "size": [ 162, 72 ],
+    "$grid_index_1|default" 0,
+    "$grid_index_2|default" 1,
+    "$grid_index_3|default" 2,
+    "$grid_index_4|default" 3,
+    "$grid_index_5|default" 4,
+    "$grid_index_6|default" 5,
+    "$grid_index_7|default" 6,
+    "$grid_index_8|default" 7,
+    "$grid_index_9|default" 8,
+    "$output_index|default" 9,
+    "$quantity_index|default" 10,
+    "$remove_index|default" 11,
+    "$blueprint_index|default" 12,
+    "controls": [
+      {
+        "output_quantity_button@uc.machine_button": {
+          "$index": "$quantity_index",
+          "$default_texture": "textures/ui/buttons/output_quantity/button",
+          "$hover_texture": "textures/ui/buttons/output_quantity/selected",
+          "$pressed_texture": "textures/ui/buttons/output_quantity/pressed",
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "offset": [ 0, -18 ],
+          "$button_size": [ 24, 24 ]
+        }
+      },
+      {
+        "remove_recipe_button@uc.machine_button": {
+          "$index": "$remove_index",
+          "$button_size": [ 12, 13 ],
+          "$default_texture": "textures/ui/buttons/remove_recipe/button",
+          "$hover_texture": "textures/ui/buttons/remove_recipe/selected",
+          "$pressed_texture": "textures/ui/buttons/remove_recipe/pressed",
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "offset": [ 0, 14 ]
+        }
+      },
+      {
+        "arrow_large": {
+          "type": "image",
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "offset": [ -46, 71 ],
+          "size": [ 22, 22 ],
+          "texture": "textures/ui/arrow_large_down"
+        }
+      },
+      {
+        "blueprint_slot@sh.small_slot": {
+          "anchor_from": "top_left",
+          "anchor_to": "top_left",
+          "offset": [ 75, 600 ],
+          "collection_index": "$blueprint_index"
+        }
+      },
+      {
+        "3x3_grid@sh.3x3_grid": {
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "offset": [ -34, 14 ],
+          "$index_1": "$grid_index_1",
+          "$index_2": "$grid_index_2",
+          "$index_3": "$grid_index_3",
+          "$index_4": "$grid_index_4",
+          "$index_5": "$grid_index_5",
+          "$index_6": "$grid_index_6",
+          "$index_7": "$grid_index_7",
+          "$index_8": "$grid_index_8",
+          "$index_9": "$grid_index_9"
+        }
+      },
+      {
+        "item@sh.prototype_large_slot": {
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "offset": [ -33, 110 ],
+          "collection_index": "$output_index"
+        }
+      }
+    ]
+  }
+}
