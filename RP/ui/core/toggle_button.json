@@ -9,7 +9,7 @@
     "$toggle_index|default": 0,
     "$toggle_group|default": false,
     "$toggle_default_state|default": false,
-    "$toggle_control_name|default": "",
+    "$toggle_control_name|default": "", // Required Match The "$panel_control_name"
     "$toggle_unchecked|default": "textures/ui/buttons/unchecked",
     "$toggle_checked|default": "textures/ui/buttons/checked",
     "$toggle_unchecked_hover|default": "textures/ui/buttons/unchecked_hover",
@@ -207,7 +207,7 @@
   },
   "toggle_button_panel": {
     "type": "panel",
-    "$panel_control_name|default": "",
+    "$panel_control_name|default": "", // Required Match The "$toggle_control_name"
     "$controls|default": [],
     "controls": [
       {
@@ -229,4 +229,4 @@
       }
     ]
   }
-            }
+}
