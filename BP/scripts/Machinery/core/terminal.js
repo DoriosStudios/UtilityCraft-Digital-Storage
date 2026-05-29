@@ -1,5 +1,5 @@
 import { EnchantmentTypes, ItemStack, system } from "@minecraft/server";
-import { BasicMachine, Machine, Rotation } from "DoriosCore/index.js";
+import { BasicMachine, Machine } from "DoriosCore/index.js";
 import { getNetworkNodes, updateNetworkAround } from "Machinery/storage/network_manager.js";
 import { addToNetwork, readNetworkRecord, removeFromNetwork } from "Machinery/storage/storage_db.js";
 import {
@@ -41,7 +41,7 @@ export class Terminal extends BasicMachine {
   }
 
   /**
-   * Handles terminal placement, rotation, entity spawning, and network refresh.
+   * Handles terminal placement, entity spawning, and network refresh.
    *
    * @param {object} e Block placement event.
    * @param {object} settings Block component settings.
@@ -50,16 +50,7 @@ export class Terminal extends BasicMachine {
    * @param {(entity: import("@minecraft/server").Entity, block: import("@minecraft/server").Block) => void} options.setupEntity Entity setup callback.
    */
   static onPlace(e, settings, { entityType, setupEntity }) {
-    const { block, player, permutationToPlace } = e;
-    if (settings?.rotation) {
-      if (player.isInSurvival()) {
-        system.run(() =>
-          player.runCommand(`clear @s ${permutationToPlace.type.id} 0 1`),
-        );
-      }
-      e.cancel = true;
-      Rotation.facing(player, block, permutationToPlace);
-    }
+    const { block } = e;
 
     system.run(() => {
       const { x, y, z } = block.center();

@@ -1,5 +1,5 @@
 import { ItemStack, system } from "@minecraft/server";
-import { Machine, Rotation } from "DoriosCore/index.js";
+import { Machine } from "DoriosCore/index.js";
 import {
   CELL_CAPACITIES,
   getCellId,
@@ -82,16 +82,7 @@ export function saveCellData(container, slot, cellItem, dataObj) {
 
 DoriosAPI.register.blockComponent("disk_drive", {
   beforeOnPlayerPlace(e, { params: settings }) {
-    const { block, player, permutationToPlace } = e;
-    if (settings?.rotation) {
-      if (player.isInSurvival()) {
-        system.run(() =>
-          player.runCommand(`clear @s ${permutationToPlace.type.id} 0 1`),
-        );
-      }
-      e.cancel = true;
-      Rotation.facing(player, block, permutationToPlace);
-    }
+    const { block } = e;
     system.run(() => {
       const { x, y, z } = block.center();
       const entity = block.dimension.spawnEntity("utilitycraft:disk_drive", {
