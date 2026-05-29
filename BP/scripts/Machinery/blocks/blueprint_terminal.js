@@ -7,7 +7,10 @@ import {
   getCellData,
   cellCapacities,
 } from "Machinery/blocks/disk_drive.js";
-import { updateNetworkAround } from "Machinery/storage/network_manager.js";
+import {
+  getNetworkIdForBlock,
+  updateNetworkAround,
+} from "Machinery/storage/network_manager.js";
 import {
   readNetworkRecord,
 } from "Machinery/storage/storage_db.js";
@@ -99,6 +102,7 @@ function renderBlueprintTerminalControls(
   entity.setDynamicProperty("last_rendered_page", currentPage);
   entity.setDynamicProperty("last_rendered_page_count", pageCount);
   entity.setDynamicProperty("last_rendered_qty", currentQty);
+  entity.setDynamicProperty("last_rendered_craft_qty", currentCraftQty);
   entity.setDynamicProperty("last_rendered_sort", currentSort);
 }
 function refreshBlueprintTerminalControls(entity) {
@@ -234,6 +238,8 @@ function setupCraftingTerminalEntity(entity, block) {
     pageChangeDelayTicks: PAGE_CHANGE_DELAY_TICKS,
     extraProperties: {
       craft_qty: 1,
+      rendered_order: "[]",
+      sort_requested: true,
       output_mode: "default",
       grid_hash: "",
       is_resolving_recipe: false,
@@ -302,6 +308,7 @@ ButtonManager.registerMachineButton(
         "sort_mode",
         currentSort === "count" ? "name" : "count",
       );
+      entity.setDynamicProperty("sort_requested", true);
     }
     entity.setDynamicProperty("last_rendered_page", -1);
     entity.setDynamicProperty("force_refresh", true);
@@ -319,6 +326,16 @@ function getMachineEntity(block) {
 }
 function getConnectedInventories(startBlock) {
   return Terminal.getConnectedInventories(startBlock);
+}
+function getNetworkSnapshot(block) {
+  const networkId = getNetworkIdForBlock(block);
+  const record = readNetworkRecord(networkId);
+  return {
+    networkId,
+    record,
+    totals: record?.totals ?? {},
+    version: record?.version ?? 0,
+  };
 }
 function collectNetworkTotals(nodes) {
   let networkTotals = {};
@@ -362,6 +379,34 @@ function removeItemsFromNetwork(nodes, itemKey, amount) {
 function addItemsToNetwork(nodes, itemToAdd) {
   return Terminal.addItemsToNetwork(nodes, itemToAdd, isStorageCell);
 }
+function hasBurnSlotItem(inv) {
+  const burnItem = inv.getItem(BURN_SLOT);
+  return Boolean(burnItem && burnItem.typeId !== "utilitycraft:storage_filler");
+}
+function hasActionableStorageItems(inv) {
+  for (let i = STORAGE_START; i <= STORAGE_END; i++) {
+    const item = inv.getItem(i);
+    if (!item || item.typeId === "utilitycraft:storage_filler") continue;
+    if (getStoredCount(item) === -1 && !isStorageCell(item)) return true;
+  }
+
+  return false;
+}
+function getSlotStateHash(inv, slot) {
+  const item = inv.getItem(slot);
+  if (!item) return "empty";
+  return `${getItemKey(item)}@${item.amount}`;
+}
+function getSlotsStateHash(inv, slots) {
+  let hash = "";
+  for (const slot of slots) hash += `${slot}:${getSlotStateHash(inv, slot)}|`;
+  return hash;
+}
+function syncActivityState(entity, gridState, blueprintState, outputState) {
+  entity.setDynamicProperty("last_grid_state_hash", gridState);
+  entity.setDynamicProperty("last_blueprint_state_hash", blueprintState);
+  entity.setDynamicProperty("last_output_state_hash", outputState);
+}
 function getRenderedSlotMap(entity) {
   return Terminal.getRenderedSlotMap(entity);
 }
@@ -372,6 +417,54 @@ function setCountLabel(machine, inv, slot) {
   Terminal.setCountLabel(machine, inv, slot, {
     countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
   });
+}
+function getRenderedOrder(entity) {
+  const raw = entity.getDynamicProperty("rendered_order");
+  if (typeof raw !== "string" || raw.length === 0) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+function sortItemKeys(keys, networkTotals, sortMode) {
+  return keys.sort((a, b) => {
+    if (sortMode === "name") {
+      let nameA = a.split("||")[0].split(":").pop();
+      let nameB = b.split("||")[0].split(":").pop();
+      return nameA.localeCompare(nameB);
+    }
+
+    return (networkTotals[b] || 0) - (networkTotals[a] || 0);
+  });
+}
+function getStableRenderedOrder(entity, networkTotals, sortMode) {
+  const keys = Object.keys(networkTotals).filter(
+    (key) => (networkTotals[key] || 0) > 0,
+  );
+  const sortRequested = entity.getDynamicProperty("sort_requested") ?? false;
+  let order = getRenderedOrder(entity);
+
+  if (sortRequested || order.length === 0) {
+    order = sortItemKeys(keys, networkTotals, sortMode);
+    entity.setDynamicProperty("sort_requested", false);
+  } else {
+    const keySet = new Set(keys);
+    const orderedSet = new Set();
+    order = order.filter((key) => {
+      const keep = keySet.has(key);
+      if (keep) orderedSet.add(key);
+      return keep;
+    });
+    for (const key of keys) {
+      if (!orderedSet.has(key)) order.push(key);
+    }
+  }
+
+  entity.setDynamicProperty("rendered_order", JSON.stringify(order));
+  return order;
 }
 function findVisibleVirtualSlot(inv, itemKey) {
   return Terminal.findVisibleVirtualSlot(inv, itemKey, {
@@ -421,6 +514,55 @@ function applyNetworkDeltas(entity, inv, machine, networkRecord, networkId, curr
 function syncTerminalNetworkState(entity, networkRecord, networkTotals, networkVersion) {
   Terminal.syncNetworkState(entity, networkRecord, networkTotals, networkVersion);
 }
+async function renderBlueprintTerminalPage(
+  entity,
+  inv,
+  machine,
+  networkId,
+  hasNetwork,
+  networkTotals,
+  currentPage,
+  pageCount,
+  currentQty,
+  currentCraftQty,
+  currentSort,
+) {
+  renderBlueprintTerminalControls(
+    entity,
+    inv,
+    currentPage,
+    pageCount,
+    currentQty,
+    currentCraftQty,
+    currentSort,
+  );
+
+  let pageSlice = [];
+  if (hasNetwork) {
+    const sortedTypes = getStableRenderedOrder(entity, networkTotals, currentSort);
+    const startIdx = currentPage * STORAGE_SLOTS;
+    pageSlice = sortedTypes.slice(startIdx, startIdx + STORAGE_SLOTS);
+    setRenderedSlotMap(entity, pageSlice);
+  } else {
+    setRenderedSlotMap(entity, []);
+  }
+
+  await Terminal.renderVirtualGridChunked({
+    entity,
+    inv,
+    machine,
+    networkId,
+    hasNetwork,
+    networkTotals,
+    pageSlice,
+    currentQty,
+    storageStart: STORAGE_START,
+    storageSlots: STORAGE_SLOTS,
+    countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
+    loreDisplay: LORE_DISPLAY,
+    spreadTicks: PAGE_CHANGE_DELAY_TICKS,
+  });
+}
 function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   const entity = machineEntity;
   const isProxy = entity.getDynamicProperty("is_proxy");
@@ -431,23 +573,166 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   if (!machine || !machine.valid) return;
   const inv = entity.getComponent("minecraft:inventory").container;
   ButtonManager.ensureWatching(entity, "blueprint_terminal");
+  const networkSnapshot = getNetworkSnapshot(block);
   let currentPage = entity.getDynamicProperty("page") ?? 0;
   let lastRendered = entity.getDynamicProperty("last_rendered_page") ?? -1;
-  let pageCount = getPageCountForEntity(entity);
+  let pageCount = getPageCountFromTotals(networkSnapshot.totals);
   currentPage = clampTerminalPage(entity, pageCount);
   let lastPageCount = entity.getDynamicProperty("last_rendered_page_count") ?? -1;
   let currentQty = entity.getDynamicProperty("extract_quantity") ?? 1;
   let currentCraftQty = entity.getDynamicProperty("craft_qty") ?? 1;
   let lastQty = entity.getDynamicProperty("last_rendered_qty") ?? -1;
+  let lastCraftQty = entity.getDynamicProperty("last_rendered_craft_qty") ?? -1;
   let currentSort = entity.getDynamicProperty("sort_mode") ?? "count";
   let lastSort = entity.getDynamicProperty("last_rendered_sort") ?? "";
   let forceRefresh = entity.getDynamicProperty("force_refresh") ?? false;
   let controlsChanged = controlsNeedRender(inv);
   let pageChanged = false;
+  let networkVersion = networkSnapshot.version;
+  const lastNetworkVersion = entity.getDynamicProperty("last_network_version") ?? -1;
+  const currentTick = system.currentTick ?? 0;
+  const hasPendingBurnSlot = hasBurnSlotItem(inv);
+  const stateBlueprintItem = inv.getItem(CRAFTING_BLUEPRINT_SLOT);
+  const hasCraftBlueprint =
+    stateBlueprintItem && stateBlueprintItem.typeId === OUTPUT_BLUEPRINT_ITEM;
+  const gridState = getSlotsStateHash(inv, LOCAL_GRID_SLOTS);
+  const blueprintState = getSlotStateHash(inv, CRAFTING_BLUEPRINT_SLOT);
+  const outputState = getSlotStateHash(inv, CRAFTING_OUTPUT_SLOT);
+  const activityChanged =
+    gridState !== (entity.getDynamicProperty("last_grid_state_hash") ?? "") ||
+    blueprintState !==
+      (entity.getDynamicProperty("last_blueprint_state_hash") ?? "") ||
+    outputState !== (entity.getDynamicProperty("last_output_state_hash") ?? "");
+  if (activityChanged) {
+    syncActivityState(entity, gridState, blueprintState, outputState);
+  }
+  const shouldScanInput =
+    forceRefresh || controlsChanged || hasPendingBurnSlot || currentTick % 10 === 0;
+  const hasPendingInput =
+    hasPendingBurnSlot ||
+    (shouldScanInput ? hasActionableStorageItems(inv) : false);
+  const canUseNetworkDeltas =
+    !hasCraftBlueprint &&
+    !forceRefresh &&
+    !controlsChanged &&
+    !hasPendingInput &&
+    !activityChanged &&
+    currentPage === lastRendered &&
+    currentQty === lastQty &&
+    currentCraftQty === lastCraftQty &&
+    currentSort === lastSort &&
+    networkVersion !== lastNetworkVersion;
+  if (canUseNetworkDeltas) {
+    const handledByDeltas = applyNetworkDeltas(
+      entity,
+      inv,
+      machine,
+      networkSnapshot.record,
+      networkSnapshot.networkId,
+      currentQty,
+    );
+    if (handledByDeltas === "reload") {
+      const nextPageCount = getPageCountFromTotals(networkSnapshot.totals);
+      const nextPage = Math.max(0, Math.min(currentPage, nextPageCount - 1));
+      if (nextPage !== currentPage) entity.setDynamicProperty("page", nextPage);
+      renderBlueprintTerminalPage(
+        entity,
+        inv,
+        machine,
+        networkSnapshot.networkId,
+        Boolean(networkSnapshot.networkId),
+        networkSnapshot.totals,
+        nextPage,
+        nextPageCount,
+        currentQty,
+        currentCraftQty,
+        currentSort,
+      );
+      syncTerminalNetworkState(
+        entity,
+        networkSnapshot.record,
+        networkSnapshot.totals,
+        networkVersion,
+      );
+      entity.setDynamicProperty("force_refresh", false);
+      return;
+    }
+    if (handledByDeltas) {
+      const nextPageCount = getPageCountFromTotals(networkSnapshot.totals);
+      const nextPage = Math.max(0, Math.min(currentPage, nextPageCount - 1));
+      if (nextPage !== currentPage) {
+        entity.setDynamicProperty("page", nextPage);
+        renderBlueprintTerminalPage(
+          entity,
+          inv,
+          machine,
+          networkSnapshot.networkId,
+          Boolean(networkSnapshot.networkId),
+          networkSnapshot.totals,
+          nextPage,
+          nextPageCount,
+          currentQty,
+          currentCraftQty,
+          currentSort,
+        );
+      } else if (nextPageCount !== lastPageCount) {
+        renderBlueprintTerminalControls(
+          entity,
+          inv,
+          currentPage,
+          nextPageCount,
+          currentQty,
+          currentCraftQty,
+          currentSort,
+        );
+      }
+      syncTerminalNetworkState(
+        entity,
+        networkSnapshot.record,
+        networkSnapshot.totals,
+        networkVersion,
+      );
+      entity.setDynamicProperty("force_refresh", false);
+      return;
+    }
+    syncTerminalNetworkState(
+      entity,
+      networkSnapshot.record,
+      networkSnapshot.totals,
+      networkVersion,
+    );
+    entity.setDynamicProperty("force_refresh", false);
+    return;
+  }
+  if (
+    !forceRefresh &&
+    !controlsChanged &&
+    !hasPendingInput &&
+    !activityChanged &&
+    currentPage === lastRendered &&
+    currentQty === lastQty &&
+    currentCraftQty === lastCraftQty &&
+    currentSort === lastSort &&
+    networkVersion === lastNetworkVersion
+  ) {
+    if (pageCount !== lastPageCount) {
+      renderBlueprintTerminalControls(
+        entity,
+        inv,
+        currentPage,
+        pageCount,
+        currentQty,
+        currentCraftQty,
+        currentSort,
+      );
+    }
+    return;
+  }
   if (
     currentPage !== lastRendered ||
     pageCount !== lastPageCount ||
     currentQty !== lastQty ||
+    currentCraftQty !== lastCraftQty ||
     currentSort !== lastSort ||
     controlsChanged
   ) {
@@ -465,8 +750,7 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   let nodes = getConnectedInventories(block);
   let networkRecord = readNetworkRecord(nodes.networkId);
   let networkTotals = Object.assign({}, networkRecord?.totals ?? {});
-  let networkVersion = networkRecord?.version ?? 0;
-  let lastNetworkVersion = entity.getDynamicProperty("last_network_version") ?? -1;
+  networkVersion = networkRecord?.version ?? networkVersion;
   let hasNetwork = nodes.length > 0;
   let currentBurnItem = inv.getItem(BURN_SLOT);
   if (
@@ -879,113 +1163,25 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
     }
   }
 
-  if (hasNetwork && Object.keys(networkTotals).length === 0) {
-    for (let node of nodes) {
-      if (node.isDrive) {
-        for (let i = 1; i <= 9; i++) {
-          let data = getCellData(node.container.getItem(i));
-          if (data) {
-            for (let key in data.items)
-              networkTotals[key] = (networkTotals[key] || 0) + data.items[key];
-          }
-        }
-      } else {
-        for (let i = 0; i < node.container.size; i++) {
-          let item = node.container.getItem(i);
-          if (item) {
-            let key = getItemKey(item);
-            networkTotals[key] = (networkTotals[key] || 0) + item.amount;
-          }
-        }
-      }
-    }
-  }
-  let sortedTypes = [];
-  if (hasNetwork) {
-    sortedTypes = Object.keys(networkTotals).sort((a, b) => {
-      if (currentSort === "name") {
-        let nameA = a.split("||")[0].split(":").pop();
-        let nameB = b.split("||")[0].split(":").pop();
-        return nameA.localeCompare(nameB);
-      } else {
-        return networkTotals[b] - networkTotals[a];
-      }
-    });
-  }
-  pageCount = getPageCountFromTotals(networkTotals);
-  currentPage = clampTerminalPage(entity, pageCount);
-  const itemsPerPage = STORAGE_SLOTS;
-  const startIdx = currentPage * itemsPerPage;
-  let pageSlice = sortedTypes.slice(startIdx, startIdx + itemsPerPage);
-  setRenderedSlotMap(entity, pageSlice);
-  let uiMismatch = false;
-  for (let i = 0; i < itemsPerPage; i++) {
-    let currentSlot = STORAGE_START + i;
-    let existingItem = inv.getItem(currentSlot);
-    let isFiller =
-      existingItem && existingItem.typeId === "utilitycraft:storage_filler";
-    let checkItem = isFiller ? undefined : existingItem;
-    if (checkItem && getStoredCount(checkItem) === -1) continue;
-    let expectedKey = pageSlice[i];
-    if (expectedKey) {
-      if (isFiller) {
-        uiMismatch = true;
-        break;
-      }
-      if (checkItem) {
-        let existingKey = getItemKey(checkItem);
-        let virtualItemTest = createItemFromKey(expectedKey, 1);
-        let maxStack = virtualItemTest.maxAmount ?? 64;
-        let expectedAmount = Math.min(
-          currentQty,
-          networkTotals[expectedKey] || 0,
-          maxStack,
-        );
-        if (
-          existingKey !== expectedKey ||
-          getStoredCount(checkItem) !== networkTotals[expectedKey] ||
-          checkItem.amount !== expectedAmount
-        ) {
-          uiMismatch = true;
-          break;
-        }
-      } else {
-        uiMismatch = true;
-        break;
-      }
-    } else {
-      if (!isFiller) {
-        uiMismatch = true;
-        break;
-      }
-    }
-  }
-  let currentNetworkState = JSON.stringify(networkTotals);
-  let lastNetworkState = entity.getDynamicProperty("last_network_state");
-  if (
-    forceRefresh ||
-    currentNetworkState !== lastNetworkState ||
-    pageChanged ||
-    uiMismatch
-  ) {
-    entity.setDynamicProperty("last_network_state", currentNetworkState);
-    syncTerminalNetworkState(entity, networkRecord, networkTotals, networkVersion);
-    entity.setDynamicProperty("force_refresh", false);
-    Terminal.renderVirtualGridChunked({
+  const shouldRenderTerminal = forceRefresh || pageChanged;
+  if (shouldRenderTerminal) {
+    pageCount = getPageCountFromTotals(networkTotals);
+    currentPage = clampTerminalPage(entity, pageCount);
+    renderBlueprintTerminalPage(
       entity,
       inv,
       machine,
-      networkId: nodes.networkId,
+      nodes.networkId,
       hasNetwork,
       networkTotals,
-      pageSlice,
+      currentPage,
+      pageCount,
       currentQty,
-      storageStart: STORAGE_START,
-      storageSlots: STORAGE_SLOTS,
-      countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
-      loreDisplay: LORE_DISPLAY,
-      spreadTicks: PAGE_CHANGE_DELAY_TICKS,
-    });
+      currentCraftQty,
+      currentSort,
+    );
+    syncTerminalNetworkState(entity, networkRecord, networkTotals, networkVersion);
+    entity.setDynamicProperty("force_refresh", false);
     return;
   }
 }
