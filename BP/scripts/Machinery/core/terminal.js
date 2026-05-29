@@ -56,7 +56,7 @@ export class Terminal extends BasicMachine {
       const { x, y, z } = block.center();
       const entity = block.dimension.spawnEntity(entityType, {
         x,
-        y: y - 0.5,
+        y: y - 0.25,
         z,
       });
       setupEntity?.(entity, block);

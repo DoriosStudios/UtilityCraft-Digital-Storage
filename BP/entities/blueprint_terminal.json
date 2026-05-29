@@ -26,21 +26,45 @@
 					"dorios:container"
 				]
 			},
-			"minecraft:health": { "max": 1, "value": 1 },
-			"minecraft:damage_sensor": { "triggers": [{ "cause": "all", "deals_damage": false }] },
-			"minecraft:knockback_resistance": { "value": 1000 },
+			"minecraft:health": {
+				"max": 1,
+				"value": 1
+			},
+			"minecraft:damage_sensor": {
+				"triggers": [
+					{
+						"cause": "all",
+						"deals_damage": false
+					}
+				]
+			},
+			"minecraft:knockback_resistance": {
+				"value": 1000
+			},
 			"minecraft:fire_immune": true,
 			"minecraft:inventory": {
 				"inventory_size": 231,
 				"container_type": "container"
+			},
+			"minecraft:collision_box": {
+				"height": 0.5,
+				"width": 1
 			}
 		},
 		"events": {
 			"despawn": {
-				"add": { "component_groups": ["despawn"] }
+				"add": {
+					"component_groups": [
+						"despawn"
+					]
+				}
 			},
 			"utilitycraft:setup_inventory": {
-				"add": { "component_groups": ["utilitycraft:inventory_setup"] }
+				"add": {
+					"component_groups": [
+						"utilitycraft:inventory_setup"
+					]
+				}
 			}
 		}
 	}

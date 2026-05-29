@@ -87,7 +87,7 @@ DoriosAPI.register.blockComponent("disk_drive", {
       const { x, y, z } = block.center();
       const entity = block.dimension.spawnEntity("utilitycraft:disk_drive", {
         x,
-        y: y - 0.5,
+        y: y - 0.25,
         z,
       });
       entity.nameTag = "entity.utilitycraft:disk_drive.name";
