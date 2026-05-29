@@ -1,0 +1,1 @@
+import './recipes/crafter.js'

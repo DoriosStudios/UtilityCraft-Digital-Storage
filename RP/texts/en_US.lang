@@ -1,0 +1,36 @@
+pack.name=UtilityCraft: Advanced Storage (1.0.0)
+pack.description=Made By: SHADOW1GO1
+
+######################
+####    BLOCKS    ####
+######################
+
+tile.utilitycraft:storage_terminal.name=Storage Terminal\n§7- A Terminal For Soting Items
+entity.utilitycraft:storage_terminal.name=§fStorage Terminal
+tile.utilitycraft:blueprint_terminal.name=Blueprint Terminal\n§7- A Terminal For Soting Items And Crafting\n§7- Accepted upgrades:\n   §a§7 §b§7
+entity.utilitycraft:blueprint_terminal.name=§fBlueprint Terminal
+tile.utilitycraft:crafting_terminal.name=Crafting Terminal\n§7- A Terminal For Soting Items And Crafting\n§7- Accepted upgrades:\n   §a§7 §b§7
+entity.utilitycraft:crafting_terminal.name=§fCrafting Terminal
+tile.utilitycraft:disk_drive.name=Disk Drive\n§7- A Disk For Storage Cells
+entity.utilitycraft:disk_drive.name=Disk Drive
+tile.utilitycraft:ds_item_conduit.name=Digital Storage Conduit\n§7- Links digital storage machines
+#####################
+####    ITEMS    ####
+#####################
+
+item.utilitycraft:empty_storage_cell=Empty Storage Cell
+item.utilitycraft:basic_storage_cell=§eBasic Storage Cell
+item.utilitycraft:advanced_storage_cell=§cAdvanced Storage Cell
+item.utilitycraft:expert_storage_cell=§bExpert Storage Cell
+item.utilitycraft:ultimate_storage_cell=§8Ultimate Storage Cell
+item.utilitycraft:basic_storage_part=§eBasic Storage Part
+item.utilitycraft:advanced_storage_part=§cAdvanced Storage Part
+item.utilitycraft:expert_storage_part=§bExpert Storage Part
+item.utilitycraft:ultimate_storage_part=§8Ultimate Storage Part
+
+####################
+####   GROUPS   ####
+####################
+
+dorios:itemGroup.name.storage=Storage
+dorios:itemGroup.name.cells_parts=Cells & Parts

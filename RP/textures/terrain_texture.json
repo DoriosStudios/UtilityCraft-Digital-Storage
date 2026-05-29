@@ -1,0 +1,23 @@
+{
+	"num_mip_levels": 4,
+	"padding": 8,
+	"resource_pack_name": "Digital Storage",
+	"texture_name": "atlas.terrain",
+	"texture_data": {
+		"utilitycraft_storage_terminal": {
+			"textures": "textures/blocks/storage_terminal"
+		},
+		"utilitycraft_crafting_terminal": {
+			"textures": "textures/blocks/crafting_terminal"
+		},
+		"utilitycraft_blueprint_terminal": {
+			"textures": "textures/blocks/blueprint_terminal"
+		},
+		"utilitycraft_disk_drive": {
+			"textures": "textures/blocks/disk_drive"
+		},
+		"utilitycraft_item_conduit_default": {
+			"textures": "textures/blocks/item_conduit"
+		}
+	}
+}

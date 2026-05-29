@@ -1,0 +1,157 @@
+{
+    "namespace": "storage_terminal",
+    "storage_terminal_top": {
+        "type": "collection_panel",
+        "anchor_from": "center",
+        "anchor_to": "center",
+        "size": [ 162, 72 ],
+        "offset": [ -10, -40 ],
+        "collection_name": "container_items",
+        "$item_collection_name": "container_items",
+        "controls": [
+            // Close Button
+            {
+                "close_button":{
+                    "type": "panel",
+                    "anchor_from": "top_right",
+                    "anchor_to": "top_right",
+                    "offset": [100, -61],
+                    "controls": [
+                        {
+                            "close_button@common.close_button":{
+                                "size": [ 12, 12 ],
+                                "anchor_from": "center",
+                                "anchor_to": "center",
+                                "offset": [-4, -2]
+                            }
+                        }
+                    ]
+                }
+            },
+            // Search Bar Background
+            {
+                "search_bar_bg": {
+                    "type": "image",
+                    "texture": "textures/ui/background/background_panel",
+                    "size": [ 198, 31 ],
+                    "offset": [ 28, -41 ],
+                    "anchor_from": "top_right",
+                    "anchor_to": "top_right",
+                    "layer": 0
+                }
+            },
+            // Machine Name
+            {
+                "text_label@chest.chest_label": {
+                    "offset": [ -5, -52 ]
+                }
+            },
+            // Terminal Core
+            {
+                "terminal_core@sh.terminal_core": {
+                    "anchor_from": "center",
+                    "anchor_to": "center",
+                    "offset": [ 0, 57 ]
+                }
+            },
+            // buttons
+            {
+                "sort_button@uc.machine_button": {
+                    "$index": 221,
+                    "$default_texture": "textures/ui/buttons/sort/button",
+                    "$hover_texture": "textures/ui/buttons/sort/selected",
+                    "$pressed_texture": "textures/ui/buttons/sort/pressed",
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ -102, -8 ]
+                }
+            },
+            {
+                "quantity_button@uc.machine_button": {
+                    "$index": 222,
+                    "$default_texture": "textures/ui/buttons/quantity/button",
+                    "$hover_texture": "textures/ui/buttons/quantity/selected",
+                    "$pressed_texture": "textures/ui/buttons/quantity/pressed",
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ -102, 10 ]
+                }
+            },
+            {
+                "previous_button@uc.machine_button": {
+                    "$index": 223,
+                    "$default_texture": "textures/ui/buttons/previous/button",
+                    "$hover_texture": "textures/ui/buttons/previous/selected",
+                    "$pressed_texture": "textures/ui/buttons/previous/pressed",
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ -102, 28 ]
+                }
+            },
+            {
+                "next_button@uc.machine_button": {
+                    "$index": 224,
+                    "$default_texture": "textures/ui/buttons/next/button",
+                    "$hover_texture": "textures/ui/buttons/next/selected",
+                    "$pressed_texture": "textures/ui/buttons/next/pressed",
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ -102, 46 ]
+                }
+            }
+        ]
+    },
+    "utility_panel": {
+        "type": "panel",
+        "controls": [
+            {
+                "container_gamepad_helpers@common.container_gamepad_helpers": {}
+            },
+            {
+                "flying_item_renderer@common.flying_item_renderer": { "layer": 14 }
+            },
+            {
+                "selected_item_details_factory@common.selected_item_details_factory": {}
+            },
+            {
+                "item_lock_notification_factory@common.item_lock_notification_factory": {}
+            },
+            {
+                "root_panel@common.root_panel": {
+                    "layer": 1,
+                    "controls": [
+                        {
+                            "common_panel@common.common_panel": {}
+                        },
+                        {
+                            "chest_panel": {
+                                "type": "panel",
+                                "layer": 5,
+                                "controls": [
+                                    {
+                                        "storage_terminal_top@storage_terminal.storage_terminal_top": {}
+                                    },
+                                    {
+                                        "inventory_panel_bottom_half_with_label@common.inventory_panel_bottom_half_with_label": {}
+                                    },
+                                    {
+                                        "hotbar_grid@common.hotbar_grid_template": {}
+                                    },
+                                    {
+                                        "inventory_take_progress_icon_button@common.inventory_take_progress_icon_button": {}
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "inventory_selected_icon_button@common.inventory_selected_icon_button": {}
+                        },
+                        {
+                            "gamepad_cursor@common.gamepad_cursor_button": {}
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

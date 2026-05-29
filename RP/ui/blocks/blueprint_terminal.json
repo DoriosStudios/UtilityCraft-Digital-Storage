@@ -1,0 +1,229 @@
+{
+    "namespace": "blueprint_terminal",
+    "blueprint_terminal_top": {
+        "type": "collection_panel",
+        "anchor_from": "center",
+        "anchor_to": "center",
+        "size": [ 162, 72 ],
+        "offset": [ -10, -10 ],
+        "collection_name": "container_items",
+        "$item_collection_name": "container_items",
+        "controls": [
+            // Close Button
+            {
+                "close_button":{
+                    "type": "panel",
+                    "anchor_from": "top_right",
+                    "anchor_to": "top_right",
+                    "offset": [100, -118],
+                    "controls": [
+                        {
+                            "close_button@common.close_button":{
+                                "size": [ 12, 12 ],
+                                "anchor_from": "center",
+                                "anchor_to": "center",
+                                "offset": [-4, -2]
+                            }
+                        }
+                    ]
+                }
+            },
+            // Search Bar Background
+            {
+                "search_bar_bg": {
+                    "type": "image",
+                    "texture": "textures/ui/background/background_panel",
+                    "size": [ 198, 31 ],
+                    "offset": [ 28, -98 ],
+                    "anchor_from": "top_right",
+                    "anchor_to": "top_right",
+                    "layer": 0
+                }
+            },
+            // Machine Name
+            {
+                "text_label@chest.chest_label": {
+                    "offset": [ -5, -109 ]
+                }
+            },
+            // Search Bar
+            {
+                "terminal_core@sh.terminal_core": {}
+            },
+            // Next Button
+            {
+                "next_button@uc.machine_button": {
+                    "layer": 10,
+                    "$index": 221,
+                    "$button_size": [22, 22],
+                    "$default_texture": "textures/ui/buttons/next/button",
+                    "$hover_texture": "textures/ui/buttons/next/selected",
+                    "$pressed_texture": "textures/ui/buttons/next/pressed",
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ 144, -30 ]
+                }
+            },
+            // Previous Button
+            {
+                "previous_button@uc.machine_button": {
+                    "layer": 10,
+                    "$index": 222,
+                    "$button_size": [22, 22],
+                    "$default_texture": "textures/ui/buttons/previous/button",
+                    "$hover_texture": "textures/ui/buttons/previous/selected",
+                    "$pressed_texture": "textures/ui/buttons/previous/pressed",
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ 144, -52 ]
+                }
+            },
+            // Quantity Button
+            {
+                "quantity_button@uc.machine_button": {
+                    "$index": 223,
+                    "$default_texture": "textures/ui/buttons/crafting_quantity/button",
+                    "$hover_texture": "textures/ui/buttons/crafting_quantity/selected",
+                    "$pressed_texture": "textures/ui/buttons/crafting_quantity/pressed",
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ -104, -42 ],
+                    "$button_size": [ 24, 24 ]
+                }
+            },
+            // Output Quantity Button
+            {
+                "output_quantity_button@uc.machine_button": {
+                    "$index": 224,
+                    "$default_texture": "textures/ui/buttons/output_quantity/button",
+                    "$hover_texture": "textures/ui/buttons/output_quantity/selected",
+                    "$pressed_texture": "textures/ui/buttons/output_quantity/pressed",
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ -104, -18 ],
+                    "$button_size": [ 24, 24 ]
+                }
+            },
+            // Sort Button
+            {
+                "sort_button@uc.machine_button": {
+                    "$index": 225,
+                    "$default_texture": "textures/ui/buttons/crafting_sort/button",
+                    "$hover_texture": "textures/ui/buttons/crafting_sort/selected",
+                    "$pressed_texture": "textures/ui/buttons/crafting_sort/pressed",
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ -104, -66 ],
+                    "$button_size": [ 24, 24 ]
+                }
+            },
+            // Arrow Large
+            {
+                "arrow_large": {
+                    "type": "image",
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ 36, 32 ],
+                    "size": [22, 15],
+                    "texture": "textures/ui/arrow_large"
+                }
+            },
+            // Crafting Blueprint Slot
+            {
+                "blueprint_slot@sh.small_slot": {
+                    "anchor_from": "top_left",
+                    "anchor_to": "top_left",
+                    "offset": [ 75, 30 ],
+                    "collection_index": 226
+                }
+            },
+            // Crafting Blueprint Overlay
+            {
+                "overlay@sh.overlay_image": {
+                    "type": "image",
+                    "$texture": "textures/ui/overlay/blueprint_overlay",
+                    "anchor_from": "top_left",
+                    "anchor_to": "top_left",
+                    "offset": [ 76, 31 ],
+                    "layer": 4
+                }
+            },
+            // Crafting Output Slot
+            {
+                "item@sh.prototype_large_slot": {
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ 75, 26 ],
+                    "collection_index": 227
+                }
+            },
+            // Crafting Info Panel
+            {
+                "crafting_info_panel@uc.text_label": {
+                    "collection_index": 228,
+                    "anchor_from": "top_left",
+                    "anchor_to": "top_left",
+                    "$text_scale": 0.55,
+                    "offset": [ 14, 12 ]
+                }
+            },
+            // Info Panel Background
+            {
+                "info_panel_background@uc.machine_small_screen": {}
+            }
+        ]
+    },
+    "utility_panel": {
+        "type": "panel",
+        "controls": [
+            {
+                "container_gamepad_helpers@common.container_gamepad_helpers": { }
+            },
+            {
+                "flying_item_renderer@common.flying_item_renderer": { "layer": 14 }
+            },
+            {
+                "selected_item_details_factory@common.selected_item_details_factory": { "offset": [ 0, 10 ] }
+            },
+            {
+                "item_lock_notification_factory@common.item_lock_notification_factory": { "offset": [ 0, 10 ] }
+            },
+            {
+                "root_panel@common.root_panel": {
+                    "layer": 1,
+                    "controls": [
+                        {
+                            "common_panel@common.common_panel": { "offset": [ 0, 30 ] }
+                        },
+                        {
+                            "chest_panel": {
+                                "type": "panel",
+                                "layer": 5,
+                                "controls": [
+                                    {
+                                        "blueprint_terminal_top@blueprint_terminal.blueprint_terminal_top": { }
+                                    },
+                                    {
+                                        "inventory_panel_bottom_half_with_label@common.inventory_panel_bottom_half_with_label": { "offset": [ 0, 30 ] }
+                                    },
+                                    {
+                                        "hotbar_grid@common.hotbar_grid_template": { "offset": [ 0, 25 ] }
+                                    },
+                                    {
+                                        "inventory_take_progress_icon_button@common.inventory_take_progress_icon_button": { }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "inventory_selected_icon_button@common.inventory_selected_icon_button": { }
+                        },
+                        {
+                            "gamepad_cursor@common.gamepad_cursor_button": { }
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

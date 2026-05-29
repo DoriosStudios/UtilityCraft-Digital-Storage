@@ -1,0 +1,278 @@
+{
+  "namespace": "sh",
+  "empty_cell": {
+    "type": "image",
+    "texture": "textures/ui/empty_cell"
+  },
+  "grid_item_template": {
+    "type": "panel",
+    "$item_collection_name": "container_items",
+    "size": [ 18, 18 ],
+    "controls": [
+      {
+        "slot@common.container_item": {
+          "$item_collection_name": "$item_collection_name",
+          "size": [18, 18],
+          "layer": 1,
+          "$cell_image_size|default": [18, 18],
+          "$cell_overlay_ref|default": "common.cell_overlay",
+          "$button_ref": "sh.slot_button_prototype",
+          "$background_images": "sh.empty_cell",
+          "$stack_count_required|default": false,
+          "$durability_bar_required|default": true,
+          "$storage_bar_required|default": true,
+          "$item_renderer|default": "common.item_renderer",
+          "$item_renderer_panel_size|default": [18, 18],
+          "$item_renderer_size|default": [16, 16],
+          "$item_renderer_offset|default": [0, 0],
+          "$focus_id|default": "",
+          "$focus_override_down|default": "",
+          "$focus_override_up|default": "",
+          "$focus_override_left|default": "",
+          "$focus_override_right|default": "",
+          "focus_identifier": "$focus_id",
+          "focus_change_down": "$focus_override_down",
+          "focus_change_up": "$focus_override_up",
+          "focus_change_left": "$focus_override_left",
+          "focus_change_right": "$focus_override_right",
+          "focus_enabled": true,
+          "focus_wrap_enabled": false,
+          "focus_magnet_enabled": true
+        }
+      },
+      {
+        "search_overlay": {
+          "type": "image",
+          "texture": "textures/ui/overlay/search_overlay",
+          "alpha": 0.56,
+          "layer": 28,
+          "size": [ "18px", "18px" ],
+          "bindings": [
+            {
+              "binding_type": "view",
+              "source_control_name": "search_box_text_control",
+              "source_property_name": "#item_name",
+              "target_property_name": "#edit_box_input"
+            },
+            {
+              "binding_type": "collection",
+              "binding_collection_name": "$item_collection_name",
+              "binding_name": "#hover_text"
+            },
+            {
+              "binding_type": "view",
+              "source_property_name": "((#hover_text - #edit_box_input) = #hover_text and not (#edit_box_input = ''))",
+              "target_property_name": "#visible"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "storage_grid_scroll_content": {
+    "type": "panel",
+    "size": [ "100%", 180 ],
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
+    "controls": [
+      {
+        "storage_grid": {
+          "type": "grid",
+          "anchor_from": "center",
+          "anchor_to": "center",
+          "offset": [ 0, 0 ],
+          "grid_dimensions": [ 11, 10 ],
+          "maximum_grid_items": 110,
+          "collection_name": "container_items",
+          "grid_item_template": "sh.grid_item_template",
+          "layer": 2
+        }
+      },
+      {
+        "count_label_grid@sh.count_label_grid": {
+          "anchor_from": "top_left",
+          "anchor_to": "top_left",
+          "layer": 20,
+          "offset": [ 2, 12 ],
+          "$collection_index_1": 110,
+          "$collection_index_2": 111,
+          "$collection_index_3": 112,
+          "$collection_index_4": 113,
+          "$collection_index_5": 114,
+          "$collection_index_6": 115,
+          "$collection_index_7": 116,
+          "$collection_index_8": 117,
+          "$collection_index_9": 118,
+          "$collection_index_10": 119,
+          "$collection_index_11": 120,
+          "$collection_index_12": 121,
+          "$collection_index_13": 122,
+          "$collection_index_14": 123,
+          "$collection_index_15": 124,
+          "$collection_index_16": 125,
+          "$collection_index_17": 126,
+          "$collection_index_18": 127,
+          "$collection_index_19": 128,
+          "$collection_index_20": 129,
+          "$collection_index_21": 130,
+          "$collection_index_22": 131,
+          "$collection_index_23": 132,
+          "$collection_index_24": 133,
+          "$collection_index_25": 134,
+          "$collection_index_26": 135,
+          "$collection_index_27": 136,
+          "$collection_index_28": 137,
+          "$collection_index_29": 138,
+          "$collection_index_30": 139,
+          "$collection_index_31": 140,
+          "$collection_index_32": 141,
+          "$collection_index_33": 142,
+          "$collection_index_34": 143,
+          "$collection_index_35": 144,
+          "$collection_index_36": 145,
+          "$collection_index_37": 146,
+          "$collection_index_38": 147,
+          "$collection_index_39": 148,
+          "$collection_index_40": 149,
+          "$collection_index_41": 150,
+          "$collection_index_42": 151,
+          "$collection_index_43": 152,
+          "$collection_index_44": 153,
+          "$collection_index_45": 154,
+          "$collection_index_46": 155,
+          "$collection_index_47": 156,
+          "$collection_index_48": 157,
+          "$collection_index_49": 158,
+          "$collection_index_50": 159,
+          "$collection_index_51": 160,
+          "$collection_index_52": 161,
+          "$collection_index_53": 162,
+          "$collection_index_54": 163,
+          "$collection_index_55": 164,
+          "$collection_index_56": 165,
+          "$collection_index_57": 166,
+          "$collection_index_58": 167,
+          "$collection_index_59": 168,
+          "$collection_index_60": 169,
+          "$collection_index_61": 170,
+          "$collection_index_62": 171,
+          "$collection_index_63": 172,
+          "$collection_index_64": 173,
+          "$collection_index_65": 174,
+          "$collection_index_66": 175,
+          "$collection_index_67": 176,
+          "$collection_index_68": 177,
+          "$collection_index_69": 178,
+          "$collection_index_70": 179,
+          "$collection_index_71": 180,
+          "$collection_index_72": 181,
+          "$collection_index_73": 182,
+          "$collection_index_74": 183,
+          "$collection_index_75": 184,
+          "$collection_index_76": 185,
+          "$collection_index_77": 186,
+          "$collection_index_78": 187,
+          "$collection_index_79": 188,
+          "$collection_index_80": 189,
+          "$collection_index_81": 190,
+          "$collection_index_82": 191,
+          "$collection_index_83": 192,
+          "$collection_index_84": 193,
+          "$collection_index_85": 194,
+          "$collection_index_86": 195,
+          "$collection_index_87": 196,
+          "$collection_index_88": 197,
+          "$collection_index_89": 198,
+          "$collection_index_90": 199,
+          "$collection_index_91": 200,
+          "$collection_index_92": 201,
+          "$collection_index_93": 202,
+          "$collection_index_94": 203,
+          "$collection_index_95": 204,
+          "$collection_index_96": 205,
+          "$collection_index_97": 206,
+          "$collection_index_98": 207,
+          "$collection_index_99": 208,
+          "$collection_index_100": 209,
+          "$collection_index_101": 210,
+          "$collection_index_102": 211,
+          "$collection_index_103": 212,
+          "$collection_index_104": 213,
+          "$collection_index_105": 214,
+          "$collection_index_106": 215,
+          "$collection_index_107": 216,
+          "$collection_index_108": 217,
+          "$collection_index_109": 218,
+          "$collection_index_110": 219
+        }
+      }
+    ]
+  },
+  "terminal_core": {
+    "type": "collection_panel",
+    "collection_name": "container_items",
+    "$item_collection_name": "container_items",
+    "anchor_from": "center",
+    "anchor_to": "center",
+    "size": [ 162, 72 ],
+    "offset": [ 0, 0 ],
+    "$burn_index|default": 220,
+    "controls": [
+      {
+        "search_bar@common.text_edit_box": {
+          "size": [ 150, 18 ],
+          "offset": [ 12, -120 ],
+          "anchor_from": "center",
+          "anchor_to": "center",
+          "layer": 5,
+          "max_length": 32,
+          "$text_box_name": "search_box",
+          "$text_edit_text_control": "search_box_text_control",
+          "$magnifying_glass_enabled": true,
+          "$magnifying_glass_size": [ 8, 8 ],
+          "$magnifying_glass_offset": [ 0, -0.5 ],
+          "$text_edit_box_label_offset": [ 10, 0 ],
+          "$place_holder_text": "Search..."
+        }
+      },
+      {
+        "burn_slot@sh.small_slot": {
+          "$item_collection_name": "$item_collection_name",
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "offset": [ -75, -93 ],
+          "collection_index": "$burn_index"
+        }
+      },
+      {
+        "storage_slots": {
+          "type": "panel",
+          "anchor_from": "center",
+          "anchor_to": "center",
+          "offset": [ 10, -66 ], 
+          "size": [ 198, 72 ],
+          "controls": [
+            {
+              "scrolling_panel@sh.scrolling_panel": {
+                "size": [ 198, 72 ],
+                "$scroll_view_port_size": [ 198, 72 ],
+                "$scrolling_content": "sh.storage_grid_scroll_content"
+              }
+            },
+            {
+              "storage_grid_background": {
+                "type": "image",
+                "texture": "textures/ui/background/storage_background",
+                "anchor_from": "top_left",
+                "anchor_to": "top_left",
+                "size": [ 210, 84 ],
+                "offset": [ -6, -6 ],
+                "layer": 0
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

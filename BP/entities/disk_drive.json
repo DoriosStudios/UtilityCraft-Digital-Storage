@@ -1,0 +1,47 @@
+{
+	"format_version": "1.19.20",
+	"minecraft:entity": {
+		"description": {
+			"identifier": "utilitycraft:disk_drive",
+			"is_spawnable": false,
+			"is_summonable": true,
+			"is_experimental": false
+		},
+		"component_groups": {
+			"despawn": {
+				"minecraft:instant_despawn": {}
+			},
+			"utilitycraft:inventory_setup": {
+				"minecraft:inventory": {
+					"inventory_size": 10,
+					"container_type": "container"
+				}
+			}
+		},
+		"components": {
+			"minecraft:type_family": {
+				"family": [
+					"dorios:machine",
+					"dorios:energy_container",
+					"dorios:container"
+				]
+			},
+			"minecraft:health": { "max": 1, "value": 1 },
+			"minecraft:damage_sensor": { "triggers": [{ "cause": "all", "deals_damage": false }] },
+			"minecraft:knockback_resistance": { "value": 1000 },
+			"minecraft:fire_immune": true,
+			"minecraft:inventory": {
+				"inventory_size": 10,
+				"container_type": "container"
+			}
+		},
+		"events": {
+			"despawn": {
+				"add": { "component_groups": ["despawn"] }
+			},
+			"utilitycraft:setup_inventory": {
+				"add": { "component_groups": ["utilitycraft:inventory_setup"] }
+			}
+		}
+	}
+}

@@ -1,0 +1,36 @@
+{
+  "resource_pack_name": "Digital Storage",
+  "texture_name": "atlas.item",
+  "texture_data": {
+     "utilitycraft_empty_storage_cell": {
+      "textures": "textures/items/cells/empty_storage_cell"
+    },
+     "utilitycraft_basic_storage_cell": {
+      "textures": "textures/items/cells/basic_storage_cell"
+    },
+     "utilitycraft_advanced_storage_cell": {
+      "textures": "textures/items/cells/advanced_storage_cell"
+    },
+     "utilitycraft_expert_storage_cell": {
+      "textures": "textures/items/cells/expert_storage_cell"
+    },
+     "utilitycraft_ultimate_storage_cell": {
+      "textures": "textures/items/cells/ultimate_storage_cell"
+    },
+     "utilitycraft_basic_storage_part": {
+      "textures": "textures/items/parts/basic_storage_part"
+    },
+     "utilitycraft_advanced_storage_part": {
+      "textures": "textures/items/parts/advanced_storage_part"
+    },
+     "utilitycraft_expert_storage_part": {
+      "textures": "textures/items/parts/expert_storage_part"
+    },
+     "utilitycraft_ultimate_storage_part": {
+      "textures": "textures/items/parts/ultimate_storage_part"
+    },
+     "utilitycraft_storage_filler": {
+      "textures": "textures/ui/empty_cell"
+    }
+  }
+}

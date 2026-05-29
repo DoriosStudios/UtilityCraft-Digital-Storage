@@ -1,0 +1,28 @@
+{
+	"format_version": 2,
+	"metadata": {
+		"product_type": "addon",
+		"authors": ["SHADOW1GO1"],
+		"url": "https://www.curseforge.com/members/doriosstudios/projects"
+	},
+	"header": {
+		"name": "§bDigital Storage",
+		"description": "1.0.0 §6Dorios Studios",
+		"min_engine_version": [1,21,0],
+		"uuid": "3e925e65-b723-4a41-a226-47937568ba59",
+		"version": [1,0,0]
+	},
+	"modules": [
+		{
+			"type": "resources",
+			"uuid": "0473012a-9a7c-4f46-8374-ad296a78addd",
+			"version": [1,0,0]
+		}
+	],
+	"dependencies": [
+		{
+			"uuid": "093134e3-1163-4cf5-a3a2-0ef53c77dc87",
+			"version": [1,0,0]
+		}
+	]
+}

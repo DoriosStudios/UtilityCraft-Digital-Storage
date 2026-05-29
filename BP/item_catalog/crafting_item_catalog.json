@@ -1,0 +1,47 @@
+{
+    "format_version": "1.21.60",
+    "minecraft:crafting_items_catalog": {
+        "categories": [
+            {
+                "category_name": "construction",
+                "groups": [
+                    {
+                        "group_identifier": {
+                            "icon": "utilitycraft:storage_terminal",
+                            "name": "dorios:itemGroup.name.storage"
+                        },
+                        "items": [
+                            "utilitycraft:storage_terminal",
+                            "utilitycraft:crafting_terminal",
+                            "utilitycraft:blueprint_terminal",
+                            "utilitycraft:disk_drive",
+                            "utilitycraft:ds_item_conduit"
+                        ]
+                    }
+                ]
+            },
+            {
+                "category_name": "items",
+                "groups": [
+                    {
+                        "group_identifier": {
+                            "icon": "utilitycraft:empty_storage_cell",
+                            "name": "dorios:itemGroup.name.cells_parts"
+                        },
+                        "items": [
+                            "utilitycraft:empty_storage_cell",
+                            "utilitycraft:basic_storage_cell",
+                            "utilitycraft:advanced_storage_cell",
+                            "utilitycraft:expert_storage_cell",
+                            "utilitycraft:ultimate_storage_cell",
+                            "utilitycraft:basic_storage_part",
+                            "utilitycraft:advanced_storage_part",
+                            "utilitycraft:expert_storage_part",
+                            "utilitycraft:ultimate_storage_part"
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}
