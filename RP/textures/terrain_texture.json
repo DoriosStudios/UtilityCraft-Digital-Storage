@@ -16,8 +16,8 @@
 		"utilitycraft_disk_drive": {
 			"textures": "textures/blocks/disk_drive"
 		},
-		"utilitycraft_item_conduit_default": {
-			"textures": "textures/blocks/item_conduit"
+		"utilitycraft_ds_item_conduit": {
+			"textures": "textures/blocks/ds_item_conduit"
 		}
 	}
 }
