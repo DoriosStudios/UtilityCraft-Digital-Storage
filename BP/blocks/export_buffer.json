@@ -11,8 +11,10 @@
 			"utilitycraft:export_buffer": {
 				"entity": {
 					"inventory_size": 37,
-					"input_range": [0, 8],
-					"output_range": [9, 35]
+					"output_range": [
+						9,
+						35
+					]
 				},
 				"machine": {
 					"rate_speed_base": 0

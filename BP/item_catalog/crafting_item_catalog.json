@@ -15,7 +15,10 @@
                             "utilitycraft:crafting_terminal",
                             "utilitycraft:blueprint_terminal",
                             "utilitycraft:disk_drive",
-                            "utilitycraft:ds_item_conduit"
+                            "utilitycraft:ds_item_conduit",
+                            "utilitycraft:import_buffer",
+                            "utilitycraft:export_buffer",
+                            "utilitycraft:storage_center"
                         ]
                     }
                 ]
