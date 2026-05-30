@@ -2,14 +2,14 @@
 	"format_version": "1.26.0",
 	"minecraft:item": {
 		"description": {
-			"identifier": "utilitycraft:empty_storage_cell",
+			"identifier": "utilitycraft:storage_cell",
 			"menu_category": {
 				"category": "items"
 			}
 		},
 		"components": {
-			"minecraft:icon": "utilitycraft_empty_storage_cell",
-         "minecraft:max_stack_size": 64
+			"minecraft:icon": "utilitycraft_storage_cell",
+			"minecraft:max_stack_size": 1
 		}
 	}
 }

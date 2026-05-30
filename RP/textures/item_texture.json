@@ -2,8 +2,8 @@
   "resource_pack_name": "Digital Storage",
   "texture_name": "atlas.item",
   "texture_data": {
-     "utilitycraft_empty_storage_cell": {
-      "textures": "textures/items/cells/empty_storage_cell"
+     "utilitycraft_storage_cell": {
+      "textures": "textures/items/cells/storage_cell"
     },
      "utilitycraft_basic_storage_cell": {
       "textures": "textures/items/cells/basic_storage_cell"

@@ -4,7 +4,7 @@ export const CELL_ID_PROPERTY = "ucds_cell_id";
 const NETWORK_CHANGE_LIMIT = 64;
 
 export const CELL_CAPACITIES = {
-  "utilitycraft:empty_storage_cell": 1024,
+  "utilitycraft:storage_cell": 1024,
   "utilitycraft:basic_storage_cell": 4096,
   "utilitycraft:advanced_storage_cell": 16384,
   "utilitycraft:expert_storage_cell": 65536,

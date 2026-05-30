@@ -28,11 +28,11 @@
                 "groups": [
                     {
                         "group_identifier": {
-                            "icon": "utilitycraft:empty_storage_cell",
+                            "icon": "utilitycraft:storage_cell",
                             "name": "dorios:itemGroup.name.cells_parts"
                         },
                         "items": [
-                            "utilitycraft:empty_storage_cell",
+                            "utilitycraft:storage_cell",
                             "utilitycraft:basic_storage_cell",
                             "utilitycraft:advanced_storage_cell",
                             "utilitycraft:expert_storage_cell",
