@@ -45,3 +45,5 @@ item.utilitycraft:achd_wlss_storage_panel=Linked Wireless Storage Panel
 item.utilitycraft:achd_wlss_cftg_storage_panel=Linked Wireless Crafting Storage Panel
 item.utilitycraft:unchd_wlss_storage_panel=Wireless Storage Panel\nÂ§7- Link with a terminal to use
 item.utilitycraft:unchd_wlss_cftg_storage_panel=Wireless Crafting Storage Panel\nÂ§7- Link with a terminal to use
+ui.utilitycraft:crafting_label=Crafting Info:
+ui.utilitycraft:blueprint_label=Blueprint Info:

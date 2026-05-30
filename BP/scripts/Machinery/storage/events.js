@@ -1,5 +1,10 @@
-import { world } from "@minecraft/server";
+import { system, world } from "@minecraft/server";
 import { createItemFromKey } from "./item_key.js";
+import {
+  readFillerRestoreData,
+  restoreTaggedFiller,
+  RESTORABLE_FILLER_TYPES,
+} from "./filler_restore.js";
 import { readVirtualItemData } from "./virtual_item_codec.js";
 import { removeFromNetwork } from "./storage_db.js";
 
@@ -13,8 +18,12 @@ function resolveVirtualItem(player, item, slot) {
   const inventory = getInventory(player);
   if (!inventory) return;
 
-  if (item.typeId === "utilitycraft:storage_filler") {
+  if (RESTORABLE_FILLER_TYPES.has(item.typeId)) {
+    const fillerRestore = readFillerRestoreData(item);
     inventory.setItem(slot, undefined);
+    if (fillerRestore) {
+      system.run(() => restoreTaggedFiller(fillerRestore));
+    }
     return;
   }
 
@@ -52,12 +61,17 @@ world.afterEvents.entitySpawn.subscribe(({ entity }) => {
   }
   if (!item) return;
 
+  const fillerRestore = readFillerRestoreData(item);
   const virtual = readVirtualItemData(item);
-  if (!virtual && item.typeId !== "utilitycraft:storage_filler") return;
+  if (!virtual && !RESTORABLE_FILLER_TYPES.has(item.typeId)) return;
 
   try {
     if (entity.isValid) entity.remove();
   } catch {}
+
+  if (fillerRestore) {
+    system.run(() => restoreTaggedFiller(fillerRestore));
+  }
 
   if (!virtual) return;
 

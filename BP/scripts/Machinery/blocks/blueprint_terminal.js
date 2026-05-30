@@ -21,22 +21,23 @@ import {
 
 // Constant
 
-const BURN_SLOT = 220;
+const BURN_SLOT = 218;
 const STORAGE_START = 0;
-const STORAGE_END = 109;
-const COUNT_LABEL_BASE_SLOT = 110;
-const NEXT_SLOT = 221;
-const PREVIOUS_SLOT = 222;
-const QUANTITY_SLOT = 223;
-const CRAFT_QTY_SLOT = 224;
-const SORT_SLOT = 225;
-const CRAFTING_BLUEPRINT_SLOT = 226;
-const CRAFTING_OUTPUT_SLOT = 227;
-const CRAFTING_INFO_PANEL_SLOT = 228;
-const STORAGE_SLOTS = 110;
+const STORAGE_END = 107;
+const COUNT_LABEL_BASE_SLOT = 108;
+const NEXT_SLOT = 219;
+const PREVIOUS_SLOT = 220;
+const QUANTITY_SLOT = 221;
+const SORT_SLOT = 222;
+const CRAFTING_BLUEPRINT_SLOT = 223;
+const CRAFTING_OUTPUT_SLOT = 224;
+const CRAFTING_INFO_PANEL_SLOT = 225;
+const CRAFT_QTY_SLOT = 226;
+const STORAGE_SLOTS = 108;
 const LORE_DISPLAY = "§r§7- Count: §f";
 const MAX_PAGES = 27;
 const OUTPUT_BLUEPRINT_ITEM = "utilitycraft:blueprint";
+const RESERVED_FILLER_SLOTS = [216, 217];
 const LOCAL_GRID_SLOTS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 const CONTROL_SLOTS = [
   PREVIOUS_SLOT,
@@ -572,6 +573,10 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   const machine = new Terminal(block, settings);
   if (!machine || !machine.valid) return;
   const inv = entity.getComponent("minecraft:inventory").container;
+  Terminal.repairFillerSlots(inv, RESERVED_FILLER_SLOTS, {
+    entity,
+    onBlockedItem: (item) => returnToPlayer(block, item),
+  });
   ButtonManager.ensureWatching(entity, "blueprint_terminal");
   const networkSnapshot = getNetworkSnapshot(block);
   let currentPage = entity.getDynamicProperty("page") ?? 0;
@@ -587,6 +592,13 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   let lastSort = entity.getDynamicProperty("last_rendered_sort") ?? "";
   let forceRefresh = entity.getDynamicProperty("force_refresh") ?? false;
   let controlsChanged = controlsNeedRender(inv);
+  let gridNeedsRepair =
+    !Terminal.isChunkedRenderActive(entity) &&
+    Terminal.storageGridNeedsRender(inv, {
+      storageStart: STORAGE_START,
+      storageEnd: STORAGE_END,
+      countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
+    });
   let pageChanged = false;
   let networkVersion = networkSnapshot.version;
   const lastNetworkVersion = entity.getDynamicProperty("last_network_version") ?? -1;
@@ -615,6 +627,7 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
     !hasCraftBlueprint &&
     !forceRefresh &&
     !controlsChanged &&
+    !gridNeedsRepair &&
     !hasPendingInput &&
     !activityChanged &&
     currentPage === lastRendered &&
@@ -707,6 +720,7 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   if (
     !forceRefresh &&
     !controlsChanged &&
+    !gridNeedsRepair &&
     !hasPendingInput &&
     !activityChanged &&
     currentPage === lastRendered &&
@@ -734,7 +748,8 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
     currentQty !== lastQty ||
     currentCraftQty !== lastCraftQty ||
     currentSort !== lastSort ||
-    controlsChanged
+    controlsChanged ||
+    gridNeedsRepair
   ) {
     pageChanged = true;
     renderBlueprintTerminalControls(

@@ -22,7 +22,7 @@
                                 "size": [ 12, 12 ],
                                 "anchor_from": "center",
                                 "anchor_to": "center",
-                                "offset": [-4, -2]
+                                "offset": [-22, -2]
                             }
                         }
                     ]
@@ -33,8 +33,8 @@
                 "search_bar_bg": {
                     "type": "image",
                     "texture": "textures/ui/background/background_panel",
-                    "size": [ 198, 31 ],
-                    "offset": [ 28, -41 ],
+                    "size": [ 162, 31 ],
+                    "offset": [ 10, -41 ],
                     "anchor_from": "top_right",
                     "anchor_to": "top_right",
                     "layer": 0
@@ -43,7 +43,7 @@
             // Machine Name
             {
                 "text_label@chest.chest_label": {
-                    "offset": [ -5, -52 ]
+                    "offset": [ 14, -52 ]
                 }
             },
             // Terminal Core
@@ -54,49 +54,57 @@
                     "offset": [ 0, 57 ]
                 }
             },
-            // buttons
-            {
-                "sort_button@uc.machine_button": {
-                    "$index": 221,
-                    "$default_texture": "textures/ui/buttons/sort/button",
-                    "$hover_texture": "textures/ui/buttons/sort/selected",
-                    "$pressed_texture": "textures/ui/buttons/sort/pressed",
-                    "anchor_from": "top_middle",
-                    "anchor_to": "top_middle",
-                    "offset": [ -102, -8 ]
-                }
-            },
-            {
-                "quantity_button@uc.machine_button": {
-                    "$index": 222,
-                    "$default_texture": "textures/ui/buttons/quantity/button",
-                    "$hover_texture": "textures/ui/buttons/quantity/selected",
-                    "$pressed_texture": "textures/ui/buttons/quantity/pressed",
-                    "anchor_from": "top_middle",
-                    "anchor_to": "top_middle",
-                    "offset": [ -102, 10 ]
-                }
-            },
-            {
-                "previous_button@uc.machine_button": {
-                    "$index": 223,
-                    "$default_texture": "textures/ui/buttons/previous/button",
-                    "$hover_texture": "textures/ui/buttons/previous/selected",
-                    "$pressed_texture": "textures/ui/buttons/previous/pressed",
-                    "anchor_from": "top_middle",
-                    "anchor_to": "top_middle",
-                    "offset": [ -102, 28 ]
-                }
-            },
+            // Buttons
             {
                 "next_button@uc.machine_button": {
-                    "$index": 224,
+                    "layer": 10,
+                    "$index": 219,
                     "$default_texture": "textures/ui/buttons/next/button",
                     "$hover_texture": "textures/ui/buttons/next/selected",
                     "$pressed_texture": "textures/ui/buttons/next/pressed",
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
-                    "offset": [ -102, 46 ]
+                    "offset": [ 106, 134 ],
+                    "$button_size": [ 22, 22 ]
+                }
+            },
+            {
+                "previous_button@uc.machine_button": {
+                    "layer": 10,
+                    "$index": 220,
+                    "$default_texture": "textures/ui/buttons/previous/button",
+                    "$hover_texture": "textures/ui/buttons/previous/selected",
+                    "$pressed_texture": "textures/ui/buttons/previous/pressed",
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ 106, 112 ],
+                    "$button_size": [ 22, 22 ]
+                }
+            },
+            {
+                "quantity_button@uc.machine_button": {
+                    "layer": 10,
+                    "$index": 221,
+                    "$default_texture": "textures/ui/buttons/quantity/button",
+                    "$hover_texture": "textures/ui/buttons/quantity/selected",
+                    "$pressed_texture": "textures/ui/buttons/quantity/pressed",
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ 106, 90 ],
+                    "$button_size": [ 22, 22 ]
+                }
+            },
+            {
+                "sort_button@uc.machine_button": {
+                    "layer": 10,
+                    "$index": 222,
+                    "$default_texture": "textures/ui/buttons/sort/button",
+                    "$hover_texture": "textures/ui/buttons/sort/selected",
+                    "$pressed_texture": "textures/ui/buttons/sort/pressed",
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ 106, 68 ],
+                    "$button_size": [ 22, 22 ]
                 }
             }
         ]

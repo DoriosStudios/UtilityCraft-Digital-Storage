@@ -23,8 +23,7 @@
 					"skip_machine_event": false,
 					"skip_inventory_event": false,
 					"input_type": "simple",
-					"output_type": "simple",
-					"inventory_size": 239
+					"output_type": "simple"
 				},
 				"machine": {
 					"rate_speed_base": 20

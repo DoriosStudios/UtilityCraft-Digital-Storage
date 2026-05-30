@@ -21,18 +21,19 @@ import {
 
 // Constant
 
-const BURN_SLOT = 220;
+const BURN_SLOT = 218;
 const STORAGE_START = 0;
-const STORAGE_END = 109;
-const COUNT_LABEL_BASE_SLOT = 110;
-const SORT_SLOT = 221;
-const QUANTITY_SLOT = 222;
-const PREVIOUS_SLOT = 223;
-const NEXT_SLOT = 224;
+const STORAGE_END = 107;
+const COUNT_LABEL_BASE_SLOT = 108;
+const NEXT_SLOT = 219;
+const PREVIOUS_SLOT = 220;
+const QUANTITY_SLOT = 221;
+const SORT_SLOT = 222;
 const LORE_DISPLAY = "§r§7- Count: §f";
 const MAX_PAGES = 27;
-const STORAGE_SLOTS = 110;
+const STORAGE_SLOTS = 108;
 const CONTROL_SLOTS = [PREVIOUS_SLOT, NEXT_SLOT, QUANTITY_SLOT, SORT_SLOT];
+const RESERVED_FILLER_SLOTS = [216, 217];
 const RENDER_SETTINGS = {
   machine: {
     rate_speed_base: 0,
@@ -434,6 +435,10 @@ function runStorageTerminalTick(block, machineEntity, settings) {
   const machine = new Terminal(block, settings);
   if (!machine || !machine.valid) return;
   const inv = entity.getComponent("minecraft:inventory").container;
+  Terminal.repairFillerSlots(inv, RESERVED_FILLER_SLOTS, {
+    entity,
+    onBlockedItem: (item) => returnToPlayer(block, item),
+  });
   ButtonManager.ensureWatching(entity, "storage_terminal");
   const networkSnapshot = getNetworkSnapshot(block);
   let currentPage = entity.getDynamicProperty("page") ?? 0;
@@ -447,6 +452,13 @@ function runStorageTerminalTick(block, machineEntity, settings) {
   let lastSort = entity.getDynamicProperty("last_rendered_sort") ?? "";
   let forceRefresh = entity.getDynamicProperty("force_refresh") ?? false;
   let controlsChanged = controlsNeedRender(inv);
+  let gridNeedsRepair =
+    !Terminal.isChunkedRenderActive(entity) &&
+    Terminal.storageGridNeedsRender(inv, {
+      storageStart: STORAGE_START,
+      storageEnd: STORAGE_END,
+      countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
+    });
   let networkVersion = networkSnapshot.version;
   const lastNetworkVersion = entity.getDynamicProperty("last_network_version") ?? -1;
   const currentTick = system.currentTick ?? 0;
@@ -454,6 +466,7 @@ function runStorageTerminalTick(block, machineEntity, settings) {
   const canUseNetworkDeltas =
     !forceRefresh &&
     !controlsChanged &&
+    !gridNeedsRepair &&
     !hasPendingBurnSlot &&
     currentPage === lastRendered &&
     currentQty === lastQty &&
@@ -538,6 +551,7 @@ function runStorageTerminalTick(block, machineEntity, settings) {
   if (
     !forceRefresh &&
     !controlsChanged &&
+    !gridNeedsRepair &&
     !hasPendingInput &&
     currentPage === lastRendered &&
     currentQty === lastQty &&
@@ -554,7 +568,8 @@ function runStorageTerminalTick(block, machineEntity, settings) {
     currentPage !== lastRendered ||
     currentQty !== lastQty ||
     currentSort !== lastSort ||
-    controlsChanged;
+    controlsChanged ||
+    gridNeedsRepair;
   const controlsNeedUpdate = gridNeedsRender || pageCount !== lastPageCount;
   if (controlsNeedUpdate) {
     const prevItem = new ItemStack("utilitycraft:ui_filler", 1);

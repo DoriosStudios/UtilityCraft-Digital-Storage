@@ -18,7 +18,7 @@
           "$pressed_texture": "textures/ui/buttons/output_quantity/pressed",
           "anchor_from": "top_middle",
           "anchor_to": "top_middle",
-          "offset": [ 0, -18 ],
+          "offset": [ -44, 72 ],
           "$button_size": [ 24, 24 ]
         }
       },
@@ -27,7 +27,7 @@
           "type": "image",
           "anchor_from": "top_middle",
           "anchor_to": "top_middle",
-          "offset": [ 0, 28 ],
+          "offset": [ 4, 37 ],
           "size": [ 22, 22 ],
           "texture": "textures/ui/arrow_large_down"
         }
@@ -36,7 +36,7 @@
         "blueprint_slot@sh.small_slot": {
           "anchor_from": "top_left",
           "anchor_to": "top_left",
-          "offset": [ 71, 6 ],
+          "offset": [ 75, 15 ],
           "collection_index": "$blueprint_index"
         }
       },
@@ -46,7 +46,7 @@
           "$texture": "textures/ui/overlay/blueprint_overlay",
           "anchor_from": "top_left",
           "anchor_to": "top_left",
-          "offset": [ 72, 7 ],
+          "offset": [ 76, 16 ],
           "layer": 4
         }
       },
@@ -54,7 +54,7 @@
         "item@sh.prototype_large_slot": {
           "anchor_from": "top_middle",
           "anchor_to": "top_middle",
-          "offset": [ 0, 50 ],
+          "offset": [ 4, 63 ],
           "collection_index": "$output_index"
         }
       },
@@ -99,7 +99,7 @@
           "$pressed_texture": "textures/ui/buttons/output_quantity/pressed",
           "anchor_from": "top_middle",
           "anchor_to": "top_middle",
-          "offset": [ 0, -18 ],
+          "offset": [ 0, 101 ],
           "$button_size": [ 24, 24 ]
         }
       },
@@ -120,7 +120,7 @@
           "type": "image",
           "anchor_from": "top_middle",
           "anchor_to": "top_middle",
-          "offset": [ -46, 71 ],
+          "offset": [ -33, 72 ],
           "size": [ 22, 22 ],
           "texture": "textures/ui/arrow_large_down"
         }
@@ -153,7 +153,7 @@
         "item@sh.prototype_large_slot": {
           "anchor_from": "top_middle",
           "anchor_to": "top_middle",
-          "offset": [ -33, 110 ],
+          "offset": [ -33, 100 ],
           "collection_index": "$output_index"
         }
       }

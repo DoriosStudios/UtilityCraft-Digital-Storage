@@ -47,7 +47,20 @@
             {
               "mouse_box": {
                 "type": "image",
-                "texture": "textures/ui/scroll_panel/scroller"
+                "texture": "textures/ui/scroll_panel/scroller",
+                "controls": [
+                  {
+                    "lines": {
+                      "type": "image",
+                      "size": ["100%", "100%-3px"],
+                      "offset": [0, 2],
+                      "anchor_from": "top_middle",
+                      "anchor_to": "top_middle",
+                      "tiled": true,
+                      "texture": "textures/ui/scroll_panel/scroller_line"
+                    }
+                  }
+                ]
               }
             }
           ]

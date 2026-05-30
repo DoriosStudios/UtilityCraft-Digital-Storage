@@ -8,12 +8,13 @@ import {
   needsVirtualLoreRewrite,
   stripHiddenLore,
 } from "Machinery/storage/virtual_item_codec.js";
+import { createTaggedFiller } from "Machinery/storage/filler_restore.js";
 
 const DEFAULT_STORAGE_START = 0;
-const DEFAULT_STORAGE_END = 109;
-const DEFAULT_STORAGE_SLOTS = 110;
-const DEFAULT_MAX_PAGES = 3;
-const DEFAULT_COUNT_LABEL_BASE_SLOT = 110;
+const DEFAULT_STORAGE_END = 107;
+const DEFAULT_STORAGE_SLOTS = 108;
+const DEFAULT_MAX_PAGES = 27;
+const DEFAULT_COUNT_LABEL_BASE_SLOT = 108;
 const DEFAULT_STORAGE_FILLER = "utilitycraft:storage_filler";
 const DEFAULT_STORAGE_FILLER_NAME = "§rStorage Slot";
 const DEFAULT_LORE_DISPLAY = "§r§7- Count: §f";
@@ -119,6 +120,78 @@ export class Terminal extends BasicMachine {
         item.nameTag === " "
       );
     });
+  }
+
+  static createUiFiller(entity, slot, nameTag = " ") {
+    return createTaggedFiller("utilitycraft:ui_filler", nameTag, entity, slot);
+  }
+
+  static createStorageFiller(entity, slot, nameTag = DEFAULT_STORAGE_FILLER_NAME) {
+    return createTaggedFiller(DEFAULT_STORAGE_FILLER, nameTag, entity, slot);
+  }
+
+  /**
+   * Checks whether the visible storage grid has an empty or stale filler slot.
+   *
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   * @param {object} [options] Grid options.
+   * @param {number} [options.storageStart=0] First storage slot.
+   * @param {number} [options.storageEnd=107] Last storage slot.
+   * @param {number} [options.countLabelBaseSlot=108] First count label slot.
+   * @param {string} [options.fillerId="utilitycraft:storage_filler"] Filler item id.
+   * @param {string} [options.fillerName] Filler display name.
+   * @returns {boolean} True when the grid should be rendered again.
+   */
+  static storageGridNeedsRender(
+    inv,
+    {
+      storageStart = DEFAULT_STORAGE_START,
+      storageEnd = DEFAULT_STORAGE_END,
+      countLabelBaseSlot = DEFAULT_COUNT_LABEL_BASE_SLOT,
+      fillerId = DEFAULT_STORAGE_FILLER,
+      fillerName = DEFAULT_STORAGE_FILLER_NAME,
+    } = {},
+  ) {
+    for (let slot = storageStart; slot <= storageEnd; slot++) {
+      const item = inv.getItem(slot);
+      if (!item) return true;
+      if (item.typeId === fillerId && item.nameTag !== fillerName) return true;
+      if (!inv.getItem(countLabelBaseSlot + slot - storageStart)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Keeps reserved UI-only slots occupied so real items can only enter valid slots.
+   *
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   * @param {number[]} slots Reserved slot indexes.
+   * @param {object} [options] Filler options.
+   * @param {string} [options.fillerId="utilitycraft:ui_filler"] Filler item id.
+   * @param {string} [options.fillerName=" "] Filler display name.
+   * @param {import("@minecraft/server").Entity} [options.entity] Entity that owns the slot.
+   * @param {(item: import("@minecraft/server").ItemStack) => void} [options.onBlockedItem] Callback for real items found in reserved slots.
+   */
+  static repairFillerSlots(
+    inv,
+    slots,
+    {
+      fillerId = "utilitycraft:ui_filler",
+      fillerName = " ",
+      entity,
+      onBlockedItem,
+    } = {},
+  ) {
+    for (const slot of slots) {
+      const item = inv.getItem(slot);
+      if (item && item.typeId === fillerId && item.nameTag === fillerName) {
+        continue;
+      }
+      if (item && item.typeId !== fillerId) {
+        onBlockedItem?.(item);
+      }
+      inv.setItem(slot, createTaggedFiller(fillerId, fillerName, entity, slot));
+    }
   }
 
   /**
@@ -673,9 +746,7 @@ export class Terminal extends BasicMachine {
         });
     if (slot < 0) return true;
     if (count <= 0) {
-      const filler = new ItemStack(fillerId, 1);
-      filler.nameTag = fillerName;
-      inv.setItem(slot, filler);
+      inv.setItem(slot, createTaggedFiller(fillerId, fillerName, entity, slot));
       Terminal.setCountLabel(machine, inv, slot, {
         countLabelBaseSlot,
         fillerId,
@@ -789,9 +860,10 @@ export class Terminal extends BasicMachine {
           existingItem.typeId !== fillerId ||
           existingItem.nameTag !== fillerName
         ) {
-          const filler = new ItemStack(fillerId, 1);
-          filler.nameTag = fillerName;
-          inv.setItem(currentSlot, filler);
+          inv.setItem(
+            currentSlot,
+            createTaggedFiller(fillerId, fillerName, entity, currentSlot),
+          );
         }
 
         Terminal.setCountLabel(machine, inv, currentSlot, {

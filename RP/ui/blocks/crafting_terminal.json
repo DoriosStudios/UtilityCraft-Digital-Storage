@@ -5,7 +5,7 @@
         "anchor_from": "center",
         "anchor_to": "center",
         "size": [ 162, 72 ],
-        "offset": [ -10, -10 ],
+        "offset": [ -10, -40 ],
         "collection_name": "container_items",
         "$item_collection_name": "container_items",
         "controls": [
@@ -15,14 +15,14 @@
                     "type": "panel",
                     "anchor_from": "top_right",
                     "anchor_to": "top_right",
-                    "offset": [100, -118],
+                    "offset": [100, -61],
                     "controls": [
                         {
                             "close_button@common.close_button":{
                                 "size": [ 12, 12 ],
                                 "anchor_from": "center",
                                 "anchor_to": "center",
-                                "offset": [-4, -2]
+                                "offset": [-22, -2]
                             }
                         }
                     ]
@@ -33,8 +33,8 @@
                 "search_bar_bg": {
                     "type": "image",
                     "texture": "textures/ui/background/background_panel",
-                    "size": [ 198, 31 ],
-                    "offset": [ 28, -98 ],
+                    "size": [ 162, 31 ],
+                    "offset": [ 10, -41 ],
                     "anchor_from": "top_right",
                     "anchor_to": "top_right",
                     "layer": 0
@@ -43,137 +43,160 @@
             // Machine Name
             {
                 "text_label@chest.chest_label": {
-                    "offset": [ -5, -109 ]
+                    "offset": [ 14, -52 ]
                 }
             },
             // Terminal Core
             {
-                "terminal_core@sh.terminal_core": {}
+                "terminal_core@sh.terminal_core": {
+                    "anchor_from": "center",
+                    "anchor_to": "center",
+                    "offset": [ 0, 57 ]
+                }
             },
             // Next Button
             {
                 "next_button@uc.machine_button": {
                     "layer": 10,
-                    "$index": 221,
+                    "$index": 219,
                     "$button_size": [22, 22],
                     "$default_texture": "textures/ui/buttons/next/button",
                     "$hover_texture": "textures/ui/buttons/next/selected",
                     "$pressed_texture": "textures/ui/buttons/next/pressed",
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
-                    "offset": [ 144, -30 ]
+                    "offset": [ 106, 134 ]
                 }
             },
             // Previous Button
             {
                 "previous_button@uc.machine_button": {
                     "layer": 10,
-                    "$index": 222,
+                    "$index": 220,
                     "$button_size": [22, 22],
                     "$default_texture": "textures/ui/buttons/previous/button",
                     "$hover_texture": "textures/ui/buttons/previous/selected",
                     "$pressed_texture": "textures/ui/buttons/previous/pressed",
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
-                    "offset": [ 144, -52 ]
+                    "offset": [ 106, 112 ]
                 }
             },
             // Quantity Button
             {
                 "quantity_button@uc.machine_button": {
-                    "$index": 223,
-                    "$default_texture": "textures/ui/buttons/crafting_quantity/button",
-                    "$hover_texture": "textures/ui/buttons/crafting_quantity/selected",
-                    "$pressed_texture": "textures/ui/buttons/crafting_quantity/pressed",
+                    "layer": 10,
+                    "$index": 221,
+                    "$default_texture": "textures/ui/buttons/quantity/button",
+                    "$hover_texture": "textures/ui/buttons/quantity/selected",
+                    "$pressed_texture": "textures/ui/buttons/quantity/pressed",
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
-                    "offset": [ -104, -42 ],
-                    "$button_size": [ 24, 24 ]
-                }
-            },
-            // Output Quantity Button
-            {
-                "output_quantity_button@uc.machine_button": {
-                    "$index": 224,
-                    "$default_texture": "textures/ui/buttons/output_quantity/button",
-                    "$hover_texture": "textures/ui/buttons/output_quantity/selected",
-                    "$pressed_texture": "textures/ui/buttons/output_quantity/pressed",
-                    "anchor_from": "top_middle",
-                    "anchor_to": "top_middle",
-                    "offset": [ -104, -18 ],
-                    "$button_size": [ 24, 24 ]
+                    "offset": [ 106, 90 ],
+                    "$button_size": [ 22, 22 ]
                 }
             },
             // Sort Button
             {
                 "sort_button@uc.machine_button": {
-                    "$index": 225,
-                    "$default_texture": "textures/ui/buttons/crafting_sort/button",
-                    "$hover_texture": "textures/ui/buttons/crafting_sort/selected",
-                    "$pressed_texture": "textures/ui/buttons/crafting_sort/pressed",
+                    "layer": 10,
+                    "$index": 222,
+                    "$default_texture": "textures/ui/buttons/sort/button",
+                    "$hover_texture": "textures/ui/buttons/sort/selected",
+                    "$pressed_texture": "textures/ui/buttons/sort/pressed",
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
-                    "offset": [ -104, -66 ],
-                    "$button_size": [ 24, 24 ]
+                    "offset": [ 106, 68 ],
+                    "$button_size": [ 22, 22 ]
                 }
             },
-            // Remove Recipe Button
             {
-                "remove_recipe_button@uc.machine_button": {
-                    "$index": 226,
-                    "$button_size": [12, 13],
-                    "$default_texture": "textures/ui/buttons/remove_recipe/button",
-                    "$hover_texture": "textures/ui/buttons/remove_recipe/selected",
-                    "$pressed_texture": "textures/ui/buttons/remove_recipe/pressed",
+                "crafting_toggle@sh.toggle_button": {
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
-                    "offset": [ 0, 14 ]
+                    "offset": [ -90, -27 ],
+                    "$toggle_size": [ 17, 17 ],
+                    "$toggle_layer": 7,
+                    "$toggle_index": 0,
+                    "$toggle_group": false,
+                    "$toggle_lost_reset": true,
+                    "$toggle_default_state": false,
+                    "$toggle_control_name": "crafting_toggle_button",
+                    "$toggle_unchecked": "textures/ui/buttons/crafting/unchecked",
+                    "$toggle_checked": "textures/ui/buttons/crafting/checked",
+                    "$toggle_unchecked_hover": "textures/ui/buttons/crafting/unchecked_hover",
+                    "$toggle_checked_hover": "textures/ui/buttons/crafting/checked_hover"
                 }
             },
-            // Arrow Large
             {
-                "arrow_large": {
+                "crafting_state_panel@sh.toggle_button_panel": {
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ 0, 0 ],
+                    "size": [ 162, 72 ],
+                    "$panel_control_name": "crafting_toggle_button",
+                    "$controls": [
+                        {
+                            "crafting_panel@sh.crafting_panel": {
+                                "offset": [ -110, 6 ],
+                                "$quantity_index": 223,
+                                "$remove_index": 224,
+                                "$blueprint_index": 225,
+                                "$grid_index_1": 226,
+                                "$grid_index_2": 227,
+                                "$grid_index_3": 228,
+                                "$grid_index_4": 229,
+                                "$grid_index_5": 230,
+                                "$grid_index_6": 231,
+                                "$grid_index_7": 232,
+                                "$grid_index_8": 233,
+                                "$grid_index_9": 234,
+                                "$output_index": 235
+                            }
+                        },
+                        {
+                            "crafting_background": {
+                                "type": "image",
+                                "texture": "textures/ui/background/background_panel",
+                                "size": [ 120, 150 ],
+                                "offset": [ -144, -6 ],
+                                "anchor_from": "top_right",
+                                "anchor_to": "top_right",
+                                "layer": -6
+                            }
+                        },
+                        {
+                            "crafting_title": {
+                                "type": "label",
+                                "text": "ui.utilitycraft:crafting_label",
+                                "anchor_from": "top_middle",
+                                "anchor_to": "top_middle",
+                                "offset": [ -140, 4 ],
+                                "color": [ 0.3, 0.3, 0.3 ],
+                                "layer": 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "button_background": {
                     "type": "image",
+                    "texture": "textures/ui/buttons/button_background",
+                    "size": [ 26, 27 ],
+                    "offset": [ -90, -5 ],
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
-                    "offset": [ 24, 33 ],
-                    "size": [22, 15],
-                    "texture": "textures/ui/arrow_large"
-                }
-            },
-            // Crafting Blueprint Slot (Hiddne)
-            {
-                "blueprint_slot@sh.small_slot": {
-                    "anchor_from": "top_left",
-                    "anchor_to": "top_left",
-                    "offset": [ 75, 600 ],
-                    "collection_index": 227
-                }
-            },
-            // Crafting Input Slots
-            {
-                "3x3_grud@sh.3x3_grid": {
-                    "anchor_from": "top_middle",
-                    "anchor_to": "top_middle",
-                    "offset": [ -34, 14 ],
-                    "$index_1": 228,
-                    "$index_2": 229,
-                    "$index_3": 230,
-                    "$index_4": 231,
-                    "$index_5": 232,
-                    "$index_6": 233,
-                    "$index_7": 234,
-                    "$index_8": 235,
-                    "$index_9": 236
-                }
-            },
-            // Crafting Output Slot
-            {
-                "item@sh.prototype_large_slot": {
-                    "anchor_from": "top_middle",
-                    "anchor_to": "top_middle",
-                    "offset": [ 68, 28 ],
-                    "collection_index": 237
+                    "layer": -6,
+                    "bindings": [
+                        {
+                            "binding_type": "view",
+                            "source_control_name": "crafting_toggle_button",
+                            "source_property_name": "(not (#toggle_state))",
+                            "target_property_name": "#visible",
+                            "resolve_sibling_scope": false
+                        }
+                    ]
                 }
             }
         ]
@@ -188,17 +211,17 @@
                 "flying_item_renderer@common.flying_item_renderer": { "layer": 14 }
             },
             {
-                "selected_item_details_factory@common.selected_item_details_factory": { "offset": [ 0, 10 ] }
+                "selected_item_details_factory@common.selected_item_details_factory": {}
             },
             {
-                "item_lock_notification_factory@common.item_lock_notification_factory": { "offset": [ 0, 10 ] }
+                "item_lock_notification_factory@common.item_lock_notification_factory": {}
             },
             {
                 "root_panel@common.root_panel": {
                     "layer": 1,
                     "controls": [
                         {
-                            "common_panel@common.common_panel": { "offset": [ 0, 30 ] }
+                            "common_panel@common.common_panel": { "layer": -1 }
                         },
                         {
                             "chest_panel": {
@@ -209,10 +232,10 @@
                                         "crafting_terminal_top@crafting_terminal.crafting_terminal_top": {}
                                     },
                                     {
-                                        "inventory_panel_bottom_half_with_label@common.inventory_panel_bottom_half_with_label": { "offset": [ 0, 30 ] }
+                                        "inventory_panel_bottom_half_with_label@common.inventory_panel_bottom_half_with_label": {}
                                     },
                                     {
-                                        "hotbar_grid@common.hotbar_grid_template": { "offset": [ 0, 25 ] }
+                                        "hotbar_grid@common.hotbar_grid_template": {}
                                     },
                                     {
                                         "inventory_take_progress_icon_button@common.inventory_take_progress_icon_button": {}
