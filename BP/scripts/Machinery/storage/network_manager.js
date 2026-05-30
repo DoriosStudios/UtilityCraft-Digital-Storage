@@ -19,8 +19,8 @@ const MACHINE_TYPES = new Set([
   "utilitycraft:storage_terminal",
   "utilitycraft:crafting_terminal",
   "utilitycraft:blueprint_terminal",
-  "utilitycraft:input_buffer",
-  "utilitycraft:output_buffer",
+  "utilitycraft:import_buffer",
+  "utilitycraft:export_buffer",
 ]);
 
 const DIRECTIONS = [

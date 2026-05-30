@@ -28,8 +28,8 @@
             "$screen_bg_content": "common.screen_background"
           },
           {
-            "requires": "($temp_container_title = 'entity.utilitycraft:output_buffer.name')",
-            "$screen_content": "output_buffer.utility_panel",
+            "requires": "($temp_container_title = 'entity.utilitycraft:export_buffer.name')",
+            "$screen_content": "export_buffer.utility_panel",
             "$screen_bg_content": "common.screen_background"
           }
         ]
@@ -64,8 +64,8 @@
             "$screen_bg_content": "common.screen_background"
           },
           {
-            "requires": "($temp_container_title = 'entity.utilitycraft:output_buffer.name')",
-            "$screen_content": "output_buffer.utility_panel",
+            "requires": "($temp_container_title = 'entity.utilitycraft:export_buffer.name')",
+            "$screen_content": "export_buffer.utility_panel",
             "$screen_bg_content": "common.screen_background"
           }
         ]

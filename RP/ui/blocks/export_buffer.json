@@ -1,5 +1,5 @@
 {
-  "namespace": "output_buffer",
+  "namespace": "export_buffer",
   "filter_slot": {
     "type": "input_panel",
     "anchor_from": "top_left",
@@ -43,15 +43,15 @@
     "$item_collection_name": "container_items",
     "size": [ 162, 18 ],
     "controls": [
-      { "filter_0@output_buffer.filter_slot": { "collection_index": 0, "offset": [ 0, 0 ] } },
-      { "filter_1@output_buffer.filter_slot": { "collection_index": 1, "offset": [ 18, 0 ] } },
-      { "filter_2@output_buffer.filter_slot": { "collection_index": 2, "offset": [ 36, 0 ] } },
-      { "filter_3@output_buffer.filter_slot": { "collection_index": 3, "offset": [ 54, 0 ] } },
-      { "filter_4@output_buffer.filter_slot": { "collection_index": 4, "offset": [ 72, 0 ] } },
-      { "filter_5@output_buffer.filter_slot": { "collection_index": 5, "offset": [ 90, 0 ] } },
-      { "filter_6@output_buffer.filter_slot": { "collection_index": 6, "offset": [ 108, 0 ] } },
-      { "filter_7@output_buffer.filter_slot": { "collection_index": 7, "offset": [ 126, 0 ] } },
-      { "filter_8@output_buffer.filter_slot": { "collection_index": 8, "offset": [ 144, 0 ] } }
+      { "filter_0@export_buffer.filter_slot": { "collection_index": 0, "offset": [ 0, 0 ] } },
+      { "filter_1@export_buffer.filter_slot": { "collection_index": 1, "offset": [ 18, 0 ] } },
+      { "filter_2@export_buffer.filter_slot": { "collection_index": 2, "offset": [ 36, 0 ] } },
+      { "filter_3@export_buffer.filter_slot": { "collection_index": 3, "offset": [ 54, 0 ] } },
+      { "filter_4@export_buffer.filter_slot": { "collection_index": 4, "offset": [ 72, 0 ] } },
+      { "filter_5@export_buffer.filter_slot": { "collection_index": 5, "offset": [ 90, 0 ] } },
+      { "filter_6@export_buffer.filter_slot": { "collection_index": 6, "offset": [ 108, 0 ] } },
+      { "filter_7@export_buffer.filter_slot": { "collection_index": 7, "offset": [ 126, 0 ] } },
+      { "filter_8@export_buffer.filter_slot": { "collection_index": 8, "offset": [ 144, 0 ] } }
     ]
   },
   "buffer_grid": {
@@ -60,36 +60,36 @@
     "$item_collection_name": "container_items",
     "size": [ 162, 54 ],
     "controls": [
-      { "buffer_00@output_buffer.buffer_slot": { "collection_index": 9, "offset": [ 0, 0 ] } },
-      { "buffer_01@output_buffer.buffer_slot": { "collection_index": 10, "offset": [ 18, 0 ] } },
-      { "buffer_02@output_buffer.buffer_slot": { "collection_index": 11, "offset": [ 36, 0 ] } },
-      { "buffer_03@output_buffer.buffer_slot": { "collection_index": 12, "offset": [ 54, 0 ] } },
-      { "buffer_04@output_buffer.buffer_slot": { "collection_index": 13, "offset": [ 72, 0 ] } },
-      { "buffer_05@output_buffer.buffer_slot": { "collection_index": 14, "offset": [ 90, 0 ] } },
-      { "buffer_06@output_buffer.buffer_slot": { "collection_index": 15, "offset": [ 108, 0 ] } },
-      { "buffer_07@output_buffer.buffer_slot": { "collection_index": 16, "offset": [ 126, 0 ] } },
-      { "buffer_08@output_buffer.buffer_slot": { "collection_index": 17, "offset": [ 144, 0 ] } },
-      { "buffer_09@output_buffer.buffer_slot": { "collection_index": 18, "offset": [ 0, 18 ] } },
-      { "buffer_10@output_buffer.buffer_slot": { "collection_index": 19, "offset": [ 18, 18 ] } },
-      { "buffer_11@output_buffer.buffer_slot": { "collection_index": 20, "offset": [ 36, 18 ] } },
-      { "buffer_12@output_buffer.buffer_slot": { "collection_index": 21, "offset": [ 54, 18 ] } },
-      { "buffer_13@output_buffer.buffer_slot": { "collection_index": 22, "offset": [ 72, 18 ] } },
-      { "buffer_14@output_buffer.buffer_slot": { "collection_index": 23, "offset": [ 90, 18 ] } },
-      { "buffer_15@output_buffer.buffer_slot": { "collection_index": 24, "offset": [ 108, 18 ] } },
-      { "buffer_16@output_buffer.buffer_slot": { "collection_index": 25, "offset": [ 126, 18 ] } },
-      { "buffer_17@output_buffer.buffer_slot": { "collection_index": 26, "offset": [ 144, 18 ] } },
-      { "buffer_18@output_buffer.buffer_slot": { "collection_index": 27, "offset": [ 0, 36 ] } },
-      { "buffer_19@output_buffer.buffer_slot": { "collection_index": 28, "offset": [ 18, 36 ] } },
-      { "buffer_20@output_buffer.buffer_slot": { "collection_index": 29, "offset": [ 36, 36 ] } },
-      { "buffer_21@output_buffer.buffer_slot": { "collection_index": 30, "offset": [ 54, 36 ] } },
-      { "buffer_22@output_buffer.buffer_slot": { "collection_index": 31, "offset": [ 72, 36 ] } },
-      { "buffer_23@output_buffer.buffer_slot": { "collection_index": 32, "offset": [ 90, 36 ] } },
-      { "buffer_24@output_buffer.buffer_slot": { "collection_index": 33, "offset": [ 108, 36 ] } },
-      { "buffer_25@output_buffer.buffer_slot": { "collection_index": 34, "offset": [ 126, 36 ] } },
-      { "buffer_26@output_buffer.buffer_slot": { "collection_index": 35, "offset": [ 144, 36 ] } }
+      { "buffer_00@export_buffer.buffer_slot": { "collection_index": 9, "offset": [ 0, 0 ] } },
+      { "buffer_01@export_buffer.buffer_slot": { "collection_index": 10, "offset": [ 18, 0 ] } },
+      { "buffer_02@export_buffer.buffer_slot": { "collection_index": 11, "offset": [ 36, 0 ] } },
+      { "buffer_03@export_buffer.buffer_slot": { "collection_index": 12, "offset": [ 54, 0 ] } },
+      { "buffer_04@export_buffer.buffer_slot": { "collection_index": 13, "offset": [ 72, 0 ] } },
+      { "buffer_05@export_buffer.buffer_slot": { "collection_index": 14, "offset": [ 90, 0 ] } },
+      { "buffer_06@export_buffer.buffer_slot": { "collection_index": 15, "offset": [ 108, 0 ] } },
+      { "buffer_07@export_buffer.buffer_slot": { "collection_index": 16, "offset": [ 126, 0 ] } },
+      { "buffer_08@export_buffer.buffer_slot": { "collection_index": 17, "offset": [ 144, 0 ] } },
+      { "buffer_09@export_buffer.buffer_slot": { "collection_index": 18, "offset": [ 0, 18 ] } },
+      { "buffer_10@export_buffer.buffer_slot": { "collection_index": 19, "offset": [ 18, 18 ] } },
+      { "buffer_11@export_buffer.buffer_slot": { "collection_index": 20, "offset": [ 36, 18 ] } },
+      { "buffer_12@export_buffer.buffer_slot": { "collection_index": 21, "offset": [ 54, 18 ] } },
+      { "buffer_13@export_buffer.buffer_slot": { "collection_index": 22, "offset": [ 72, 18 ] } },
+      { "buffer_14@export_buffer.buffer_slot": { "collection_index": 23, "offset": [ 90, 18 ] } },
+      { "buffer_15@export_buffer.buffer_slot": { "collection_index": 24, "offset": [ 108, 18 ] } },
+      { "buffer_16@export_buffer.buffer_slot": { "collection_index": 25, "offset": [ 126, 18 ] } },
+      { "buffer_17@export_buffer.buffer_slot": { "collection_index": 26, "offset": [ 144, 18 ] } },
+      { "buffer_18@export_buffer.buffer_slot": { "collection_index": 27, "offset": [ 0, 36 ] } },
+      { "buffer_19@export_buffer.buffer_slot": { "collection_index": 28, "offset": [ 18, 36 ] } },
+      { "buffer_20@export_buffer.buffer_slot": { "collection_index": 29, "offset": [ 36, 36 ] } },
+      { "buffer_21@export_buffer.buffer_slot": { "collection_index": 30, "offset": [ 54, 36 ] } },
+      { "buffer_22@export_buffer.buffer_slot": { "collection_index": 31, "offset": [ 72, 36 ] } },
+      { "buffer_23@export_buffer.buffer_slot": { "collection_index": 32, "offset": [ 90, 36 ] } },
+      { "buffer_24@export_buffer.buffer_slot": { "collection_index": 33, "offset": [ 108, 36 ] } },
+      { "buffer_25@export_buffer.buffer_slot": { "collection_index": 34, "offset": [ 126, 36 ] } },
+      { "buffer_26@export_buffer.buffer_slot": { "collection_index": 35, "offset": [ 144, 36 ] } }
     ]
   },
-  "output_buffer_top": {
+  "export_buffer_top": {
     "type": "collection_panel",
     "anchor_from": "center",
     "anchor_to": "center",
@@ -104,7 +104,7 @@
         }
       },
       {
-        "filter_label@output_buffer.section_label": {
+        "filter_label@export_buffer.section_label": {
           "$label_text": "Filter Items",
           "anchor_from": "top_left",
           "anchor_to": "top_left",
@@ -113,7 +113,7 @@
         }
       },
       {
-        "filter_grid@output_buffer.filter_grid": {
+        "filter_grid@export_buffer.filter_grid": {
           "anchor_from": "top_left",
           "anchor_to": "top_left",
           "offset": [ 10, 86 ],
@@ -121,7 +121,7 @@
         }
       },
       {
-        "buffer_label@output_buffer.section_label": {
+        "buffer_label@export_buffer.section_label": {
           "$label_text": "Buffer",
           "anchor_from": "top_left",
           "anchor_to": "top_left",
@@ -130,7 +130,7 @@
         }
       },
       {
-        "buffer_grid@output_buffer.buffer_grid": {
+        "buffer_grid@export_buffer.buffer_grid": {
           "anchor_from": "top_left",
           "anchor_to": "top_left",
           "offset": [ 10, 122 ],
@@ -177,7 +177,7 @@
                 "offset": [ 0, -34 ],
                 "controls": [
                   {
-                    "output_buffer_background": {
+                    "export_buffer_background": {
                       "type": "image",
                       "texture": "textures/ui/background/background_panel",
                       "size": [ 176, 218 ],
@@ -205,7 +205,7 @@
                     }
                   },
                   {
-                    "output_buffer_top@output_buffer.output_buffer_top": {}
+                    "export_buffer_top@export_buffer.export_buffer_top": {}
                   },
                   {
                     "inventory_panel_bottom_half_with_label@common.inventory_panel_bottom_half_with_label": {

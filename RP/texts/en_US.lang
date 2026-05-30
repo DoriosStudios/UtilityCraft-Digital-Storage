@@ -18,7 +18,7 @@ tile.utilitycraft:ds_item_conduit.name=Digital Storage Conduit\n§7- Links digit
 ####    ITEMS    ####
 #####################
 
-item.utilitycraft:empty_storage_cell=Empty Storage Cell
+item.utilitycraft:empty_storage_cell=Storage Cell\n§7- Max Capacity: §f1k
 item.utilitycraft:basic_storage_cell=§eBasic Storage Cell\n§7- Max Capacity: §f4.1k
 item.utilitycraft:advanced_storage_cell=§cAdvanced Storage Cell\n§7- Max Capacity: §f16.4k
 item.utilitycraft:expert_storage_cell=§bExpert Storage Cell\n§7- Max Capacity: §f65.5k
@@ -35,10 +35,10 @@ item.utilitycraft:ultimate_storage_part=§8Ultimate Storage Part
 dorios:itemGroup.name.storage=Storage
 dorios:itemGroup.name.cells_parts=Cells & Parts
 
-tile.utilitycraft:input_buffer.name=Input Buffer
-entity.utilitycraft:input_buffer.name=Input Buffer
-tile.utilitycraft:output_buffer.name=Output Buffer
-entity.utilitycraft:output_buffer.name=Output Buffer
+tile.utilitycraft:import_buffer.name=Import Buffer\n§7- Imports items into the storage network
+entity.utilitycraft:import_buffer.name=Import Buffer
+tile.utilitycraft:export_buffer.name=Export Buffer\n§7- Exports filtered items from the storage network
+entity.utilitycraft:export_buffer.name=Export Buffer
 tile.utilitycraft:storage_center.name=Storage Center
 item.utilitycraft:storage_core=Storage Core
 item.utilitycraft:achd_wlss_storage_panel=Linked Wireless Storage Panel

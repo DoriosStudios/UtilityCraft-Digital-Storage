@@ -2,13 +2,13 @@
 	"format_version": "1.20.80",
 	"minecraft:block": {
 		"description": {
-			"identifier": "utilitycraft:input_buffer",
+			"identifier": "utilitycraft:import_buffer",
 			"menu_category": {
 				"category": "construction"
 			}
 		},
 		"components": {
-			"utilitycraft:input_buffer": {
+			"utilitycraft:import_buffer": {
 				"entity": {
 					"inventory_size": 27,
 					"input_range": [0, 26],
@@ -21,7 +21,7 @@
 			"minecraft:geometry": "geometry.utilitycraft_block_2",
 			"minecraft:material_instances": {
 				"*": {
-					"texture": "utilitycraft_input_buffer",
+					"texture": "utilitycraft_import_buffer",
 					"render_method": "alpha_test"
 				}
 			},

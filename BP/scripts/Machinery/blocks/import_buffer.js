@@ -15,10 +15,10 @@ const SLOT_START = 0;
 const SLOT_END = 26;
 const INSERT_INTERVAL_TICKS = 40;
 
-function getInputBufferEntity(block) {
+function getImportBufferEntity(block) {
   return block.dimension
     .getEntitiesAtBlockLocation(block.location)
-    .find((entity) => entity.typeId === "utilitycraft:input_buffer");
+    .find((entity) => entity.typeId === "utilitycraft:import_buffer");
 }
 
 function consumeFromSlots(container, slots, amount) {
@@ -60,7 +60,7 @@ function collectInsertBatch(container) {
   return { amounts, slotsByKey };
 }
 
-function flushInputBuffer(block, entity) {
+function flushImportBuffer(block, entity) {
   const container = entity.getComponent("minecraft:inventory")?.container;
   if (!container) return;
 
@@ -74,43 +74,43 @@ function flushInputBuffer(block, entity) {
     return;
   }
 
-  const remainingByKey = addManyToNetwork(networkId, amounts, "input_buffer");
+  const remainingByKey = addManyToNetwork(networkId, amounts, "import_buffer");
   for (const itemKey of Object.keys(amounts)) {
     const inserted = amounts[itemKey] - Math.floor(Number(remainingByKey[itemKey]) || 0);
     if (inserted > 0) consumeFromSlots(container, slotsByKey[itemKey] ?? [], inserted);
   }
 }
 
-DoriosAPI.register.blockComponent("input_buffer", {
+DoriosAPI.register.blockComponent("import_buffer", {
   beforeOnPlayerPlace(e, { params: settings }) {
     const { block } = e;
     system.run(() => {
       const entity = spawnEntity(block, {
         entity: {
-          identifier: "utilitycraft:input_buffer",
-          name: "input_buffer",
+          identifier: "utilitycraft:import_buffer",
+          name: "import_buffer",
           inventory_size: settings?.entity?.inventory_size ?? 27,
           input_range: settings?.entity?.input_range ?? [SLOT_START, SLOT_END],
           output_range: settings?.entity?.output_range ?? [-1, -1],
         },
       });
       entity.triggerEvent("utilitycraft:setup_inventory");
-      entity.nameTag = "entity.utilitycraft:input_buffer.name";
-      entity.setDynamicProperty("last_input_buffer_tick", system.currentTick ?? 0);
+      entity.nameTag = "entity.utilitycraft:import_buffer.name";
+      entity.setDynamicProperty("last_import_buffer_tick", system.currentTick ?? 0);
       updateNetworkAround(block);
     });
   },
 
   onTick({ block }) {
-    const entity = getInputBufferEntity(block);
+    const entity = getImportBufferEntity(block);
     if (!entity || !entity.isValid) return;
 
     const currentTick = system.currentTick ?? 0;
-    const lastTick = Math.floor(Number(entity.getDynamicProperty("last_input_buffer_tick") ?? 0));
+    const lastTick = Math.floor(Number(entity.getDynamicProperty("last_import_buffer_tick") ?? 0));
     if (currentTick - lastTick < INSERT_INTERVAL_TICKS) return;
 
-    entity.setDynamicProperty("last_input_buffer_tick", currentTick);
-    flushInputBuffer(block, entity);
+    entity.setDynamicProperty("last_import_buffer_tick", currentTick);
+    flushImportBuffer(block, entity);
   },
 
   onPlayerBreak(e) {

@@ -20,10 +20,10 @@ const UPGRADE_SLOT = 36;
 const EXTRACT_INTERVAL_TICKS = 20;
 const SPEED_AMOUNTS = [8, 16, 24, 32, 48, 64, 128, 192, 256];
 
-function getOutputBufferEntity(block) {
+function getExportBufferEntity(block) {
   return block.dimension
     .getEntitiesAtBlockLocation(block.location)
-    .find((entity) => entity.typeId === "utilitycraft:output_buffer");
+    .find((entity) => entity.typeId === "utilitycraft:export_buffer");
 }
 
 function getSpeedLevel(container) {
@@ -51,7 +51,7 @@ function getFirstAvailableFilter(container, totals) {
   return undefined;
 }
 
-function getOutputSpace(container, itemKey) {
+function getExportSpace(container, itemKey) {
   const sample = createItemFromKey(itemKey, 1);
   const maxAmount = Math.max(1, Math.floor(Number(sample.maxAmount) || 64));
   let space = 0;
@@ -70,7 +70,7 @@ function getOutputSpace(container, itemKey) {
   return space;
 }
 
-function addToOutputSlots(container, itemKey, amount) {
+function addToExportSlots(container, itemKey, amount) {
   let remaining = Math.floor(Number(amount) || 0);
   if (remaining <= 0) return 0;
 
@@ -102,7 +102,7 @@ function addToOutputSlots(container, itemKey, amount) {
   return remaining;
 }
 
-function flushOutputBuffer(block, entity) {
+function flushExportBuffer(block, entity) {
   const container = entity.getComponent("minecraft:inventory")?.container;
   if (!container) return;
 
@@ -116,7 +116,7 @@ function flushOutputBuffer(block, entity) {
   const filter = getFirstAvailableFilter(container, network.totals ?? {});
   if (!filter) return;
 
-  const space = getOutputSpace(container, filter.itemKey);
+  const space = getExportSpace(container, filter.itemKey);
   if (space <= 0) return;
 
   const requested = Math.min(getExtractionAmount(container), filter.available, space);
@@ -126,48 +126,48 @@ function flushOutputBuffer(block, entity) {
   const extracted = requested - remainingInNetwork;
   if (extracted <= 0) return;
 
-  const outputRemainder = addToOutputSlots(container, filter.itemKey, extracted);
-  if (outputRemainder > 0) {
+  const exportRemainder = addToExportSlots(container, filter.itemKey, extracted);
+  if (exportRemainder > 0) {
     // Space is calculated up front, so this should only happen if the inventory
     // changed during the same tick. Put the remainder back instead of deleting it.
     // This keeps extraction lossless.
-    const restoreRemainder = addToNetwork(networkId, filter.itemKey, outputRemainder);
+    const restoreRemainder = addToNetwork(networkId, filter.itemKey, exportRemainder);
     if (restoreRemainder > 0) {
-      console.warn("Output Buffer could not restore an extraction remainder.");
+      console.warn("Export Buffer could not restore an extraction remainder.");
     }
   }
 }
 
-DoriosAPI.register.blockComponent("output_buffer", {
+DoriosAPI.register.blockComponent("export_buffer", {
   beforeOnPlayerPlace(e, { params: settings }) {
     const { block } = e;
     system.run(() => {
       const entity = spawnEntity(block, {
         entity: {
-          identifier: "utilitycraft:output_buffer",
-          name: "output_buffer",
+          identifier: "utilitycraft:export_buffer",
+          name: "export_buffer",
           inventory_size: settings?.entity?.inventory_size ?? 37,
           input_range: settings?.entity?.input_range ?? [FILTER_START, FILTER_END],
           output_range: settings?.entity?.output_range ?? [OUTPUT_START, OUTPUT_END],
         },
       });
       entity.triggerEvent("utilitycraft:setup_inventory");
-      entity.nameTag = "entity.utilitycraft:output_buffer.name";
-      entity.setDynamicProperty("last_output_buffer_tick", system.currentTick ?? 0);
+      entity.nameTag = "entity.utilitycraft:export_buffer.name";
+      entity.setDynamicProperty("last_export_buffer_tick", system.currentTick ?? 0);
       updateNetworkAround(block);
     });
   },
 
   onTick({ block }) {
-    const entity = getOutputBufferEntity(block);
+    const entity = getExportBufferEntity(block);
     if (!entity || !entity.isValid) return;
 
     const currentTick = system.currentTick ?? 0;
-    const lastTick = Math.floor(Number(entity.getDynamicProperty("last_output_buffer_tick") ?? 0));
+    const lastTick = Math.floor(Number(entity.getDynamicProperty("last_export_buffer_tick") ?? 0));
     if (currentTick - lastTick < EXTRACT_INTERVAL_TICKS) return;
 
-    entity.setDynamicProperty("last_output_buffer_tick", currentTick);
-    flushOutputBuffer(block, entity);
+    entity.setDynamicProperty("last_export_buffer_tick", currentTick);
+    flushExportBuffer(block, entity);
   },
 
   onPlayerBreak(e) {
