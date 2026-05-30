@@ -15,10 +15,11 @@ export const DS_CONDUITS = [
 ];
 
 const MACHINE_TYPES = new Set([
-  "utilitycraft:disk_drive",
   "utilitycraft:storage_terminal",
   "utilitycraft:crafting_terminal",
   "utilitycraft:blueprint_terminal",
+  "utilitycraft:input_buffer",
+  "utilitycraft:output_buffer",
 ]);
 
 const DIRECTIONS = [
@@ -54,7 +55,6 @@ function isConduit(block) {
 
 function isStorageNode(block) {
   return !!block && (
-    block.typeId === "utilitycraft:disk_drive" ||
     block.typeId === "utilitycraft:storage_terminal" ||
     block.typeId === "utilitycraft:crafting_terminal" ||
     block.typeId === "utilitycraft:blueprint_terminal" ||

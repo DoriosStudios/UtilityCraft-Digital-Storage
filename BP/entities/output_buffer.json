@@ -2,7 +2,7 @@
 	"format_version": "1.19.20",
 	"minecraft:entity": {
 		"description": {
-			"identifier": "utilitycraft:disk_drive",
+			"identifier": "utilitycraft:output_buffer",
 			"is_spawnable": false,
 			"is_summonable": true,
 			"is_experimental": false
@@ -13,7 +13,7 @@
 			},
 			"utilitycraft:inventory_setup": {
 				"minecraft:inventory": {
-					"inventory_size": 10,
+					"inventory_size": 37,
 					"container_type": "container"
 				}
 			}
@@ -22,7 +22,8 @@
 			"minecraft:type_family": {
 				"family": [
 					"dorios:machine",
-					"dorios:energy_container"
+					"dorios:container",
+					"dorios:special_container"
 				]
 			},
 			"minecraft:health": {
@@ -42,7 +43,7 @@
 			},
 			"minecraft:fire_immune": true,
 			"minecraft:inventory": {
-				"inventory_size": 10,
+				"inventory_size": 37,
 				"container_type": "container"
 			},
 			"minecraft:collision_box": {

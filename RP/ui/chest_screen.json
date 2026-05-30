@@ -26,6 +26,47 @@
             "requires": "($temp_container_title = 'entity.utilitycraft:disk_drive.name')",
             "$screen_content": "disk_drive.utility_panel",
             "$screen_bg_content": "common.screen_background"
+          },
+          {
+            "requires": "($temp_container_title = 'entity.utilitycraft:output_buffer.name')",
+            "$screen_content": "output_buffer.utility_panel",
+            "$screen_bg_content": "common.screen_background"
+          }
+        ]
+      }
+    ]
+  },
+  "large_chest_screen": {
+    "$temp_container_title|default": "$container_title",
+    "modifications": [
+      {
+        "array_name": "variables",
+        "operation": "insert_back",
+        "value": [
+          {
+            "requires": "($temp_container_title = 'entity.utilitycraft:storage_terminal.name')",
+            "$screen_content": "storage_terminal.utility_panel",
+            "$screen_bg_content": "common.screen_background"
+          },
+          {
+            "requires": "($temp_container_title = 'entity.utilitycraft:crafting_terminal.name')",
+            "$screen_content": "crafting_terminal.utility_panel",
+            "$screen_bg_content": "common.screen_background"
+          },
+          {
+            "requires": "($temp_container_title = 'entity.utilitycraft:blueprint_terminal.name')",
+            "$screen_content": "blueprint_terminal.utility_panel",
+            "$screen_bg_content": "common.screen_background"
+          },
+          {
+            "requires": "($temp_container_title = 'entity.utilitycraft:disk_drive.name')",
+            "$screen_content": "disk_drive.utility_panel",
+            "$screen_bg_content": "common.screen_background"
+          },
+          {
+            "requires": "($temp_container_title = 'entity.utilitycraft:output_buffer.name')",
+            "$screen_content": "output_buffer.utility_panel",
+            "$screen_bg_content": "common.screen_background"
           }
         ]
       }

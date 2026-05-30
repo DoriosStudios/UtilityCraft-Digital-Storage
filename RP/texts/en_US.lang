@@ -34,3 +34,14 @@ item.utilitycraft:ultimate_storage_part=§8Ultimate Storage Part
 
 dorios:itemGroup.name.storage=Storage
 dorios:itemGroup.name.cells_parts=Cells & Parts
+
+tile.utilitycraft:input_buffer.name=Input Buffer
+entity.utilitycraft:input_buffer.name=Input Buffer
+tile.utilitycraft:output_buffer.name=Output Buffer
+entity.utilitycraft:output_buffer.name=Output Buffer
+tile.utilitycraft:storage_center.name=Storage Center
+item.utilitycraft:storage_core=Storage Core
+item.utilitycraft:achd_wlss_storage_panel=Linked Wireless Storage Panel
+item.utilitycraft:achd_wlss_cftg_storage_panel=Linked Wireless Crafting Storage Panel
+item.utilitycraft:unchd_wlss_storage_panel=Wireless Storage Panel\nÂ§7- Link with a terminal to use
+item.utilitycraft:unchd_wlss_cftg_storage_panel=Wireless Crafting Storage Panel\nÂ§7- Link with a terminal to use

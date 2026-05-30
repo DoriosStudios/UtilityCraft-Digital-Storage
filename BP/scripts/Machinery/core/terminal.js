@@ -17,7 +17,7 @@ const DEFAULT_COUNT_LABEL_BASE_SLOT = 110;
 const DEFAULT_STORAGE_FILLER = "utilitycraft:storage_filler";
 const DEFAULT_STORAGE_FILLER_NAME = "§rStorage Slot";
 const DEFAULT_LORE_DISPLAY = "§r§7- Count: §f";
-const DEFAULT_PAGE_CHANGE_DELAY_TICKS = 16;
+const DEFAULT_PAGE_CHANGE_DELAY_TICKS = 40;
 
 /**
  * Shared base class for Digital Storage terminal machines.

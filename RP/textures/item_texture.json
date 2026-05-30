@@ -29,6 +29,21 @@
      "utilitycraft_ultimate_storage_part": {
       "textures": "textures/items/parts/ultimate_storage_part"
     },
+     "utilitycraft_storage_core": {
+      "textures": "textures/items/storage_core"
+    },
+     "utilitycraft_achd_wlss_storage_panel": {
+      "textures": "textures/items/wireless/panels/achd_wlss_storage_panel"
+    },
+     "utilitycraft_achd_wlss_cftg_storage_panel": {
+      "textures": "textures/items/wireless/panels/achd_wlss_cftg_storage_panel"
+    },
+     "utilitycraft_unchd_wlss_storage_panel": {
+      "textures": "textures/items/wireless/panels/unchd_wlss_storage_panel"
+    },
+     "utilitycraft_unchd_wlss_cftg_storage_panel": {
+      "textures": "textures/items/wireless/panels/unchd_wlss_cftg_storage_panel"
+    },
      "utilitycraft_storage_filler": {
       "textures": "textures/ui/empty_cell"
     }

@@ -18,6 +18,15 @@
 		},
 		"utilitycraft_ds_item_conduit": {
 			"textures": "textures/blocks/ds_item_conduit"
+		},
+		"utilitycraft_input_buffer": {
+			"textures": "textures/blocks/input_buffer"
+		},
+		"utilitycraft_output_buffer": {
+			"textures": "textures/blocks/output_buffer"
+		},
+		"utilitycraft_storage_center": {
+			"textures": "textures/blocks/storage_center"
 		}
 	}
 }

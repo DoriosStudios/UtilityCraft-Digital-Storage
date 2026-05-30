@@ -188,6 +188,31 @@ function appendNetworkChange(previous, itemKey, before, after, reason) {
   };
 }
 
+function appendNetworkChanges(previous, entries) {
+  let changeSeq = Math.floor(Number(previous?.changeSeq ?? 0));
+  const changes = Array.isArray(previous?.changes) ? previous.changes.slice() : [];
+
+  for (const entry of entries) {
+    const before = Math.floor(Number(entry?.before) || 0);
+    const after = Math.floor(Number(entry?.after) || 0);
+    if (!entry?.itemKey || before === after) continue;
+
+    changeSeq++;
+    changes.push({
+      seq: changeSeq,
+      itemKey: entry.itemKey,
+      before,
+      after,
+      reason: entry.reason,
+    });
+  }
+
+  return {
+    changeSeq,
+    changes: changes.slice(-NETWORK_CHANGE_LIMIT),
+  };
+}
+
 function appendNetworkReload(previous, reason) {
   const changeSeq = Math.floor(Number(previous?.changeSeq ?? 0)) + 1;
   const changes = Array.isArray(previous?.changes) ? previous.changes.slice() : [];
@@ -329,4 +354,87 @@ export function addToNetwork(networkId, itemKey, amount) {
     "insert",
   );
   return remaining;
+}
+
+export function addManyToNetwork(networkId, itemAmounts, reason = "insert") {
+  const network = readNetworkRecord(networkId);
+  const remainingByKey = {};
+  if (!network || !itemAmounts || typeof itemAmounts !== "object") return remainingByKey;
+
+  const requests = [];
+  for (const itemKey of Object.keys(itemAmounts)) {
+    const amount = Math.floor(Number(itemAmounts[itemKey]) || 0);
+    if (!itemKey || amount <= 0) continue;
+    requests.push({ itemKey, amount });
+    remainingByKey[itemKey] = amount;
+  }
+  if (requests.length === 0) return remainingByKey;
+
+  const records = new Map();
+  const dirtyCells = new Set();
+
+  function getMutableCellRecord(cellId) {
+    if (records.has(cellId)) return records.get(cellId);
+    const record = getCellRecord(cellId);
+    if (!record) return undefined;
+    record.items = record.items && typeof record.items === "object" ? record.items : {};
+    record.used = Math.floor(Number(record.used) || 0);
+    record.capacity = Math.floor(Number(record.capacity) || 0);
+    records.set(cellId, record);
+    return record;
+  }
+
+  for (const { itemKey, amount } of requests) {
+    let remaining = amount;
+    for (const cellId of network.cells ?? []) {
+      if (remaining <= 0) break;
+      const record = getMutableCellRecord(cellId);
+      if (!record) continue;
+
+      const space = record.capacity - record.used;
+      if (space <= 0) continue;
+
+      const put = Math.min(space, remaining);
+      record.items[itemKey] = (Number(record.items[itemKey]) || 0) + put;
+      record.used += put;
+      remaining -= put;
+      dirtyCells.add(cellId);
+    }
+    remainingByKey[itemKey] = remaining;
+  }
+
+  if (dirtyCells.size === 0) return remainingByKey;
+
+  for (const cellId of dirtyCells) {
+    writeCellRecord(cellId, records.get(cellId));
+  }
+
+  const totals = network?.totals && typeof network.totals === "object"
+    ? Object.assign({}, network.totals)
+    : {};
+  const changes = [];
+  let insertedTotal = 0;
+
+  for (const { itemKey, amount } of requests) {
+    const inserted = amount - Math.floor(Number(remainingByKey[itemKey]) || 0);
+    if (inserted <= 0) continue;
+
+    const before = Math.floor(Number(network.totals?.[itemKey] ?? 0));
+    const after = before + inserted;
+    totals[itemKey] = after;
+    insertedTotal += inserted;
+    changes.push({ itemKey, before, after, reason });
+  }
+
+  if (insertedTotal <= 0) return remainingByKey;
+
+  const changeState = appendNetworkChanges(network, changes);
+  writeNetworkRecord(networkId, Object.assign({}, network, changeState, {
+    totals,
+    used: Math.max(0, Math.floor(Number(network?.used ?? 0)) + insertedTotal),
+    capacity: Math.floor(Number(network?.capacity ?? 0)),
+    version: network?.version ?? 0,
+  }));
+
+  return remainingByKey;
 }
