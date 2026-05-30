@@ -1,5 +1,6 @@
 import { EnchantmentTypes, ItemStack, system } from "@minecraft/server";
 import { BasicMachine, Machine } from "DoriosCore/index.js";
+import { spawnEntity } from "DoriosCore/utils/entity.js";
 import { getNetworkNodes, updateNetworkAround } from "Machinery/storage/network_manager.js";
 import { addToNetwork, readNetworkRecord, removeFromNetwork } from "Machinery/storage/storage_db.js";
 import {
@@ -54,11 +55,12 @@ export class Terminal extends BasicMachine {
 
     system.run(() => {
       const { x, y, z } = block.center();
-      const entity = block.dimension.spawnEntity(entityType, {
-        x,
-        y: y - 0.25,
-        z,
-      });
+      const entity = spawnEntity(block, {
+        entity: {
+          identifier: entityType,
+          input_slot: 220
+        }
+      })
       setupEntity?.(entity, block);
       updateNetworkAround(block);
     });

@@ -23,7 +23,8 @@
 				"family": [
 					"dorios:machine",
 					"dorios:energy_container",
-					"dorios:container"
+					"dorios:container",
+					"dorios:special_container"
 				]
 			},
 			"minecraft:health": {

@@ -99,7 +99,9 @@ export function spawnEntity(block, config) {
   const entity = dimension.spawnEntity(identifier, location);
 
   const inventorySize = entityData.inventory_size ?? 1;
-  entity.triggerEvent(`utilitycraft:inventory_${inventorySize}`);
+  try {
+    entity.triggerEvent(`utilitycraft:inventory_${inventorySize}`)
+  } catch { }
 
   const name = entityData.name ?? block.typeId.split(":")[1];
   entity.nameTag = `entity.utilitycraft:${name}.name`;
