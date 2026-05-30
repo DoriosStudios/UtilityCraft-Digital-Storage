@@ -184,7 +184,7 @@
                     "type": "image",
                     "texture": "textures/ui/buttons/button_background",
                     "size": [ 26, 27 ],
-                    "offset": [ -90, -5 ],
+                    "offset": [ -90, -4.5 ],
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
                     "layer": -6,
