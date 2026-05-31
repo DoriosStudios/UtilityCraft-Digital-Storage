@@ -29,14 +29,22 @@
                     {
                         "group_identifier": {
                             "icon": "utilitycraft:storage_cell",
-                            "name": "dorios:itemGroup.name.cells_parts"
+                            "name": "dorios:itemGroup.name.cells"
                         },
                         "items": [
                             "utilitycraft:storage_cell",
                             "utilitycraft:basic_storage_cell",
                             "utilitycraft:advanced_storage_cell",
                             "utilitycraft:expert_storage_cell",
-                            "utilitycraft:ultimate_storage_cell",
+                            "utilitycraft:ultimate_storage_cell"
+                        ]
+                    },
+                    {
+                        "group_identifier": {
+                            "icon": "utilitycraft:basic_storage_part",
+                            "name": "dorios:itemGroup.name.parts"
+                        },
+                        "items": [
                             "utilitycraft:basic_storage_part",
                             "utilitycraft:advanced_storage_part",
                             "utilitycraft:expert_storage_part",
