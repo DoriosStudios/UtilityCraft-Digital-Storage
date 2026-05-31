@@ -56,7 +56,7 @@
             },
             // Buttons
             {
-                "next_button@uc.machine_button": {
+                "next_button@sh.button": {
                     "layer": 10,
                     "$index": 219,
                     "$default_texture": "textures/ui/buttons/next/button",
@@ -69,7 +69,7 @@
                 }
             },
             {
-                "previous_button@uc.machine_button": {
+                "previous_button@sh.button": {
                     "layer": 10,
                     "$index": 220,
                     "$default_texture": "textures/ui/buttons/previous/button",
@@ -82,7 +82,7 @@
                 }
             },
             {
-                "quantity_button@uc.machine_button": {
+                "quantity_button@sh.button": {
                     "layer": 10,
                     "$index": 221,
                     "$default_texture": "textures/ui/buttons/quantity/button",
@@ -95,7 +95,7 @@
                 }
             },
             {
-                "sort_button@uc.machine_button": {
+                "sort_button@sh.button": {
                     "layer": 10,
                     "$index": 222,
                     "$default_texture": "textures/ui/buttons/sort/button",
