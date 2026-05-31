@@ -32,17 +32,17 @@
      "utilitycraft_storage_core": {
       "textures": "textures/items/storage_core"
     },
-     "utilitycraft_achd_wlss_storage_panel": {
-      "textures": "textures/items/wireless/panels/achd_wlss_storage_panel"
+     "utilitycraft_wireless_panel_off": {
+      "textures": "textures/items/wireless/wireless_panel_off"
     },
-     "utilitycraft_achd_wlss_cftg_storage_panel": {
-      "textures": "textures/items/wireless/panels/achd_wlss_cftg_storage_panel"
+     "utilitycraft_wireless_panel_on": {
+      "textures": "textures/items/wireless/wireless_panel_on"
     },
-     "utilitycraft_unchd_wlss_storage_panel": {
-      "textures": "textures/items/wireless/panels/unchd_wlss_storage_panel"
+     "utilitycraft_wireless_crafting_panel_off": {
+      "textures": "textures/items/wireless/wireless_crafting_panel_off"
     },
-     "utilitycraft_unchd_wlss_cftg_storage_panel": {
-      "textures": "textures/items/wireless/panels/unchd_wlss_cftg_storage_panel"
+     "utilitycraft_wireless_crafting_panel_on": {
+      "textures": "textures/items/wireless/wireless_crafting_panel_on"
     },
      "utilitycraft_storage_filler": {
       "textures": "textures/ui/empty_cell"
