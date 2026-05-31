@@ -10,9 +10,9 @@ tile.utilitycraft:blueprint_terminal.name=Blueprint Terminal\n§7- A Terminal Fo
 tile.utilitycraft:crafting_terminal.name=Crafting Terminal\n§7- A Terminal For Soting Items And Crafting\n§7- Accepted upgrades:\n   §a§7 §b§7
 tile.utilitycraft:disk_drive.name=Disk Drive\n§7- A Disk For Storage Cells
 tile.utilitycraft:ds_item_conduit.name=Digital Storage Conduit\n§7- Links digital storage machines
-tile.utilitycraft:output_buffer.name=Output Buffer
+tile.utilitycraft:import_buffer.name=Import Buffer
+tile.utilitycraft:export_buffer.name=Export Buffer
 tile.utilitycraft:storage_center.name=Storage Center
-tile.utilitycraft:input_buffer.name=Input Buffer
 
 #######################
 ####    Entities   ####
@@ -22,14 +22,14 @@ entity.utilitycraft:disk_drive.name=Disk Drive
 entity.utilitycraft:crafting_terminal.name=§fCrafting Terminal
 entity.utilitycraft:blueprint_terminal.name=§fBlueprint Terminal
 entity.utilitycraft:storage_terminal.name=§fStorage Terminal
-entity.utilitycraft:input_buffer.name=Input Buffer
-entity.utilitycraft:output_buffer.name=Output Buffer
+entity.utilitycraft:import_buffer.name=Import Buffer
+entity.utilitycraft:export_buffer.name=Export Buffer
 
 #####################
 ####    ITEMS    ####
 #####################
 
-item.utilitycraft:empty_storage_cell=Empty Storage Cell
+item.utilitycraft:storage_cell=Empty Storage Cell
 item.utilitycraft:basic_storage_cell=§eBasic Storage Cell\n§7- Max Capacity: §f4.1k
 item.utilitycraft:advanced_storage_cell=§cAdvanced Storage Cell\n§7- Max Capacity: §f16.4k
 item.utilitycraft:expert_storage_cell=§bExpert Storage Cell\n§7- Max Capacity: §f65.5k
