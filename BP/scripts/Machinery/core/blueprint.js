@@ -153,6 +153,42 @@ export function writeBlueprintDataAtSlot(entity, slot, data, options = {}) {
   return true;
 }
 
+export function sendBlueprintDataEvent(entity, payload, eventId = BLUEPRINT_WRITE_EVENT_ID) {
+  if (!entity || typeof entity.runCommand !== "function" || !payload || typeof payload !== "object") {
+    return false;
+  }
+
+  try {
+    entity.runCommand(`scriptevent ${eventId} ${JSON.stringify(payload)}`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function syncBlueprintDataAtSlot(entity, slot, itemStack) {
+  const slotIndex = normalizeSlot(slot);
+  if (slotIndex === undefined) return false;
+
+  const container = getEntityContainer(entity);
+  const blueprint = itemStack ?? container?.getItem(slotIndex);
+  const data = readBlueprintData(blueprint);
+  if (!data?.id || !Number.isFinite(Number(data.amount)) || Number(data.amount) <= 0) {
+    return false;
+  }
+
+  return sendBlueprintDataEvent(entity, {
+    slot: slotIndex,
+    data: {
+      id: data.id,
+      amount: data.amount,
+      materials: data.materials,
+      leftover: data.leftover,
+      lore: data.lore,
+    },
+  });
+}
+
 system.afterEvents.scriptEventReceive.subscribe(({ id, message, sourceEntity }) => {
   if (id !== BLUEPRINT_WRITE_EVENT_ID || !sourceEntity) return;
 

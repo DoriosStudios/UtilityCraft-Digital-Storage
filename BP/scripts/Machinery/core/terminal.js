@@ -17,6 +17,7 @@ import {
   needsVirtualLoreRewrite,
 } from "Machinery/storage/virtual_item_codec.js";
 import { createTaggedFiller } from "Machinery/storage/filler_restore.js";
+import { syncBlueprintDataAtSlot as syncBlueprintSlotData } from "Machinery/core/blueprint.js";
 
 const DEFAULT_STORAGE_START = 0;
 const DEFAULT_STORAGE_END = 107;
@@ -136,6 +137,10 @@ export class Terminal extends BasicMachine {
 
   static createStorageFiller(entity, slot, nameTag = DEFAULT_STORAGE_FILLER_NAME) {
     return createTaggedFiller(DEFAULT_STORAGE_FILLER, nameTag, entity, slot);
+  }
+
+  static syncBlueprintDataAtSlot(entity, slot, itemStack) {
+    return syncBlueprintSlotData(entity, slot, itemStack);
   }
 
   /**
@@ -708,6 +713,7 @@ export class Terminal extends BasicMachine {
         itemKey,
       );
       inv.setItem(slot, virtualItem);
+      Terminal.syncBlueprintDataAtSlot(entity, slot, virtualItem);
     } catch (error) {
       purgeItemFromNetwork(networkId, itemKey, "render_error");
       try {
@@ -807,6 +813,7 @@ export class Terminal extends BasicMachine {
             ) {
               inv.setItem(currentSlot, virtualItem);
             }
+            Terminal.syncBlueprintDataAtSlot(entity, currentSlot, virtualItem);
             renderedKey = key;
             renderedSlots[key] = currentSlot;
           } catch (error) {

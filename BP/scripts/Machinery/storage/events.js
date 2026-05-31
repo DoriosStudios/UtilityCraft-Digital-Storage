@@ -7,9 +7,37 @@ import {
 } from "./filler_restore.js";
 import { readVirtualItemData } from "./virtual_item_codec.js";
 import { removeFromNetwork } from "./storage_db.js";
+import { readBlueprintData, syncBlueprintDataAtSlot } from "Machinery/core/blueprint.js";
+
+const recentBlueprintSyncs = new Map();
 
 function getInventory(player) {
   return (player.getComponent("inventory") || player.getComponent("minecraft:inventory"))?.container;
+}
+
+function getBlueprintSignature(item) {
+  const data = readBlueprintData(item);
+  if (!data?.id) return "";
+  return JSON.stringify({
+    id: data.id,
+    amount: data.amount,
+    materials: data.materials,
+    leftover: data.leftover,
+  });
+}
+
+function syncBlueprintDataForPlayerSlot(player, slot, item) {
+  const signature = getBlueprintSignature(item);
+  if (!signature) return;
+
+  const key = `${player.id ?? player.name}|${slot}`;
+  if (recentBlueprintSyncs.get(key) === signature) return;
+
+  recentBlueprintSyncs.set(key, signature);
+  syncBlueprintDataAtSlot(player, slot, item);
+  system.runTimeout(() => {
+    if (recentBlueprintSyncs.get(key) === signature) recentBlueprintSyncs.delete(key);
+  }, 20);
 }
 
 function resolveVirtualItem(player, item, slot) {
@@ -24,26 +52,33 @@ function resolveVirtualItem(player, item, slot) {
     if (fillerRestore) {
       system.run(() => restoreTaggedFiller(fillerRestore));
     }
-    return;
+    return true;
   }
 
   const virtual = readVirtualItemData(item);
-  if (!virtual) return;
+  if (!virtual) return false;
 
   const amount = item.amount;
   inventory.setItem(slot, undefined);
   const remaining = removeFromNetwork(virtual.networkId, virtual.itemKey, amount);
   const extracted = amount - remaining;
-  if (extracted <= 0) return;
+  if (extracted <= 0) return true;
 
   const realItem = createItemFromKey(virtual.itemKey, extracted);
-  const overflow = inventory.addItem(realItem);
-  if (overflow) player.dimension.spawnItem(overflow, player.location);
+  if (slot >= 0 && slot < inventory.size && !inventory.getItem(slot)) {
+    inventory.setItem(slot, realItem);
+    syncBlueprintDataForPlayerSlot(player, slot, realItem);
+  } else {
+    const overflow = inventory.addItem(realItem);
+    if (overflow) player.dimension.spawnItem(overflow, player.location);
+  }
   player.playSound("random.pop");
+  return true;
 }
 
 world.afterEvents.playerInventoryItemChange.subscribe(({ player, itemStack, slot }) => {
-  resolveVirtualItem(player, itemStack, slot);
+  if (resolveVirtualItem(player, itemStack, slot)) return;
+  syncBlueprintDataForPlayerSlot(player, slot, itemStack);
 });
 
 world.afterEvents.entitySpawn.subscribe(({ entity }) => {
