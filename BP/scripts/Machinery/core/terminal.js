@@ -1,12 +1,20 @@
-import { EnchantmentTypes, ItemStack, system } from "@minecraft/server";
+import { system } from "@minecraft/server";
 import { BasicMachine, Machine } from "DoriosCore/index.js";
 import { spawnEntity } from "DoriosCore/utils/entity.js";
 import { getNetworkNodes, updateNetworkAround } from "Machinery/storage/network_manager.js";
-import { addToNetwork, readNetworkRecord, removeFromNetwork } from "Machinery/storage/storage_db.js";
+import {
+  addToNetwork,
+  purgeItemFromNetwork,
+  readNetworkRecord,
+  removeFromNetwork,
+} from "Machinery/storage/storage_db.js";
+import {
+  createItemFromKey as createStoredItemFromKey,
+  getItemKey as getStoredItemKey,
+} from "Machinery/storage/item_key.js";
 import {
   applyVirtualLore,
   needsVirtualLoreRewrite,
-  stripHiddenLore,
 } from "Machinery/storage/virtual_item_codec.js";
 import { createTaggedFiller } from "Machinery/storage/filler_restore.js";
 
@@ -347,40 +355,7 @@ export class Terminal extends BasicMachine {
    * @returns {string} Stable item key.
    */
   static getItemKey(item) {
-    if (!item) return "";
-    let key = item.typeId;
-    const extras = {};
-    if (item.nameTag) extras.nameTag = item.nameTag;
-    const lore = item.getLore();
-    if (lore && lore.length > 0) {
-      const cleanLore = stripHiddenLore(lore).filter(
-        (line) => !line.includes("- Count:"),
-      );
-      if (cleanLore.length > 0) extras.lore = cleanLore;
-    }
-    const dur = item.getComponent("durability");
-    if (dur && dur.damage > 0) extras.damage = dur.damage;
-    const ench = item.getComponent("enchantable");
-    if (ench) {
-      const list = ench.getEnchantments();
-      if (list.length > 0) {
-        extras.enchants = list.map((e) => ({
-          type: e.type.id,
-          level: e.level,
-        }));
-      }
-    }
-    const dynIds = item.getDynamicPropertyIds();
-    if (dynIds && dynIds.length > 0) {
-      extras.dynProps = {};
-      for (const id of dynIds) {
-        extras.dynProps[id] = item.getDynamicProperty(id);
-      }
-    }
-    if (Object.keys(extras).length > 0) {
-      key += "||" + JSON.stringify(extras);
-    }
-    return key;
+    return getStoredItemKey(item);
   }
 
   /**
@@ -391,46 +366,7 @@ export class Terminal extends BasicMachine {
    * @returns {import("@minecraft/server").ItemStack} Recreated item stack.
    */
   static createItemFromKey(key, amount) {
-    const parts = key.split("||");
-    const typeId = parts[0];
-    let item;
-    try {
-      item = new ItemStack(typeId, amount);
-    } catch (e) {
-      return new ItemStack("minecraft:dirt", amount);
-    }
-    if (parts.length > 1) {
-      try {
-        const extras = JSON.parse(parts[1]);
-        if (extras.nameTag) item.nameTag = extras.nameTag;
-        if (extras.lore) item.setLore(extras.lore);
-        if (extras.damage) {
-          const dur = item.getComponent("durability");
-          if (dur) dur.damage = extras.damage;
-        }
-        if (extras.enchants) {
-          const ench = item.getComponent("enchantable");
-          if (ench) {
-            for (const eData of extras.enchants) {
-              try {
-                ench.addEnchantment({
-                  type: EnchantmentTypes.get(eData.type),
-                  level: eData.level,
-                });
-              } catch (err) { }
-            }
-          }
-        }
-        if (extras.dynProps) {
-          for (const id in extras.dynProps) {
-            try {
-              item.setDynamicProperty(id, extras.dynProps[id]);
-            } catch (err) { }
-          }
-        }
-      } catch (e) { }
-    }
-    return item;
+    return createStoredItemFromKey(key, amount);
   }
 
   /**
@@ -759,18 +695,30 @@ export class Terminal extends BasicMachine {
       return true;
     }
 
-    const virtualItemTest = Terminal.createItemFromKey(itemKey, 1);
-    const maxStack = virtualItemTest.maxAmount ?? 64;
-    const renderAmount = Math.min(currentQty, count, maxStack);
-    const virtualItem = Terminal.createItemFromKey(itemKey, renderAmount);
-    const currentLore = virtualItem.getLore() || [];
-    applyVirtualLore(
-      virtualItem,
-      [...currentLore, `${loreDisplay}${count}`],
-      networkId,
-      itemKey,
-    );
-    inv.setItem(slot, virtualItem);
+    try {
+      const virtualItemTest = Terminal.createItemFromKey(itemKey, 1);
+      const maxStack = virtualItemTest.maxAmount ?? 64;
+      const renderAmount = Math.min(currentQty, count, maxStack);
+      const virtualItem = Terminal.createItemFromKey(itemKey, renderAmount);
+      const currentLore = virtualItem.getLore() || [];
+      applyVirtualLore(
+        virtualItem,
+        [...currentLore, `${loreDisplay}${count}`],
+        networkId,
+        itemKey,
+      );
+      inv.setItem(slot, virtualItem);
+    } catch (error) {
+      purgeItemFromNetwork(networkId, itemKey, "render_error");
+      try {
+        inv.setItem(slot, createTaggedFiller(fillerId, fillerName, entity, slot));
+      } catch {}
+      delete renderedSlots[itemKey];
+      entity.setDynamicProperty("rendered_slot_keys", JSON.stringify(renderedSlots));
+      entity.setDynamicProperty("force_refresh", true);
+      console.warn(`Digital Storage removed an item that could not render: ${itemKey}`);
+      return true;
+    }
     Terminal.setCountLabel(machine, inv, slot, {
       countLabelBaseSlot,
       fillerId,
@@ -813,6 +761,8 @@ export class Terminal extends BasicMachine {
     try {
       const safeTotals = networkTotals ?? {};
       const safePageSlice = Array.isArray(pageSlice) ? pageSlice : [];
+      const renderedSlots = {};
+      let pageIndex = 0;
 
       for (let i = 0; i < storageSlots; i++) {
         if (!Terminal.isChunkedRenderCurrent(entity, token)) return false;
@@ -832,34 +782,44 @@ export class Terminal extends BasicMachine {
           continue;
         }
 
-        if (hasNetwork && i < safePageSlice.length) {
-          const key = safePageSlice[i];
-          const virtualItemTest = Terminal.createItemFromKey(key, 1);
-          const maxStack = virtualItemTest.maxAmount ?? 64;
-          const renderAmount = Math.min(currentQty, safeTotals[key] || 0, maxStack);
-          const virtualItem = Terminal.createItemFromKey(key, renderAmount);
-          const currentLore = virtualItem.getLore() || [];
-          applyVirtualLore(
-            virtualItem,
-            [...currentLore, `${loreDisplay}${safeTotals[key]}`],
-            networkId,
-            key,
-          );
-          const existingKey = existingItem ? Terminal.getItemKey(existingItem) : null;
-          if (
-            !existingItem ||
-            existingKey !== key ||
-            Terminal.getStoredCount(existingItem) !== safeTotals[key] ||
-            existingItem.amount !== renderAmount ||
-            needsVirtualLoreRewrite(existingItem)
-          ) {
-            inv.setItem(currentSlot, virtualItem);
+        let renderedKey;
+        while (hasNetwork && pageIndex < safePageSlice.length && !renderedKey) {
+          const key = safePageSlice[pageIndex++];
+          try {
+            const virtualItemTest = Terminal.createItemFromKey(key, 1);
+            const maxStack = virtualItemTest.maxAmount ?? 64;
+            const renderAmount = Math.min(currentQty, safeTotals[key] || 0, maxStack);
+            const virtualItem = Terminal.createItemFromKey(key, renderAmount);
+            const currentLore = virtualItem.getLore() || [];
+            applyVirtualLore(
+              virtualItem,
+              [...currentLore, `${loreDisplay}${safeTotals[key]}`],
+              networkId,
+              key,
+            );
+            const existingKey = existingItem ? Terminal.getItemKey(existingItem) : null;
+            if (
+              !existingItem ||
+              existingKey !== key ||
+              Terminal.getStoredCount(existingItem) !== safeTotals[key] ||
+              existingItem.amount !== renderAmount ||
+              needsVirtualLoreRewrite(existingItem)
+            ) {
+              inv.setItem(currentSlot, virtualItem);
+            }
+            renderedKey = key;
+            renderedSlots[key] = currentSlot;
+          } catch (error) {
+            purgeItemFromNetwork(networkId, key, "render_error");
+            console.warn(`Digital Storage skipped an item that could not render: ${key}`);
           }
-        } else if (
+        }
+
+        if (!renderedKey && (
           !existingItem ||
           existingItem.typeId !== fillerId ||
           existingItem.nameTag !== fillerName
-        ) {
+        )) {
           inv.setItem(
             currentSlot,
             createTaggedFiller(fillerId, fillerName, entity, currentSlot),
@@ -873,6 +833,7 @@ export class Terminal extends BasicMachine {
         await Terminal.waitRenderChunk(i, storageSlots, spreadTicks);
       }
 
+      entity.setDynamicProperty("rendered_slot_keys", JSON.stringify(renderedSlots));
       return true;
     } finally {
       Terminal.finishChunkedRender(entity, token);

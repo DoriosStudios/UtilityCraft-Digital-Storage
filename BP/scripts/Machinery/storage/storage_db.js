@@ -1,4 +1,5 @@
 import { world } from "@minecraft/server";
+import { normalizeItemKey } from "./item_key.js";
 
 export const CELL_ID_PROPERTY = "ucds_cell_id";
 const NETWORK_CHANGE_LIMIT = 64;
@@ -24,6 +25,25 @@ function readJson(key, fallback) {
 
 function writeJson(key, value) {
   world.setDynamicProperty(key, JSON.stringify(value));
+}
+
+function normalizeItemAmounts(items) {
+  const normalized = {};
+  let changed = false;
+
+  for (const key of Object.keys(items ?? {})) {
+    const amount = Math.floor(Number(items[key]) || 0);
+    if (amount <= 0) {
+      changed = true;
+      continue;
+    }
+
+    const normalizedKey = normalizeItemKey(key);
+    if (normalizedKey !== key) changed = true;
+    normalized[normalizedKey] = (normalized[normalizedKey] ?? 0) + amount;
+  }
+
+  return { items: normalized, changed };
 }
 
 function nextId(key) {
@@ -90,11 +110,22 @@ export function ensureCellId(item) {
 
 export function getCellRecord(cellId) {
   if (!Number.isInteger(cellId) || cellId <= 0) return undefined;
-  return readJson(getCellKey(cellId), undefined);
+  const record = readJson(getCellKey(cellId), undefined);
+  if (!record || typeof record !== "object") return undefined;
+
+  const normalized = normalizeItemAmounts(record.items ?? {});
+  return {
+    ...record,
+    items: normalized.items,
+    used: Object.values(normalized.items).reduce((sum, value) => sum + (Number(value) || 0), 0),
+  };
 }
 
 export function writeCellRecord(cellId, record) {
-  const items = record?.items && typeof record.items === "object" ? record.items : {};
+  const normalized = normalizeItemAmounts(
+    record?.items && typeof record.items === "object" ? record.items : {},
+  );
+  const items = normalized.items;
   let used = 0;
 
   for (const key of Object.keys(items)) {
@@ -146,24 +177,48 @@ export function writeCellData(item, data) {
 
 export function readNetworkRecord(networkId) {
   if (!Number.isInteger(networkId) || networkId <= 0) return undefined;
-  return readJson(getNetworkKey(networkId), undefined);
+  const record = readJson(getNetworkKey(networkId), undefined);
+  if (!record || typeof record !== "object") return undefined;
+
+  const totals = normalizeItemAmounts(record.totals ?? {}).items;
+  const changes = Array.isArray(record.changes)
+    ? record.changes.map((change) => change?.itemKey
+      ? { ...change, itemKey: normalizeItemKey(change.itemKey) }
+      : change)
+    : [];
+
+  return {
+    ...record,
+    totals,
+    changes,
+  };
 }
 
 export function writeNetworkRecord(networkId, record) {
+  const totals = normalizeItemAmounts(
+    record?.totals && typeof record.totals === "object" ? record.totals : {},
+  ).items;
+  const changes = Array.isArray(record?.changes)
+    ? record.changes.map((change) => change?.itemKey
+      ? { ...change, itemKey: normalizeItemKey(change.itemKey) }
+      : change)
+    : [];
+
   writeJson(getNetworkKey(networkId), {
     version: Math.floor(Number(record?.version ?? 0)) + 1,
     cells: record?.cells ?? [],
     drives: record?.drives ?? [],
     terminals: record?.terminals ?? [],
-    totals: record?.totals ?? {},
+    totals,
     used: Math.floor(Number(record?.used ?? 0)),
     capacity: Math.floor(Number(record?.capacity ?? 0)),
     changeSeq: Math.floor(Number(record?.changeSeq ?? 0)),
-    changes: Array.isArray(record?.changes) ? record.changes.slice(-NETWORK_CHANGE_LIMIT) : [],
+    changes: changes.slice(-NETWORK_CHANGE_LIMIT),
   });
 }
 
 function appendNetworkChange(previous, itemKey, before, after, reason) {
+  itemKey = normalizeItemKey(itemKey);
   before = Math.floor(Number(before) || 0);
   after = Math.floor(Number(after) || 0);
   if (!itemKey || before === after) {
@@ -194,14 +249,15 @@ function appendNetworkChanges(previous, entries) {
   const changes = Array.isArray(previous?.changes) ? previous.changes.slice() : [];
 
   for (const entry of entries) {
+    const itemKey = normalizeItemKey(entry?.itemKey);
     const before = Math.floor(Number(entry?.before) || 0);
     const after = Math.floor(Number(entry?.after) || 0);
-    if (!entry?.itemKey || before === after) continue;
+    if (!itemKey || before === after) continue;
 
     changeSeq++;
     changes.push({
       seq: changeSeq,
-      itemKey: entry.itemKey,
+      itemKey,
       before,
       after,
       reason: entry.reason,
@@ -237,10 +293,16 @@ export function rebuildNetworkTotals(networkId, cells, change) {
   for (const cellId of cells) {
     const record = getCellRecord(cellId);
     if (!record) continue;
+    const normalized = normalizeItemAmounts(record.items ?? {});
+    if (normalized.changed) {
+      record.items = normalized.items;
+      writeCellRecord(cellId, record);
+    }
     capacity += Number(record.capacity) || 0;
-    used += Number(record.used) || 0;
-    for (const key in record.items ?? {}) {
-      totals[key] = (totals[key] ?? 0) + (Number(record.items[key]) || 0);
+    for (const key in normalized.items) {
+      const amount = Number(normalized.items[key]) || 0;
+      used += amount;
+      totals[key] = (totals[key] ?? 0) + amount;
     }
   }
 
@@ -269,6 +331,7 @@ export function rebuildNetworkTotals(networkId, cells, change) {
 }
 
 function writeNetworkItemDelta(networkId, network, itemKey, before, after, amountDelta, reason) {
+  itemKey = normalizeItemKey(itemKey);
   const totals = network?.totals && typeof network.totals === "object"
     ? Object.assign({}, network.totals)
     : {};
@@ -289,6 +352,7 @@ function writeNetworkItemDelta(networkId, network, itemKey, before, after, amoun
 }
 
 export function removeFromNetwork(networkId, itemKey, amount) {
+  itemKey = normalizeItemKey(itemKey);
   const network = readNetworkRecord(networkId);
   let remaining = Math.floor(Number(amount) || 0);
   if (!network || remaining <= 0) return remaining;
@@ -298,7 +362,10 @@ export function removeFromNetwork(networkId, itemKey, amount) {
   for (const cellId of network.cells ?? []) {
     if (remaining <= 0) break;
     const record = getCellRecord(cellId);
-    const stored = Number(record?.items?.[itemKey] ?? 0);
+    if (!record) continue;
+    const normalized = normalizeItemAmounts(record.items ?? {});
+    if (normalized.changed) record.items = normalized.items;
+    const stored = Number(record.items?.[itemKey] ?? 0);
     if (stored <= 0) continue;
 
     const take = Math.min(stored, remaining);
@@ -322,7 +389,43 @@ export function removeFromNetwork(networkId, itemKey, amount) {
   return remaining;
 }
 
+export function purgeItemFromNetwork(networkId, itemKey, reason = "purge") {
+  itemKey = normalizeItemKey(itemKey);
+  const network = readNetworkRecord(networkId);
+  if (!network || !itemKey) return 0;
+
+  const before = Math.floor(Number(network.totals?.[itemKey] ?? 0));
+  if (before <= 0) return 0;
+
+  let removed = 0;
+  for (const cellId of network.cells ?? []) {
+    const record = getCellRecord(cellId);
+    if (!record) continue;
+
+    const stored = Math.floor(Number(record.items?.[itemKey] ?? 0));
+    if (stored <= 0) continue;
+
+    delete record.items[itemKey];
+    removed += stored;
+    writeCellRecord(cellId, record);
+  }
+
+  if (removed <= 0) return 0;
+
+  writeNetworkItemDelta(
+    networkId,
+    network,
+    itemKey,
+    before,
+    Math.max(0, before - removed),
+    -removed,
+    reason,
+  );
+  return removed;
+}
+
 export function addToNetwork(networkId, itemKey, amount) {
+  itemKey = normalizeItemKey(itemKey);
   const network = readNetworkRecord(networkId);
   let remaining = Math.floor(Number(amount) || 0);
   if (!network || remaining <= 0) return remaining;
@@ -364,10 +467,13 @@ export function addManyToNetwork(networkId, itemAmounts, reason = "insert") {
 
   const requests = [];
   for (const itemKey of Object.keys(itemAmounts)) {
+    const normalizedKey = normalizeItemKey(itemKey);
     const amount = Math.floor(Number(itemAmounts[itemKey]) || 0);
-    if (!itemKey || amount <= 0) continue;
-    requests.push({ itemKey, amount });
-    remainingByKey[itemKey] = amount;
+    if (!normalizedKey || amount <= 0) continue;
+    const existingRequest = requests.find((request) => request.itemKey === normalizedKey);
+    if (existingRequest) existingRequest.amount += amount;
+    else requests.push({ itemKey: normalizedKey, amount });
+    remainingByKey[normalizedKey] = (remainingByKey[normalizedKey] ?? 0) + amount;
   }
   if (requests.length === 0) return remainingByKey;
 
