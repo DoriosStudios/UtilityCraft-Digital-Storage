@@ -56,7 +56,7 @@
             },
             // Next Button
             {
-                "next_button@uc.machine_button": {
+                "next_button@sh.button": {
                     "layer": 10,
                     "$index": 219,
                     "$button_size": [22, 22],
@@ -70,7 +70,7 @@
             },
             // Previous Button
             {
-                "previous_button@uc.machine_button": {
+                "previous_button@sh.button": {
                     "layer": 10,
                     "$index": 220,
                     "$button_size": [22, 22],
@@ -84,7 +84,7 @@
             },
             // Quantity Button
             {
-                "quantity_button@uc.machine_button": {
+                "quantity_button@sh.button": {
                     "layer": 10,
                     "$index": 221,
                     "$default_texture": "textures/ui/buttons/quantity/button",
@@ -98,7 +98,7 @@
             },
             // Sort Button
             {
-                "sort_button@uc.machine_button": {
+                "sort_button@sh.button": {
                     "layer": 10,
                     "$index": 222,
                     "$default_texture": "textures/ui/buttons/sort/button",
@@ -151,7 +151,9 @@
                                 "$grid_index_7": 232,
                                 "$grid_index_8": 233,
                                 "$grid_index_9": 234,
-                                "$output_index": 235
+                                "$output_index": 235,
+                                "$craft_index": 236,
+                                "$mode_index": 237
                             }
                         },
                         {
