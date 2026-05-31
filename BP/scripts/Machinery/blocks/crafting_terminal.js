@@ -135,27 +135,58 @@ function amountToCraftFromNetwork(blueprint, nodes, maxCraftsRequested) {
     return 0;
   }
 }
+function countItemsInGrid(inv, itemKey) {
+  let total = 0;
+  for (const slot of CRAFTING_GRID) {
+    const item = inv.getItem(slot);
+    if (item && getItemKey(item) === itemKey) total += item.amount;
+  }
+  return total;
+}
 function amountToCraftFromGrid(blueprint, inv) {
   const recipeStr = blueprint.getDynamicProperty("materials");
   if (recipeStr === undefined) return 0;
   try {
     const recipe = JSON.parse(recipeStr);
     if (!Array.isArray(recipe) || recipe.length === 0) return 0;
-    let minAmount = Infinity;
-    let hasItem = false;
-    for (let slot of CRAFTING_GRID) {
-      let item = inv.getItem(slot);
-      if (item) {
-        hasItem = true;
-        if (item.amount < minAmount) {
-          minAmount = item.amount;
-        }
-      }
+    let possibleCrafts = Infinity;
+    for (const mat of recipe) {
+      const available = countItemsInGrid(inv, mat.id);
+      const craftsForMat = Math.floor(available / mat.amount);
+      if (craftsForMat <= 0) return 0;
+      possibleCrafts = Math.min(possibleCrafts, craftsForMat);
     }
-    return hasItem && minAmount !== Infinity ? minAmount : 0;
+    return possibleCrafts === Infinity ? 0 : possibleCrafts;
   } catch (e) {
     return 0;
   }
+}
+function consumeRecipeFromGrid(inv, recipe, crafts) {
+  if (!Array.isArray(recipe) || crafts <= 0) return false;
+
+  for (const mat of recipe) {
+    if (countItemsInGrid(inv, mat.id) < mat.amount * crafts) return false;
+  }
+
+  for (const mat of recipe) {
+    let remaining = mat.amount * crafts;
+    for (const slot of CRAFTING_GRID) {
+      if (remaining <= 0) break;
+      const item = inv.getItem(slot);
+      if (!item || getItemKey(item) !== mat.id) continue;
+
+      const take = Math.min(item.amount, remaining);
+      remaining -= take;
+      if (take >= item.amount) {
+        inv.setItem(slot, undefined);
+      } else {
+        item.amount -= take;
+        inv.setItem(slot, item);
+      }
+    }
+  }
+
+  return true;
 }
 function getItemKey(item) {
   return Terminal.getItemKey(item);
@@ -618,13 +649,7 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   const currentHash = getGridHash(inv);
   const lastHash = entity.getDynamicProperty("grid_hash");
   const isResolving = entity.getDynamicProperty("is_resolving_recipe");
-  if (currentHash !== lastHash && !isResolving) {
-    entity.setDynamicProperty("grid_hash", currentHash);
-    entity.setDynamicProperty("is_resolving_recipe", true);
-    inv.setItem(CRAFTING_BLUEPRINT_SLOT, undefined);
-    let gridItems = CRAFTING_GRID.map((s) => inv.getItem(s));
-    resolveRecipeAsync(block.dimension, block.location, gridItems, entity);
-  }
+  const shouldResolveGridRecipe = currentHash !== lastHash && !isResolving;
   const currentTick = system.currentTick ?? 0;
   const hasPendingBurnSlot = hasBurnSlotItem(inv);
   const stateBlueprintItem = inv.getItem(CRAFTING_BLUEPRINT_SLOT);
@@ -838,7 +863,7 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
       }
     }
   }
-  const blueprintItem = inv.getItem(CRAFTING_BLUEPRINT_SLOT);
+  let blueprintItem = inv.getItem(CRAFTING_BLUEPRINT_SLOT);
   let prevActive = entity.getDynamicProperty("preview_active") ?? false;
   let prevSource = entity.getDynamicProperty("preview_source");
   let prevCrafts = entity.getDynamicProperty("preview_crafts") ?? 0;
@@ -881,23 +906,18 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
           } catch (e) {}
         } else if (prevSource === "grid") {
           try {
-            for (let slot of CRAFTING_GRID) {
-              let gItem = inv.getItem(slot);
-              if (gItem) {
-                if (gItem.amount <= prevCrafts) {
-                  inv.setItem(slot, undefined);
-                } else {
-                  gItem.amount -= prevCrafts;
-                  inv.setItem(slot, gItem);
-                }
+            const recipe = JSON.parse(blueprintItem.getDynamicProperty("materials"));
+            validCraft = consumeRecipeFromGrid(inv, recipe, prevCrafts);
+            if (validCraft) {
+              const leftover = blueprintItem.getDynamicProperty("leftover") || false;
+              if (leftover !== false) {
+                let rem = addItemsToNetwork(nodes, new ItemStack(leftover, prevCrafts));
+                if (rem > 0) returnToPlayer(block, new ItemStack(leftover, rem));
               }
             }
-            const leftover = blueprintItem.getDynamicProperty("leftover") || false;
-            if (leftover !== false) {
-              let rem = addItemsToNetwork(nodes, new ItemStack(leftover, prevCrafts));
-              if (rem > 0) returnToPlayer(block, new ItemStack(leftover, rem));
-            }
-          } catch (e) {}
+          } catch (e) {
+            validCraft = false;
+          }
         }
       }
       if (currentOutputItem && currentOutputItem.typeId !== "utilitycraft:storage_filler") {
@@ -914,6 +934,14 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
       prevActive = false;
       currentOutputItem = inv.getItem(OUTPUT_SLOT);
     }
+  }
+  if (shouldResolveGridRecipe) {
+    entity.setDynamicProperty("grid_hash", currentHash);
+    entity.setDynamicProperty("is_resolving_recipe", true);
+    inv.setItem(CRAFTING_BLUEPRINT_SLOT, undefined);
+    let gridItems = CRAFTING_GRID.map((s) => inv.getItem(s));
+    resolveRecipeAsync(block.dimension, block.location, gridItems, entity);
+    blueprintItem = undefined;
   }
   let craftSource = null;
   let craftsPossible = 0;
