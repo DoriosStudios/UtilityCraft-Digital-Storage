@@ -16,6 +16,22 @@
 			}
 		},
 		"components": {
+			"utilitycraft:storage_center": {
+				"entity": {
+					"inventory_size": 1,
+					"input_range": [
+						-1,
+						-1
+					],
+					"output_range": [
+						-1,
+						-1
+					]
+				},
+				"machine": {
+					"rate_speed_base": 0
+				}
+			},
 			"minecraft:geometry": "geometry.utilitycraft_block_2",
 			"minecraft:material_instances": {
 				"*": {
@@ -23,10 +39,19 @@
 					"render_method": "alpha_test"
 				}
 			},
+			"minecraft:tick": {
+				"interval_range": [
+					40,
+					40
+				]
+			},
 			"minecraft:destructible_by_mining": {
 				"seconds_to_destroy": 4
 			},
 			"minecraft:destructible_by_explosion": false,
+			"tag:dorios:machine": {},
+			"tag:dorios:item": {},
+			"tag:ucds:item_network": {},
 			"tag:minecraft:is_pickaxe_item_destructible": {}
 		},
 		"permutations": [

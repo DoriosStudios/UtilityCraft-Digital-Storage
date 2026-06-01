@@ -24,6 +24,7 @@ entity.utilitycraft:blueprint_terminal.name=§fBlueprint Terminal
 entity.utilitycraft:storage_terminal.name=§fStorage Terminal
 entity.utilitycraft:import_buffer.name=Import Buffer
 entity.utilitycraft:export_buffer.name=Export Buffer
+entity.utilitycraft:storage_center.name=Storage Center
 
 #####################
 ####    ITEMS    ####
