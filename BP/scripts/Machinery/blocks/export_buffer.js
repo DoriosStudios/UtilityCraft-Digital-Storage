@@ -17,7 +17,6 @@ const FILTER_END = 8;
 const OUTPUT_START = 9;
 const OUTPUT_END = 35;
 const UPGRADE_SLOT = 36;
-const EXTRACT_INTERVAL_TICKS = 20;
 const SPEED_AMOUNTS = [8, 16, 24, 32, 48, 64, 128, 192, 256];
 
 function getExportBufferEntity(block) {
@@ -153,7 +152,6 @@ DoriosAPI.register.blockComponent("export_buffer", {
       });
       entity.triggerEvent("utilitycraft:setup_inventory");
       entity.nameTag = "entity.utilitycraft:export_buffer.name";
-      entity.setDynamicProperty("last_export_buffer_tick", system.currentTick ?? 0);
       updateNetworkAround(block);
     });
   },
@@ -162,11 +160,6 @@ DoriosAPI.register.blockComponent("export_buffer", {
     const entity = getExportBufferEntity(block);
     if (!entity || !entity.isValid) return;
 
-    const currentTick = system.currentTick ?? 0;
-    const lastTick = Math.floor(Number(entity.getDynamicProperty("last_export_buffer_tick") ?? 0));
-    if (currentTick - lastTick < EXTRACT_INTERVAL_TICKS) return;
-
-    entity.setDynamicProperty("last_export_buffer_tick", currentTick);
     flushExportBuffer(block, entity);
   },
 

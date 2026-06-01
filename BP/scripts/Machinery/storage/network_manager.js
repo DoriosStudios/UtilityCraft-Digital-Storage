@@ -3,6 +3,7 @@ import {
   allocateNetworkId,
   ensureCellId,
   isStorageCell,
+  readNetworkMeta,
   readNetworkRecord,
   rebuildNetworkTotals,
   writeNetworkRecord,
@@ -272,7 +273,7 @@ export function updateNetworkAround(block) {
 export function getNetworkIdForBlock(block) {
   const cached = blockNetworkCache.get(locKey(block.dimension, block.location));
   if (cached) {
-    const cachedRecord = readNetworkRecord(cached);
+    const cachedRecord = readNetworkMeta(cached);
     if (canAccessNetworkRecord(block, cachedRecord)) return cached;
     if (cachedRecord) return undefined;
   }
@@ -280,7 +281,7 @@ export function getNetworkIdForBlock(block) {
   const entity = getMachineEntityAt(block);
   const entityNetworkId = entity?.getDynamicProperty("ucds_network_id");
   if (Number.isInteger(entityNetworkId)) {
-    const entityRecord = readNetworkRecord(entityNetworkId);
+    const entityRecord = readNetworkMeta(entityNetworkId);
     if (canAccessNetworkRecord(block, entityRecord)) {
       blockNetworkCache.set(locKey(block.dimension, block.location), entityNetworkId);
       return entityNetworkId;
@@ -289,7 +290,7 @@ export function getNetworkIdForBlock(block) {
   }
 
   const rebuiltNetworkId = rebuildNetworkFromBlock(block);
-  return canAccessNetworkRecord(block, readNetworkRecord(rebuiltNetworkId))
+  return canAccessNetworkRecord(block, readNetworkMeta(rebuiltNetworkId))
     ? rebuiltNetworkId
     : undefined;
 }

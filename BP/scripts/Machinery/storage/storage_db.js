@@ -46,6 +46,14 @@ function normalizeItemAmounts(items) {
   return { items: normalized, changed };
 }
 
+function normalizeNetworkChanges(changes) {
+  return Array.isArray(changes)
+    ? changes.map((change) => change?.itemKey
+      ? { ...change, itemKey: normalizeItemKey(change.itemKey) }
+      : change)
+    : [];
+}
+
 function nextId(key) {
   const current = Number(world.getDynamicProperty(key) ?? 1);
   const next = Number.isFinite(current) && current > 0 ? Math.floor(current) : 1;
@@ -181,11 +189,7 @@ export function readNetworkRecord(networkId) {
   if (!record || typeof record !== "object") return undefined;
 
   const totals = normalizeItemAmounts(record.totals ?? {}).items;
-  const changes = Array.isArray(record.changes)
-    ? record.changes.map((change) => change?.itemKey
-      ? { ...change, itemKey: normalizeItemKey(change.itemKey) }
-      : change)
-    : [];
+  const changes = normalizeNetworkChanges(record.changes);
 
   return {
     ...record,
@@ -202,15 +206,36 @@ export function readNetworkRecord(networkId) {
   };
 }
 
+export function readNetworkMeta(networkId) {
+  if (!Number.isInteger(networkId) || networkId <= 0) return undefined;
+  const record = readJson(getNetworkKey(networkId), undefined);
+  if (!record || typeof record !== "object") return undefined;
+
+  return {
+    version: Math.floor(Number(record.version ?? 0)),
+    cells: Array.isArray(record.cells) ? record.cells : [],
+    drives: Array.isArray(record.drives) ? record.drives : [],
+    terminals: Array.isArray(record.terminals) ? record.terminals : [],
+    core: typeof record.core === "string" ? record.core : undefined,
+    cores: Array.isArray(record.cores) ? record.cores : [],
+    online: record.online === true,
+    blockCount: Math.max(0, Math.floor(Number(record.blockCount ?? 0))),
+    baseRate: Math.max(0, Math.floor(Number(record.baseRate ?? 0))),
+    rate: Math.max(0, Math.floor(Number(record.rate ?? 0))),
+    energy: Math.max(0, Math.floor(Number(record.energy ?? 0))),
+    energyCap: Math.max(0, Math.floor(Number(record.energyCap ?? 0))),
+    used: Math.floor(Number(record.used ?? 0)),
+    capacity: Math.floor(Number(record.capacity ?? 0)),
+    changeSeq: Math.floor(Number(record.changeSeq ?? 0)),
+    changes: normalizeNetworkChanges(record.changes),
+  };
+}
+
 export function writeNetworkRecord(networkId, record) {
   const totals = normalizeItemAmounts(
     record?.totals && typeof record.totals === "object" ? record.totals : {},
   ).items;
-  const changes = Array.isArray(record?.changes)
-    ? record.changes.map((change) => change?.itemKey
-      ? { ...change, itemKey: normalizeItemKey(change.itemKey) }
-      : change)
-    : [];
+  const changes = normalizeNetworkChanges(record?.changes);
 
   writeJson(getNetworkKey(networkId), {
     version: Math.floor(Number(record?.version ?? 0)) + 1,

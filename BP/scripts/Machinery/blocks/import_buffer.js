@@ -13,7 +13,6 @@ import {
 
 const SLOT_START = 0;
 const SLOT_END = 26;
-const INSERT_INTERVAL_TICKS = 40;
 
 function getImportBufferEntity(block) {
   return block.dimension
@@ -96,7 +95,6 @@ DoriosAPI.register.blockComponent("import_buffer", {
       });
       entity.triggerEvent("utilitycraft:setup_inventory");
       entity.nameTag = "entity.utilitycraft:import_buffer.name";
-      entity.setDynamicProperty("last_import_buffer_tick", system.currentTick ?? 0);
       updateNetworkAround(block);
     });
   },
@@ -105,11 +103,6 @@ DoriosAPI.register.blockComponent("import_buffer", {
     const entity = getImportBufferEntity(block);
     if (!entity || !entity.isValid) return;
 
-    const currentTick = system.currentTick ?? 0;
-    const lastTick = Math.floor(Number(entity.getDynamicProperty("last_import_buffer_tick") ?? 0));
-    if (currentTick - lastTick < INSERT_INTERVAL_TICKS) return;
-
-    entity.setDynamicProperty("last_import_buffer_tick", currentTick);
     flushImportBuffer(block, entity);
   },
 

@@ -12,6 +12,7 @@ import {
   updateNetworkAround,
 } from "Machinery/storage/network_manager.js";
 import {
+  readNetworkMeta,
   readNetworkRecord,
 } from "Machinery/storage/storage_db.js";
 import {
@@ -213,6 +214,15 @@ function getConnectedInventories(startBlock) {
 }
 function getNetworkSnapshot(block) {
   const networkId = getNetworkIdForBlock(block);
+  const record = readNetworkMeta(networkId);
+  return {
+    networkId,
+    record,
+    totals: {},
+    version: record?.version ?? 0,
+  };
+}
+function readFullNetworkSnapshot(block, networkId = getNetworkIdForBlock(block)) {
   const record = readNetworkRecord(networkId);
   return {
     networkId,
@@ -460,9 +470,9 @@ function runStorageTerminalTick(block, machineEntity, settings) {
   const networkSnapshot = getNetworkSnapshot(block);
   let currentPage = entity.getDynamicProperty("page") ?? 0;
   let lastRendered = entity.getDynamicProperty("last_rendered_page") ?? -1;
-  let pageCount = getPageCountFromTotals(networkSnapshot.totals);
-  currentPage = clampTerminalPage(entity, pageCount);
   let lastPageCount = entity.getDynamicProperty("last_rendered_page_count") ?? -1;
+  let pageCount = Math.max(1, Math.min(MAX_PAGES, Math.floor(Number(lastPageCount)) || 1));
+  currentPage = clampTerminalPage(entity, pageCount);
   let currentQty = entity.getDynamicProperty("extract_quantity") ?? 1;
   let lastQty = entity.getDynamicProperty("last_rendered_qty") ?? -1;
   let currentSort = entity.getDynamicProperty("sort_mode") ?? "count";
@@ -483,9 +493,10 @@ function runStorageTerminalTick(block, machineEntity, settings) {
   let networkVersion = networkSnapshot.version;
   const lastNetworkVersion = entity.getDynamicProperty("last_network_version") ?? -1;
   const hasNetworkSnapshot = Boolean(networkSnapshot.networkId);
-  const hasRenderedNetworkItems =
+  const hasRenderedNetworkItems = !hasNetworkSnapshot && (
     Object.keys(getRenderedSlotMap(entity)).length > 0 ||
-    hasVisibleVirtualStorageItems(inv);
+    hasVisibleVirtualStorageItems(inv)
+  );
   if (!hasNetworkSnapshot && (lastNetworkVersion !== 0 || hasRenderedNetworkItems)) {
     forceRefresh = true;
     entity.setDynamicProperty("force_refresh", true);
@@ -511,16 +522,17 @@ function runStorageTerminalTick(block, machineEntity, settings) {
       currentQty,
     );
     if (handledByDeltas === "reload") {
-      const nextPageCount = getPageCountFromTotals(networkSnapshot.totals);
+      const fullSnapshot = readFullNetworkSnapshot(block, networkSnapshot.networkId);
+      const nextPageCount = getPageCountFromTotals(fullSnapshot.totals);
       const nextPage = Math.max(0, Math.min(currentPage, nextPageCount - 1));
       if (nextPage !== currentPage) entity.setDynamicProperty("page", nextPage);
       renderStorageTerminalPage(
         entity,
         inv,
         machine,
-        networkSnapshot.networkId,
-        Boolean(networkSnapshot.networkId),
-        networkSnapshot.totals,
+        fullSnapshot.networkId,
+        Boolean(fullSnapshot.networkId),
+        fullSnapshot.totals,
         nextPage,
         nextPageCount,
         currentQty,
@@ -528,37 +540,18 @@ function runStorageTerminalTick(block, machineEntity, settings) {
       );
       syncTerminalNetworkState(
         entity,
-        networkSnapshot.record,
-        networkSnapshot.totals,
-        networkVersion,
+        fullSnapshot.record,
+        fullSnapshot.totals,
+        fullSnapshot.version,
       );
       entity.setDynamicProperty("force_refresh", false);
       return;
     }
     if (handledByDeltas) {
-      const nextPageCount = getPageCountFromTotals(networkSnapshot.totals);
-      const nextPage = Math.max(0, Math.min(currentPage, nextPageCount - 1));
-      if (nextPage !== currentPage) {
-        entity.setDynamicProperty("page", nextPage);
-        renderStorageTerminalPage(
-          entity,
-          inv,
-          machine,
-          networkSnapshot.networkId,
-          Boolean(networkSnapshot.networkId),
-          networkSnapshot.totals,
-          nextPage,
-          nextPageCount,
-          currentQty,
-          currentSort,
-        );
-      } else if (nextPageCount !== lastPageCount) {
-        renderTerminalControls(entity, inv, currentPage, nextPageCount, currentQty, currentSort);
-      }
       syncTerminalNetworkState(
         entity,
         networkSnapshot.record,
-        networkSnapshot.totals,
+        undefined,
         networkVersion,
       );
       entity.setDynamicProperty("force_refresh", false);
@@ -567,7 +560,7 @@ function runStorageTerminalTick(block, machineEntity, settings) {
     syncTerminalNetworkState(
       entity,
       networkSnapshot.record,
-      networkSnapshot.totals,
+      undefined,
       networkVersion,
     );
     return;
@@ -587,11 +580,15 @@ function runStorageTerminalTick(block, machineEntity, settings) {
     currentSort === lastSort &&
     networkVersion === lastNetworkVersion
   ) {
-    if (pageCount !== lastPageCount) {
-      renderTerminalControls(entity, inv, currentPage, pageCount, currentQty, currentSort);
-    }
     return;
   }
+
+  const fullSnapshot = readFullNetworkSnapshot(block, networkSnapshot.networkId);
+  networkSnapshot.record = fullSnapshot.record;
+  networkSnapshot.totals = fullSnapshot.totals;
+  networkVersion = fullSnapshot.version;
+  pageCount = getPageCountFromTotals(networkSnapshot.totals);
+  currentPage = clampTerminalPage(entity, pageCount);
 
   let gridNeedsRender =
     currentPage !== lastRendered ||
