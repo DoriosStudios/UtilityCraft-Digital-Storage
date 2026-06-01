@@ -15,7 +15,7 @@
                     "type": "panel",
                     "anchor_from": "top_right",
                     "anchor_to": "top_right",
-                    "offset": [100, -61],
+                    "offset": [127, -54],
                     "controls": [
                         {
                             "close_button@common.close_button":{
@@ -28,22 +28,10 @@
                     ]
                 }
             },
-            // Search Bar Background
-            {
-                "search_bar_bg": {
-                    "type": "image",
-                    "texture": "textures/ui/background/background_panel",
-                    "size": [ 162, 31 ],
-                    "offset": [ 10, -41 ],
-                    "anchor_from": "top_right",
-                    "anchor_to": "top_right",
-                    "layer": 0
-                }
-            },
             // Machine Name
             {
                 "text_label@chest.chest_label": {
-                    "offset": [ 14, -52 ]
+                    "offset": [ 14, -44 ]
                 }
             },
             // Terminal Core
@@ -114,7 +102,7 @@
                 "crafting_toggle@sh.toggle_button": {
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
-                    "offset": [ -90, -27 ],
+                    "offset": [ -90, -33 ],
                     "$toggle_size": [ 17, 17 ],
                     "$toggle_layer": 7,
                     "$toggle_index": 0,
@@ -137,8 +125,19 @@
                     "$panel_control_name": "crafting_toggle_button",
                     "$controls": [
                         {
+                            "crafting_tab_background": {
+                                "type": "image",
+                                "texture": "textures/ui/background/crafting_terminal_tab",
+                                "size": [ 103, 169 ],
+                                "offset": [ -129, -10 ],
+                                "anchor_from": "top_middle",
+                                "anchor_to": "top_middle",
+                                "layer": -6
+                            }
+                        },
+                        {
                             "crafting_panel@sh.crafting_panel": {
-                                "offset": [ -110, 6 ],
+                                "offset": [ -114, -32 ],
                                 "$quantity_index": 223,
                                 "$remove_index": 224,
                                 "$blueprint_index": 225,
@@ -157,23 +156,27 @@
                             }
                         },
                         {
-                            "crafting_background": {
-                                "type": "image",
-                                "texture": "textures/ui/background/background_panel",
-                                "size": [ 120, 150 ],
-                                "offset": [ -144, -6 ],
-                                "anchor_from": "top_right",
-                                "anchor_to": "top_right",
-                                "layer": -6
-                            }
-                        },
-                        {
                             "crafting_title": {
                                 "type": "label",
                                 "text": "ui.utilitycraft:crafting_label",
-                                "anchor_from": "top_middle",
+                                "size": [ 80, 10 ],
+                                "text_alignment": "left",
+                                "anchor_from": "top_left",
                                 "anchor_to": "top_middle",
-                                "offset": [ -140, 4 ],
+                                "offset": [ -54, -6 ],
+                                "color": [ 0.3, 0.3, 0.3 ],
+                                "layer": 1
+                            }
+                        },
+                        {
+                            "output_mode_title": {
+                                "type": "label",
+                                "text": "Output Mode",
+                                "size": [ 80, 10 ],
+                                "text_alignment": "left",
+                                "anchor_from": "top_left",
+                                "anchor_to": "top_middle",
+                                "offset": [ -52, 93 ],
                                 "color": [ 0.3, 0.3, 0.3 ],
                                 "layer": 1
                             }
@@ -186,7 +189,7 @@
                     "type": "image",
                     "texture": "textures/ui/buttons/button_background",
                     "size": [ 26, 27 ],
-                    "offset": [ -90, -4.5 ],
+                    "offset": [ -90, -10.5 ],
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
                     "layer": -6,
@@ -223,13 +226,33 @@
                     "layer": 1,
                     "controls": [
                         {
-                            "common_panel@common.common_panel": { "layer": -1 }
-                        },
-                        {
                             "chest_panel": {
                                 "type": "panel",
                                 "layer": 5,
                                 "controls": [
+                                    {
+                                        "storage_terminal_background": {
+                                            "type": "panel",
+                                            "size": [ 196, 194 ],
+                                            "anchor_from": "center",
+                                            "anchor_to": "center",
+                                            "offset": [ 10, -13 ],
+                                            "layer": 0,
+                                            "controls": [
+                                                {
+                                                    "image": {
+                                                        "type": "image",
+                                                        "texture": "textures/ui/background/storage_terminal_bg",
+                                                        "size": [ 195, 193 ],
+                                                        "anchor_from": "top_left",
+                                                        "anchor_to": "top_left",
+                                                        "offset": [ 0, 0 ],
+                                                        "alpha": 1
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    },
                                     {
                                         "crafting_terminal_top@crafting_terminal.crafting_terminal_top": {}
                                     },

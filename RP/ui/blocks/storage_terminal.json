@@ -15,7 +15,7 @@
                     "type": "panel",
                     "anchor_from": "top_right",
                     "anchor_to": "top_right",
-                    "offset": [100, -61],
+                    "offset": [127, -54],
                     "controls": [
                         {
                             "close_button@common.close_button":{
@@ -28,22 +28,10 @@
                     ]
                 }
             },
-            // Search Bar Background
-            {
-                "search_bar_bg": {
-                    "type": "image",
-                    "texture": "textures/ui/background/background_panel",
-                    "size": [ 162, 31 ],
-                    "offset": [ 10, -41 ],
-                    "anchor_from": "top_right",
-                    "anchor_to": "top_right",
-                    "layer": 0
-                }
-            },
             // Machine Name
             {
                 "text_label@chest.chest_label": {
-                    "offset": [ 14, -52 ]
+                    "offset": [ 14, -44 ]
                 }
             },
             // Terminal Core
@@ -129,13 +117,33 @@
                     "layer": 1,
                     "controls": [
                         {
-                            "common_panel@common.common_panel": {}
-                        },
-                        {
                             "chest_panel": {
                                 "type": "panel",
                                 "layer": 5,
                                 "controls": [
+                                    {
+                                        "storage_terminal_background": {
+                                            "type": "panel",
+                                            "size": [ 196, 194 ],
+                                            "anchor_from": "center",
+                                            "anchor_to": "center",
+                                            "offset": [ 10, -13 ],
+                                            "layer": 0,
+                                            "controls": [
+                                                {
+                                                    "image": {
+                                                        "type": "image",
+                                                        "texture": "textures/ui/background/storage_terminal_bg",
+                                                        "size": [ 195, 193 ],
+                                                        "anchor_from": "top_left",
+                                                        "anchor_to": "top_left",
+                                                        "offset": [ 0, 0 ],
+                                                        "alpha": 1
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    },
                                     {
                                         "storage_terminal_top@storage_terminal.storage_terminal_top": {}
                                     },

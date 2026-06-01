@@ -134,7 +134,7 @@
         "3x3_grid@sh.3x3_grid": {
           "anchor_from": "top_middle",
           "anchor_to": "top_middle",
-          "offset": [ -34, 14 ],
+          "offset": [ -34.5, 39 ],
           "$index_1": "$grid_index_1",
           "$index_2": "$grid_index_2",
           "$index_3": "$grid_index_3",
@@ -147,10 +147,14 @@
         }
       },
       {
-        "item@sh.prototype_large_slot": {
+        "item@uc._slot_visual_hover": {
           "anchor_from": "top_middle",
           "anchor_to": "top_middle",
-          "offset": [ -34, 100 ],
+          "size": [ 16, 16 ],
+          "$cell_image_size": [ 16, 16 ],
+          "$item_renderer_panel_size": [ 16, 16 ],
+          "$item_renderer_size": [ 16, 16 ],
+          "offset": [ 22.5, 58 ],
           "collection_index": "$output_index"
         }
       },
@@ -163,43 +167,47 @@
           "$pressed_texture": "textures/ui/buttons/remove_recipe/pressed",
           "anchor_from": "top_middle",
           "anchor_to": "top_middle",
-          "offset": [ 2, 16 ]
+          "offset": [ 3, 41 ]
         }
       },
       {
-        "output_mode_button@sh.button": {
-          "$index": "$mode_index",
-          "$default_texture": "textures/ui/buttons/output_mode/button",
-          "$hover_texture": "textures/ui/buttons/output_mode/selected",
-          "$pressed_texture": "textures/ui/buttons/output_mode/pressed",
-          "anchor_from": "top_middle",
-          "anchor_to": "top_middle",
-          "offset": [ 2, 33 ],
-          "$button_size": [ 16, 16 ]
-        }
-      },
-      {
-        "output_quantity_button@sh.button": {
+        "output_quantity_button@uc.dynamic_button": {
           "$index": "$quantity_index",
-          "$default_texture": "textures/ui/buttons/output_quantity/button",
-          "$hover_texture": "textures/ui/buttons/output_quantity/selected",
-          "$pressed_texture": "textures/ui/buttons/output_quantity/pressed",
+          "$default_texture": "textures/ui/buttons/button",
+          "$hover_texture": "textures/ui/buttons/button_selected",
+          "$pressed_texture": "textures/ui/buttons/button_pressed",
+          "$text_scale": 1,
           "anchor_from": "top_middle",
           "anchor_to": "top_middle",
-          "offset": [ 2, 50 ],
-          "$button_size": [ 16, 16 ]
+          "offset": [ 21, 97 ],
+          "$button_size": [ 22, 22 ]
         }
       },
       {
         "craft_button@sh.button": {
           "$index": "$craft_index",
-          "$default_texture": "textures/ui/buttons/craft/button",
-          "$hover_texture": "textures/ui/buttons/craft/selected",
-          "$pressed_texture": "textures/ui/buttons/craft/pressed",
+          "$default_texture": "textures/ui/buttons/output_mode_wide/button",
+          "$hover_texture": "textures/ui/buttons/output_mode_wide/selected",
+          "$pressed_texture": "textures/ui/buttons/output_mode_wide/pressed",
+          "$button_text": "Craft",
+          "$text_scale": 1,
           "anchor_from": "top_middle",
           "anchor_to": "top_middle",
-          "offset": [ -34, 72 ],
-          "$button_size": [ 18, 24 ]
+          "offset": [ -29, 97 ],
+          "$button_size": [ 66, 22 ]
+        }
+      },
+      {
+        "output_mode_button@uc.dynamic_button": {
+          "$index": "$mode_index",
+          "$default_texture": "textures/ui/buttons/output_mode_wide/button",
+          "$hover_texture": "textures/ui/buttons/output_mode_wide/selected",
+          "$pressed_texture": "textures/ui/buttons/output_mode_wide/pressed",
+          "$text_scale": 1,
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "offset": [ -15, 139 ],
+          "$button_size": [ 66, 22 ]
         }
       }
     ]

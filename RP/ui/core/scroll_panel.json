@@ -150,22 +150,6 @@
                 "anchor_from": "center",
                 "anchor_to": "center"
               }
-            },
-            {
-              "outline": {
-                "type": "image",
-                "size": [ "100%+2px", "100%+2px" ],
-                "texture": "textures/ui/cell_image"
-              }
-            },
-            {
-              "outline_outline": {
-                "type": "image",
-                "layer": -1,
-                "size": [ "100%+10px", "100%+12px" ],
-                "offset": [ 1, 0 ],
-                "texture": "textures/ui/TabRightFront"
-              }
             }
           ]
         }
