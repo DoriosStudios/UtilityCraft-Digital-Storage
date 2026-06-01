@@ -30,7 +30,7 @@ entity.utilitycraft:storage_center.name=Storage Center
 ####    ITEMS    ####
 #####################
 
-item.utilitycraft:storage_cell=Empty Storage Cell
+item.utilitycraft:storage_cell=Storage Cell\n§7- Max Capacity: §f1k
 item.utilitycraft:basic_storage_cell=§eBasic Storage Cell\n§7- Max Capacity: §f4.1k
 item.utilitycraft:advanced_storage_cell=§cAdvanced Storage Cell\n§7- Max Capacity: §f16.4k
 item.utilitycraft:expert_storage_cell=§bExpert Storage Cell\n§7- Max Capacity: §f65.5k
