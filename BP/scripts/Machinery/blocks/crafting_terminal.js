@@ -24,6 +24,8 @@ const REMOVE_RECIPE_SLOT = 224;
 const CRAFTING_BLUEPRINT_SLOT = 225;
 const CRAFTING_GRID = [226, 227, 228, 229, 230, 231, 232, 233, 234];
 const OUTPUT_SLOT = 235;
+const CRAFT_BUTTON_SLOT = 236;
+const OUTPUT_MODE_SLOT = 237;
 const LORE_DISPLAY = "§r§7- Count: §f";
 const MAX_PAGES = 27;
 const STORAGE_SLOTS = 108;
@@ -36,7 +38,18 @@ const MC_MAPS = {
   "minecraft:nether": DoriosAPI.constants.dimensions.nether.minY,
   "minecraft:the_end": DoriosAPI.constants.dimensions.end.minY,
 };
-const CONTROL_SLOTS = [PREVIOUS_SLOT, NEXT_SLOT, QUANTITY_SLOT, CRAFT_QTY_SLOT, SORT_SLOT, REMOVE_RECIPE_SLOT];
+const CONTROL_SLOTS = [
+  PREVIOUS_SLOT,
+  NEXT_SLOT,
+  QUANTITY_SLOT,
+  CRAFT_QTY_SLOT,
+  SORT_SLOT,
+  REMOVE_RECIPE_SLOT,
+  CRAFT_BUTTON_SLOT,
+  OUTPUT_MODE_SLOT,
+];
+const CRAFT_MULTIPLIERS = [1, 2, 4, 8, 16, 64];
+const OUTPUT_PREVIEW_LORE = ["§1§1§1§1§1§1§1"];
 const RENDER_SETTINGS = {
   machine: {
     rate_speed_base: 20,
@@ -67,12 +80,23 @@ function scheduleCraftingTerminalRender(entity) {
 function controlsNeedRender(inv) {
   return Terminal.controlsNeedRender(inv, CONTROL_SLOTS);
 }
+function getCraftQty(entity) {
+  const value = Number(entity.getDynamicProperty("craft_qty") ?? 1);
+  return CRAFT_MULTIPLIERS.includes(value) ? value : 1;
+}
+function getNextCraftQty(currentQty) {
+  const index = CRAFT_MULTIPLIERS.indexOf(currentQty);
+  return CRAFT_MULTIPLIERS[(index + 1) % CRAFT_MULTIPLIERS.length];
+}
+function getOutputMode(entity) {
+  return entity.getDynamicProperty("output_mode") === "network" ? "network" : "inventory";
+}
 function renderCraftingTerminalControls(entity, inv, currentPage, pageCount, currentQty, currentCraftQty, currentSort) {
   const qtyItem = new ItemStack("utilitycraft:ui_filler", 1);
   qtyItem.nameTag = `§r§7- Quantity: §f${currentQty}`;
   inv.setItem(QUANTITY_SLOT, qtyItem);
   const craftQtyItem = new ItemStack("utilitycraft:ui_filler", 1);
-  craftQtyItem.nameTag = `§r§7- Craft Multiplier: §fx${currentCraftQty}`;
+  craftQtyItem.nameTag = `§r§fx${currentCraftQty}`;
   inv.setItem(CRAFT_QTY_SLOT, craftQtyItem);
   const sortItem = new ItemStack("utilitycraft:ui_filler", 1);
   sortItem.nameTag = `§r§7- Sort By: §f${currentSort === "name" ? "Name" : "Count"}`;
@@ -86,11 +110,19 @@ function renderCraftingTerminalControls(entity, inv, currentPage, pageCount, cur
   const nextItem = new ItemStack("utilitycraft:ui_filler", 1);
   nextItem.nameTag = `§r§7- Next Page §f${currentPage + 1}/${pageCount}`;
   inv.setItem(NEXT_SLOT, nextItem);
+  const craftItem = new ItemStack("utilitycraft:ui_filler", 1);
+  craftItem.nameTag = "§r§fCraft";
+  inv.setItem(CRAFT_BUTTON_SLOT, craftItem);
+  const outputMode = getOutputMode(entity);
+  const modeItem = new ItemStack("utilitycraft:ui_filler", 1);
+  modeItem.nameTag = outputMode === "network" ? "§r§fTo Network" : "§r§fTo Inventory";
+  inv.setItem(OUTPUT_MODE_SLOT, modeItem);
   entity.setDynamicProperty("last_rendered_page", currentPage);
   entity.setDynamicProperty("last_rendered_page_count", pageCount);
   entity.setDynamicProperty("last_rendered_qty", currentQty);
   entity.setDynamicProperty("last_rendered_craft_qty", currentCraftQty);
   entity.setDynamicProperty("last_rendered_sort", currentSort);
+  entity.setDynamicProperty("last_rendered_output_mode", outputMode);
 }
 function refreshCraftingTerminalControls(entity) {
   try {
@@ -101,7 +133,7 @@ function refreshCraftingTerminalControls(entity) {
     const pageCount = getPageCountForEntity(entity);
     currentPage = Math.max(0, Math.min(currentPage, pageCount - 1));
     const currentQty = entity.getDynamicProperty("extract_quantity") ?? 1;
-    const currentCraftQty = entity.getDynamicProperty("craft_qty") ?? 1;
+    const currentCraftQty = getCraftQty(entity);
     const currentSort = entity.getDynamicProperty("sort_mode") ?? "count";
     renderCraftingTerminalControls(entity, inv, currentPage, pageCount, currentQty, currentCraftQty, currentSort);
   } catch (e) {}
@@ -209,7 +241,7 @@ function setupCraftingTerminalEntity(entity, block) {
       craft_qty: 1,
       rendered_order: "[]",
       sort_requested: true,
-      output_mode: "default",
+      output_mode: "inventory",
       grid_hash: "",
       is_resolving_recipe: false,
       preview_active: false,
@@ -355,13 +387,15 @@ ButtonManager.registerMachineButton("crafting_terminal", CONTROL_SLOTS, ({ entit
     let nextQty = currentQty === 1 ? 16 : currentQty === 16 ? 32 : currentQty === 32 ? 64 : 1;
     entity.setDynamicProperty("extract_quantity", nextQty);
   } else if (slot === CRAFT_QTY_SLOT) {
-    let cq = entity.getDynamicProperty("craft_qty") ?? 1;
-    let nextCq = cq === 1 ? 2 : cq === 2 ? 4 : cq === 4 ? 6 : 1;
-    entity.setDynamicProperty("craft_qty", nextCq);
+    entity.setDynamicProperty("craft_qty", getNextCraftQty(getCraftQty(entity)));
   } else if (slot === SORT_SLOT) {
     let currentSort = entity.getDynamicProperty("sort_mode") ?? "count";
     entity.setDynamicProperty("sort_mode", currentSort === "count" ? "name" : "count");
     entity.setDynamicProperty("sort_requested", true);
+  } else if (slot === OUTPUT_MODE_SLOT) {
+    entity.setDynamicProperty("output_mode", getOutputMode(entity) === "network" ? "inventory" : "network");
+  } else if (slot === CRAFT_BUTTON_SLOT) {
+    performCraftButtonAction(entity, inv);
   } else if (slot === REMOVE_RECIPE_SLOT) {
     const block = getEntityBlock(entity);
     if (!block) {
@@ -450,6 +484,117 @@ function removeItemsFromNetwork(nodes, itemKey, amount) {
 }
 function addItemsToNetwork(nodes, itemToAdd) {
   return Terminal.addItemsToNetwork(nodes, itemToAdd, isStorageCell);
+}
+function getBlueprintRecipe(blueprint) {
+  if (!blueprint || blueprint.typeId !== OUTPUT_BLUEPRINT_ITEM) return undefined;
+  const recipeStr = blueprint.getDynamicProperty("materials");
+  if (recipeStr === undefined) return undefined;
+  try {
+    const recipe = JSON.parse(recipeStr);
+    return Array.isArray(recipe) && recipe.length > 0 ? recipe : undefined;
+  } catch (e) {
+    return undefined;
+  }
+}
+function getBlueprintResult(blueprint) {
+  if (!blueprint || blueprint.typeId !== OUTPUT_BLUEPRINT_ITEM) return undefined;
+  const id = blueprint.getDynamicProperty("id");
+  const amount = Math.floor(Number(blueprint.getDynamicProperty("amount")) || 0);
+  if (!id || amount <= 0) return undefined;
+  return { id, amount };
+}
+function getCraftSource(blueprint, inv, nodes) {
+  const networkCrafts = nodes.networkId ? amountToCraftFromNetwork(blueprint, nodes, Number.MAX_SAFE_INTEGER) : 0;
+  const gridCrafts = amountToCraftFromGrid(blueprint, inv);
+  if (networkCrafts <= 0 && gridCrafts <= 0) return undefined;
+  return networkCrafts >= gridCrafts
+    ? { source: "network", maxCrafts: networkCrafts }
+    : { source: "grid", maxCrafts: gridCrafts };
+}
+function splitStoredItemAmount(itemKey, amount) {
+  const stacks = [];
+  let remaining = Math.floor(Number(amount) || 0);
+  if (remaining <= 0) return stacks;
+  const testItem = createItemFromKey(itemKey, 1);
+  const maxStack = Math.max(1, Number(testItem.maxAmount) || 64);
+  while (remaining > 0) {
+    const stackAmount = Math.min(maxStack, remaining);
+    stacks.push(createItemFromKey(itemKey, stackAmount));
+    remaining -= stackAmount;
+  }
+  return stacks;
+}
+function splitRawItemAmount(typeId, amount) {
+  const stacks = [];
+  let remaining = Math.floor(Number(amount) || 0);
+  if (!typeId || remaining <= 0) return stacks;
+  const testItem = new ItemStack(typeId, 1);
+  const maxStack = Math.max(1, Number(testItem.maxAmount) || 64);
+  while (remaining > 0) {
+    const stackAmount = Math.min(maxStack, remaining);
+    stacks.push(new ItemStack(typeId, stackAmount));
+    remaining -= stackAmount;
+  }
+  return stacks;
+}
+function deliverStack(block, nodes, itemStack, toNetwork) {
+  if (toNetwork && nodes.networkId) {
+    const remaining = addItemsToNetwork(nodes, itemStack);
+    if (remaining > 0) {
+      itemStack.amount = remaining;
+      returnToPlayer(block, itemStack);
+    }
+  } else {
+    returnToPlayer(block, itemStack);
+  }
+}
+function deliverStoredItemAmount(block, nodes, itemKey, amount, toNetwork) {
+  for (const stack of splitStoredItemAmount(itemKey, amount)) {
+    deliverStack(block, nodes, stack, toNetwork);
+  }
+}
+function deliverRawItemAmount(block, nodes, typeId, amount, toNetwork) {
+  for (const stack of splitRawItemAmount(typeId, amount)) {
+    deliverStack(block, nodes, stack, toNetwork);
+  }
+}
+function consumeCraftMaterials(block, inv, nodes, blueprint, source, crafts) {
+  const recipe = getBlueprintRecipe(blueprint);
+  if (!recipe || crafts <= 0) return false;
+  if (source === "network") {
+    for (const mat of recipe) {
+      removeItemsFromNetwork(nodes, mat.id, mat.amount * crafts);
+    }
+  } else if (!consumeRecipeFromGrid(inv, recipe, crafts)) {
+    return false;
+  }
+
+  const leftover = blueprint.getDynamicProperty("leftover") || false;
+  if (leftover !== false) deliverRawItemAmount(block, nodes, leftover, crafts, Boolean(nodes.networkId));
+  return true;
+}
+function performCraftButtonAction(entity, inv) {
+  const block = getEntityBlock(entity);
+  if (!block) return false;
+  const blueprint = inv.getItem(CRAFTING_BLUEPRINT_SLOT);
+  const recipe = getBlueprintRecipe(blueprint);
+  const result = getBlueprintResult(blueprint);
+  if (!recipe || !result) return false;
+
+  const nodes = getConnectedInventories(block);
+  const outputMode = getOutputMode(entity);
+  if (outputMode === "network" && !nodes.networkId) return false;
+
+  const sourceData = getCraftSource(blueprint, inv, nodes);
+  if (!sourceData) return false;
+
+  const crafts = Math.min(getCraftQty(entity), sourceData.maxCrafts);
+  if (crafts <= 0) return false;
+  if (!consumeCraftMaterials(block, inv, nodes, blueprint, sourceData.source, crafts)) return false;
+
+  deliverStoredItemAmount(block, nodes, result.id, result.amount * crafts, outputMode === "network");
+  entity.setDynamicProperty("force_refresh", true);
+  return true;
 }
 function hasBurnSlotItem(inv) {
   const burnItem = inv.getItem(BURN_SLOT);
@@ -629,11 +774,13 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   currentPage = clampTerminalPage(entity, pageCount);
   let lastPageCount = entity.getDynamicProperty("last_rendered_page_count") ?? -1;
   let currentQty = entity.getDynamicProperty("extract_quantity") ?? 1;
-  let currentCraftQty = entity.getDynamicProperty("craft_qty") ?? 1;
+  let currentCraftQty = getCraftQty(entity);
   let lastQty = entity.getDynamicProperty("last_rendered_qty") ?? -1;
   let lastCraftQty = entity.getDynamicProperty("last_rendered_craft_qty") ?? -1;
   let currentSort = entity.getDynamicProperty("sort_mode") ?? "count";
   let lastSort = entity.getDynamicProperty("last_rendered_sort") ?? "";
+  let currentOutputMode = getOutputMode(entity);
+  let lastOutputMode = entity.getDynamicProperty("last_rendered_output_mode") ?? "";
   let forceRefresh = entity.getDynamicProperty("force_refresh") ?? false;
   let controlsChanged = controlsNeedRender(inv);
   let gridNeedsRepair =
@@ -677,6 +824,7 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
     currentQty === lastQty &&
     currentCraftQty === lastCraftQty &&
     currentSort === lastSort &&
+    currentOutputMode === lastOutputMode &&
     networkVersion !== lastNetworkVersion;
   if (canUseNetworkDeltas) {
     const handledByDeltas = applyNetworkDeltas(entity, inv, machine, networkSnapshot.record, networkSnapshot.networkId, currentQty);
@@ -740,6 +888,7 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
     currentQty === lastQty &&
     currentCraftQty === lastCraftQty &&
     currentSort === lastSort &&
+    currentOutputMode === lastOutputMode &&
     networkVersion === lastNetworkVersion
   ) {
     if (pageCount !== lastPageCount) {
@@ -753,6 +902,7 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
     currentQty !== lastQty ||
     currentCraftQty !== lastCraftQty ||
     currentSort !== lastSort ||
+    currentOutputMode !== lastOutputMode ||
     controlsChanged ||
     gridNeedsRepair
   ) {
@@ -865,76 +1015,6 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   }
   let blueprintItem = inv.getItem(CRAFTING_BLUEPRINT_SLOT);
   let prevActive = entity.getDynamicProperty("preview_active") ?? false;
-  let prevSource = entity.getDynamicProperty("preview_source");
-  let prevCrafts = entity.getDynamicProperty("preview_crafts") ?? 0;
-  let prevKey = entity.getDynamicProperty("preview_item_key");
-  let prevAmount = entity.getDynamicProperty("preview_amount") ?? 0;
-  let currentOutputItem = inv.getItem(OUTPUT_SLOT);
-  if (prevActive) {
-    let outputChanged = false;
-    let blueprintMissing = !blueprintItem || blueprintItem.typeId !== OUTPUT_BLUEPRINT_ITEM;
-    if (blueprintMissing) {
-      outputChanged = true;
-    } else if (!currentOutputItem) {
-      outputChanged = true;
-    } else if (currentOutputItem.typeId === "utilitycraft:storage_filler") {
-      outputChanged = true;
-    } else if (getItemKey(currentOutputItem) !== prevKey) {
-      outputChanged = true;
-    } else if (currentOutputItem.amount < prevAmount) {
-      outputChanged = true;
-    }
-    if (outputChanged) {
-      let itemTaken =
-        !currentOutputItem ||
-        currentOutputItem.typeId === "utilitycraft:storage_filler" ||
-        getItemKey(currentOutputItem) !== prevKey ||
-        currentOutputItem.amount < prevAmount;
-      let validCraft = !blueprintMissing && itemTaken;
-      if (validCraft) {
-        if (prevSource === "network") {
-          try {
-            const recipeStr = blueprintItem.getDynamicProperty("materials");
-            const recipe = JSON.parse(recipeStr);
-            for (const mat of recipe) {
-              removeItemsFromNetwork(nodes, mat.id, mat.amount * prevCrafts);
-            }
-            const leftover = blueprintItem.getDynamicProperty("leftover") || false;
-            if (leftover !== false) {
-              addItemsToNetwork(nodes, new ItemStack(leftover, prevCrafts));
-            }
-          } catch (e) {}
-        } else if (prevSource === "grid") {
-          try {
-            const recipe = JSON.parse(blueprintItem.getDynamicProperty("materials"));
-            validCraft = consumeRecipeFromGrid(inv, recipe, prevCrafts);
-            if (validCraft) {
-              const leftover = blueprintItem.getDynamicProperty("leftover") || false;
-              if (leftover !== false) {
-                let rem = addItemsToNetwork(nodes, new ItemStack(leftover, prevCrafts));
-                if (rem > 0) returnToPlayer(block, new ItemStack(leftover, rem));
-              }
-            }
-          } catch (e) {
-            validCraft = false;
-          }
-        }
-      }
-      if (currentOutputItem && currentOutputItem.typeId !== "utilitycraft:storage_filler") {
-        let isUntouchedPreview = getItemKey(currentOutputItem) === prevKey && currentOutputItem.amount === prevAmount;
-        if (!validCraft && isUntouchedPreview) {
-        } else {
-          returnToPlayer(block, currentOutputItem);
-        }
-        inv.setItem(OUTPUT_SLOT, undefined);
-      }
-      entity.setDynamicProperty("preview_active", false);
-      entity.setDynamicProperty("force_refresh", true);
-      pageChanged = true;
-      prevActive = false;
-      currentOutputItem = inv.getItem(OUTPUT_SLOT);
-    }
-  }
   if (shouldResolveGridRecipe) {
     entity.setDynamicProperty("grid_hash", currentHash);
     entity.setDynamicProperty("is_resolving_recipe", true);
@@ -943,45 +1023,30 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
     resolveRecipeAsync(block.dimension, block.location, gridItems, entity);
     blueprintItem = undefined;
   }
-  let craftSource = null;
-  let craftsPossible = 0;
-  if (blueprintItem && blueprintItem.typeId === OUTPUT_BLUEPRINT_ITEM && !entity.getDynamicProperty("is_resolving_recipe")) {
-    let networkCrafts = amountToCraftFromNetwork(blueprintItem, nodes, currentCraftQty);
-    if (networkCrafts > 0) {
-      craftSource = "network";
-      craftsPossible = networkCrafts;
-    } else {
-      let gridCrafts = amountToCraftFromGrid(blueprintItem, inv);
-      if (gridCrafts > 0) {
-        craftSource = "grid";
-        craftsPossible = Math.min(gridCrafts, currentCraftQty);
-      }
-    }
-  }
-  if (craftsPossible > 0 && blueprintItem) {
-    let resultId = blueprintItem.getDynamicProperty("id");
-    let resultAmount = blueprintItem.getDynamicProperty("amount");
-    let displayAmount = Math.min(64, craftsPossible * resultAmount);
-    let currentPreviewCrafts = entity.getDynamicProperty("preview_crafts") ?? 0;
-    let currentPreviewSource = entity.getDynamicProperty("preview_source");
-    let currentPreviewKey = entity.getDynamicProperty("preview_item_key");
-    let currentPreviewAmount = entity.getDynamicProperty("preview_amount") ?? 0;
+
+  const blueprintResult =
+    blueprintItem && !entity.getDynamicProperty("is_resolving_recipe") ? getBlueprintResult(blueprintItem) : undefined;
+  if (blueprintResult) {
+    const maxStack = createItemFromKey(blueprintResult.id, 1).maxAmount ?? 64;
+    const displayAmount = Math.min(maxStack, blueprintResult.amount);
+    const currentOutputItem = inv.getItem(OUTPUT_SLOT);
     if (
       !prevActive ||
-      currentPreviewCrafts !== craftsPossible ||
-      currentPreviewSource !== craftSource ||
-      currentPreviewKey !== resultId ||
-      currentPreviewAmount !== displayAmount
+      !currentOutputItem ||
+      currentOutputItem.typeId === "utilitycraft:storage_filler" ||
+      getItemKey(currentOutputItem) !== blueprintResult.id ||
+      currentOutputItem.amount !== displayAmount
     ) {
       if (currentOutputItem && currentOutputItem.typeId !== "utilitycraft:storage_filler" && !prevActive) {
         returnToPlayer(block, currentOutputItem);
       }
-      let previewItemStack = createItemFromKey(resultId, displayAmount);
+      let previewItemStack = createItemFromKey(blueprintResult.id, displayAmount);
+      previewItemStack.setLore(OUTPUT_PREVIEW_LORE);
       inv.setItem(OUTPUT_SLOT, previewItemStack);
       entity.setDynamicProperty("preview_active", true);
-      entity.setDynamicProperty("preview_source", craftSource);
-      entity.setDynamicProperty("preview_crafts", craftsPossible);
-      entity.setDynamicProperty("preview_item_key", resultId);
+      entity.setDynamicProperty("preview_source", "static");
+      entity.setDynamicProperty("preview_crafts", 0);
+      entity.setDynamicProperty("preview_item_key", blueprintResult.id);
       entity.setDynamicProperty("preview_amount", displayAmount);
     }
   } else {
@@ -990,6 +1055,10 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
       entity.setDynamicProperty("preview_active", false);
     }
     let checkOutput = inv.getItem(OUTPUT_SLOT);
+    if (checkOutput && checkOutput.typeId !== "utilitycraft:storage_filler") {
+      returnToPlayer(block, checkOutput);
+      checkOutput = undefined;
+    }
     if (!checkOutput || (checkOutput.typeId === "utilitycraft:storage_filler" && checkOutput.nameTag !== "§rOutput Slot")) {
       let filler = new ItemStack("utilitycraft:storage_filler", 1);
       filler.nameTag = "§rOutput Slot";
@@ -1011,7 +1080,9 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
     !pageChanged &&
     currentPage === lastRendered &&
     currentQty === lastQty &&
+    currentCraftQty === lastCraftQty &&
     currentSort === lastSort &&
+    currentOutputMode === lastOutputMode &&
     networkVersion !== lastNetworkVersion
   ) {
     const handledByDeltas = applyNetworkDeltas(entity, inv, machine, networkRecord, nodes.networkId, currentQty);

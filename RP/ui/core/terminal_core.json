@@ -62,7 +62,7 @@
         "search_overlay": {
           "type": "image",
           "texture": "textures/ui/overlay/search_overlay",
-          "alpha": 0.56,
+          "alpha": 0.9,
           "layer": 28,
           "size": [
             "18px",

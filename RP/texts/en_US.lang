@@ -57,5 +57,5 @@ dorios:itemGroup.name.wireless=Wireless
 ####   UI    ####
 #################
 
-ui.utilitycraft:blueprint_label=Blueprint Info:
+ui.utilitycraft:blueprint_label=Crafting
 ui.utilitycraft:crafting_label=Crafting

@@ -5,13 +5,14 @@
         "controls": [
             {
                 "highlight@common.highlight_slot": {
+                    "layer": 40,
                     "controls": [
                         {
                             "hover_text": {
                                 "type": "custom",
                                 "renderer": "hover_text_renderer",
                                 "allow_clipping": false,
-                                "layer": 20,
+                                "layer": 41,
                                 "property_bag": {
                                     "#hover_text": "#hover_text"
                                 },
@@ -45,6 +46,7 @@
             },
             {
                 "white_border@common.white_border_slot": {
+                "layer": 40,
                 "bindings": [
                         {
                             "binding_name": "#show_persistent_bundle_hover_text",

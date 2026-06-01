@@ -4,25 +4,40 @@
         "type": "collection_panel",
         "anchor_from": "center",
         "anchor_to": "center",
-        "size": [ 162, 72 ],
-        "offset": [ -10, -40 ],
+        "size": [
+            162,
+            72
+        ],
+        "offset": [
+            -10,
+            -40
+        ],
         "collection_name": "container_items",
         "$item_collection_name": "container_items",
         "controls": [
             // Close Button
             {
-                "close_button":{
+                "close_button": {
                     "type": "panel",
                     "anchor_from": "top_right",
                     "anchor_to": "top_right",
-                    "offset": [127, -54],
+                    "offset": [
+                        126,
+                        -54
+                    ],
                     "controls": [
                         {
-                            "close_button@common.close_button":{
-                                "size": [ 12, 12 ],
+                            "close_button@common.close_button": {
+                                "size": [
+                                    12,
+                                    12
+                                ],
                                 "anchor_from": "center",
                                 "anchor_to": "center",
-                                "offset": [-22, -2]
+                                "offset": [
+                                    -22,
+                                    -2
+                                ]
                             }
                         }
                     ]
@@ -31,7 +46,10 @@
             // Machine Name
             {
                 "text_label@chest.chest_label": {
-                    "offset": [ 14, -44 ]
+                    "offset": [
+                        14,
+                        -44
+                    ]
                 }
             },
             // Terminal Core
@@ -39,7 +57,10 @@
                 "terminal_core@sh.terminal_core": {
                     "anchor_from": "center",
                     "anchor_to": "center",
-                    "offset": [ 0, 57 ]
+                    "offset": [
+                        0,
+                        57
+                    ]
                 }
             },
             // Next Button
@@ -47,13 +68,19 @@
                 "next_button@sh.button": {
                     "layer": 10,
                     "$index": 219,
-                    "$button_size": [22, 22],
+                    "$button_size": [
+                        22,
+                        22
+                    ],
                     "$default_texture": "textures/ui/buttons/next/button",
                     "$hover_texture": "textures/ui/buttons/next/selected",
                     "$pressed_texture": "textures/ui/buttons/next/pressed",
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
-                    "offset": [ 106, 134 ]
+                    "offset": [
+                        106,
+                        134
+                    ]
                 }
             },
             // Previous Button
@@ -61,13 +88,19 @@
                 "previous_button@sh.button": {
                     "layer": 10,
                     "$index": 220,
-                    "$button_size": [22, 22],
+                    "$button_size": [
+                        22,
+                        22
+                    ],
                     "$default_texture": "textures/ui/buttons/previous/button",
                     "$hover_texture": "textures/ui/buttons/previous/selected",
                     "$pressed_texture": "textures/ui/buttons/previous/pressed",
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
-                    "offset": [ 106, 112 ]
+                    "offset": [
+                        106,
+                        112
+                    ]
                 }
             },
             // Quantity Button
@@ -80,8 +113,14 @@
                     "$pressed_texture": "textures/ui/buttons/quantity/pressed",
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
-                    "offset": [ 106, 90 ],
-                    "$button_size": [ 22, 22 ]
+                    "offset": [
+                        106,
+                        90
+                    ],
+                    "$button_size": [
+                        22,
+                        22
+                    ]
                 }
             },
             // Sort Button
@@ -94,16 +133,28 @@
                     "$pressed_texture": "textures/ui/buttons/sort/pressed",
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
-                    "offset": [ 106, 68 ],
-                    "$button_size": [ 22, 22 ]
+                    "offset": [
+                        106,
+                        68
+                    ],
+                    "$button_size": [
+                        22,
+                        22
+                    ]
                 }
             },
             {
                 "crafting_toggle@sh.toggle_button": {
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
-                    "offset": [ -90, -33 ],
-                    "$toggle_size": [ 17, 17 ],
+                    "offset": [
+                        -90,
+                        -33
+                    ],
+                    "$toggle_size": [
+                        17,
+                        17
+                    ],
                     "$toggle_layer": 7,
                     "$toggle_index": 0,
                     "$toggle_group": false,
@@ -120,16 +171,28 @@
                 "crafting_state_panel@sh.toggle_button_panel": {
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
-                    "offset": [ 0, 0 ],
-                    "size": [ 162, 72 ],
+                    "offset": [
+                        0,
+                        0
+                    ],
+                    "size": [
+                        162,
+                        72
+                    ],
                     "$panel_control_name": "crafting_toggle_button",
                     "$controls": [
                         {
                             "crafting_tab_background": {
                                 "type": "image",
                                 "texture": "textures/ui/background/crafting_terminal_tab",
-                                "size": [ 103, 169 ],
-                                "offset": [ -129, -10 ],
+                                "size": [
+                                    103,
+                                    169
+                                ],
+                                "offset": [
+                                    -129,
+                                    -10
+                                ],
                                 "anchor_from": "top_middle",
                                 "anchor_to": "top_middle",
                                 "layer": -6
@@ -137,7 +200,10 @@
                         },
                         {
                             "crafting_panel@sh.crafting_panel": {
-                                "offset": [ -114, -32 ],
+                                "offset": [
+                                    -114,
+                                    -32
+                                ],
                                 "$quantity_index": 223,
                                 "$remove_index": 224,
                                 "$blueprint_index": 225,
@@ -159,12 +225,22 @@
                             "crafting_title": {
                                 "type": "label",
                                 "text": "ui.utilitycraft:crafting_label",
-                                "size": [ 80, 10 ],
+                                "size": [
+                                    80,
+                                    10
+                                ],
                                 "text_alignment": "left",
                                 "anchor_from": "top_left",
                                 "anchor_to": "top_middle",
-                                "offset": [ -54, -6 ],
-                                "color": [ 0.3, 0.3, 0.3 ],
+                                "offset": [
+                                    -54,
+                                    -6
+                                ],
+                                "color": [
+                                    0.3,
+                                    0.3,
+                                    0.3
+                                ],
                                 "layer": 1
                             }
                         },
@@ -172,12 +248,22 @@
                             "output_mode_title": {
                                 "type": "label",
                                 "text": "Output Mode",
-                                "size": [ 80, 10 ],
+                                "size": [
+                                    80,
+                                    10
+                                ],
                                 "text_alignment": "left",
                                 "anchor_from": "top_left",
                                 "anchor_to": "top_middle",
-                                "offset": [ -52, 93 ],
-                                "color": [ 0.3, 0.3, 0.3 ],
+                                "offset": [
+                                    -52,
+                                    93
+                                ],
+                                "color": [
+                                    0.3,
+                                    0.3,
+                                    0.3
+                                ],
                                 "layer": 1
                             }
                         }
@@ -188,8 +274,14 @@
                 "button_background": {
                     "type": "image",
                     "texture": "textures/ui/buttons/button_background",
-                    "size": [ 26, 27 ],
-                    "offset": [ -90, -10.5 ],
+                    "size": [
+                        26,
+                        27
+                    ],
+                    "offset": [
+                        -90,
+                        -10.5
+                    ],
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
                     "layer": -6,
@@ -213,7 +305,9 @@
                 "container_gamepad_helpers@common.container_gamepad_helpers": {}
             },
             {
-                "flying_item_renderer@common.flying_item_renderer": { "layer": 14 }
+                "flying_item_renderer@common.flying_item_renderer": {
+                    "layer": 14
+                }
             },
             {
                 "selected_item_details_factory@common.selected_item_details_factory": {}
@@ -233,20 +327,32 @@
                                     {
                                         "storage_terminal_background": {
                                             "type": "panel",
-                                            "size": [ 196, 194 ],
+                                            "size": [
+                                                196,
+                                                194
+                                            ],
                                             "anchor_from": "center",
                                             "anchor_to": "center",
-                                            "offset": [ 10, -13 ],
+                                            "offset": [
+                                                10,
+                                                -13
+                                            ],
                                             "layer": 0,
                                             "controls": [
                                                 {
                                                     "image": {
                                                         "type": "image",
                                                         "texture": "textures/ui/background/storage_terminal_bg",
-                                                        "size": [ 195, 193 ],
+                                                        "size": [
+                                                            195,
+                                                            193
+                                                        ],
                                                         "anchor_from": "top_left",
                                                         "anchor_to": "top_left",
-                                                        "offset": [ 0, 0 ],
+                                                        "offset": [
+                                                            0,
+                                                            0
+                                                        ],
                                                         "alpha": 1
                                                     }
                                                 }
@@ -272,7 +378,7 @@
                             "inventory_selected_icon_button@common.inventory_selected_icon_button": {}
                         },
                         {
-                            "gamepad_cursor@common.gamepad_cursor_button": { }
+                            "gamepad_cursor@common.gamepad_cursor_button": {}
                         }
                     ]
                 }

@@ -15,7 +15,7 @@
                     "type": "panel",
                     "anchor_from": "top_right",
                     "anchor_to": "top_right",
-                    "offset": [127, -54],
+                    "offset": [126, -54],
                     "controls": [
                         {
                             "close_button@common.close_button":{
