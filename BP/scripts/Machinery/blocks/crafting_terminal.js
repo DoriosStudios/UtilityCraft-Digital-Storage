@@ -52,12 +52,13 @@ const CRAFT_MULTIPLIERS = [1, 2, 4, 8, 16, 64];
 const OUTPUT_PREVIEW_LORE = ["§1§1§1§1§1§1§1"];
 const RENDER_SETTINGS = {
   machine: {
-    rate_speed_base: 20,
+    rate_speed_base: 0,
   },
   ignoreTick: false,
 };
 const BUTTON_RELEASE_TICKS = 6;
 const PAGE_CHANGE_DELAY_TICKS = 4;
+const GRID_REPAIR_TICKS = 200;
 
 // Main Work (Functions)
 
@@ -609,6 +610,22 @@ function hasActionableStorageItems(inv) {
 
   return false;
 }
+function hasVisibleVirtualStorageItems(inv) {
+  for (let i = STORAGE_START; i <= STORAGE_END; i++) {
+    const item = inv.getItem(i);
+    if (!item || item.typeId === "utilitycraft:storage_filler") continue;
+    if (getStoredCount(item) !== -1) return true;
+  }
+
+  return false;
+}
+function shouldCheckStorageGrid(entity, currentTick) {
+  const lastTick = Math.floor(Number(entity.getDynamicProperty("last_grid_repair_tick") ?? -GRID_REPAIR_TICKS));
+  if (currentTick - lastTick < GRID_REPAIR_TICKS) return false;
+
+  entity.setDynamicProperty("last_grid_repair_tick", currentTick);
+  return true;
+}
 function getSlotStateHash(inv, slot) {
   const item = inv.getItem(slot);
   if (!item) return "empty";
@@ -783,8 +800,12 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   let lastOutputMode = entity.getDynamicProperty("last_rendered_output_mode") ?? "";
   let forceRefresh = entity.getDynamicProperty("force_refresh") ?? false;
   let controlsChanged = controlsNeedRender(inv);
-  let gridNeedsRepair =
+  const currentTick = system.currentTick ?? 0;
+  const shouldRepairGrid =
     !Terminal.isChunkedRenderActive(entity) &&
+    shouldCheckStorageGrid(entity, currentTick);
+  let gridNeedsRepair =
+    shouldRepairGrid &&
     Terminal.storageGridNeedsRender(inv, {
       storageStart: STORAGE_START,
       storageEnd: STORAGE_END,
@@ -793,11 +814,19 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   let pageChanged = false;
   let networkVersion = networkSnapshot.version;
   const lastNetworkVersion = entity.getDynamicProperty("last_network_version") ?? -1;
+  const hasNetworkSnapshot = Boolean(networkSnapshot.networkId);
+  const hasRenderedNetworkItems =
+    Object.keys(getRenderedSlotMap(entity)).length > 0 ||
+    hasVisibleVirtualStorageItems(inv);
+  if (!hasNetworkSnapshot && (lastNetworkVersion !== 0 || hasRenderedNetworkItems)) {
+    forceRefresh = true;
+    entity.setDynamicProperty("force_refresh", true);
+    entity.setDynamicProperty("last_rendered_page", -1);
+  }
   const currentHash = getGridHash(inv);
   const lastHash = entity.getDynamicProperty("grid_hash");
   const isResolving = entity.getDynamicProperty("is_resolving_recipe");
   const shouldResolveGridRecipe = currentHash !== lastHash && !isResolving;
-  const currentTick = system.currentTick ?? 0;
   const hasPendingBurnSlot = hasBurnSlotItem(inv);
   const stateBlueprintItem = inv.getItem(CRAFTING_BLUEPRINT_SLOT);
   const hasCraftBlueprint = stateBlueprintItem && stateBlueprintItem.typeId === OUTPUT_BLUEPRINT_ITEM;
@@ -814,10 +843,10 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   const shouldScanInput = forceRefresh || controlsChanged || hasPendingBurnSlot || currentTick % 10 === 0;
   const hasPendingInput = hasPendingBurnSlot || (shouldScanInput ? hasActionableStorageItems(inv) : false);
   const canUseNetworkDeltas =
+    hasNetworkSnapshot &&
     !hasCraftBlueprint &&
     !forceRefresh &&
     !controlsChanged &&
-    !gridNeedsRepair &&
     !hasPendingInput &&
     !activityChanged &&
     currentPage === lastRendered &&

@@ -23,7 +23,7 @@
 					"inventory_size": 10
 				},
 				"machine": {
-					"rate_speed_base": 1,
+					"rate_speed_base": 0,
 					"energy_cap": 0,
 					"fluid_cap": 0
 				}

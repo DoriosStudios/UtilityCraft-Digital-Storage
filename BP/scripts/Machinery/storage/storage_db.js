@@ -189,6 +189,14 @@ export function readNetworkRecord(networkId) {
 
   return {
     ...record,
+    core: typeof record.core === "string" ? record.core : undefined,
+    cores: Array.isArray(record.cores) ? record.cores : [],
+    online: record.online === true,
+    blockCount: Math.max(0, Math.floor(Number(record.blockCount ?? 0))),
+    baseRate: Math.max(0, Math.floor(Number(record.baseRate ?? 0))),
+    rate: Math.max(0, Math.floor(Number(record.rate ?? 0))),
+    energy: Math.max(0, Math.floor(Number(record.energy ?? 0))),
+    energyCap: Math.max(0, Math.floor(Number(record.energyCap ?? 0))),
     totals,
     changes,
   };
@@ -209,12 +217,68 @@ export function writeNetworkRecord(networkId, record) {
     cells: record?.cells ?? [],
     drives: record?.drives ?? [],
     terminals: record?.terminals ?? [],
+    core: typeof record?.core === "string" ? record.core : undefined,
+    cores: Array.isArray(record?.cores) ? record.cores : [],
+    online: record?.online === true,
+    blockCount: Math.max(0, Math.floor(Number(record?.blockCount ?? 0))),
+    baseRate: Math.max(0, Math.floor(Number(record?.baseRate ?? 0))),
+    rate: Math.max(0, Math.floor(Number(record?.rate ?? 0))),
+    energy: Math.max(0, Math.floor(Number(record?.energy ?? 0))),
+    energyCap: Math.max(0, Math.floor(Number(record?.energyCap ?? 0))),
     totals,
     used: Math.floor(Number(record?.used ?? 0)),
     capacity: Math.floor(Number(record?.capacity ?? 0)),
     changeSeq: Math.floor(Number(record?.changeSeq ?? 0)),
     changes: changes.slice(-NETWORK_CHANGE_LIMIT),
   });
+}
+
+function writeNetworkPowerState(networkId, previous, online, details = {}) {
+  if (!previous) return undefined;
+
+  const energy = Math.max(0, Math.floor(Number(details.energy ?? previous.energy ?? 0)));
+  const energyCap = Math.max(0, Math.floor(Number(details.energyCap ?? previous.energyCap ?? 0)));
+  const baseRate = Math.max(0, Math.floor(Number(details.baseRate ?? previous.baseRate ?? 0)));
+  const rate = Math.max(0, Math.floor(Number(details.rate ?? previous.rate ?? 0)));
+  const core = typeof details.core === "string" ? details.core : previous.core;
+  const nextOnline = online === true;
+  const stateChanged =
+    previous.online !== nextOnline ||
+    previous.energyCap !== energyCap ||
+    previous.baseRate !== baseRate ||
+    previous.rate !== rate ||
+    previous.core !== core;
+
+  if (!stateChanged) return previous;
+
+  const changeState = previous.online !== nextOnline
+    ? appendNetworkReload(previous, nextOnline ? "network_power_on" : "network_power_off")
+    : {
+      changeSeq: Math.floor(Number(previous?.changeSeq ?? 0)),
+      changes: Array.isArray(previous?.changes) ? previous.changes.slice(-NETWORK_CHANGE_LIMIT) : [],
+    };
+
+  writeNetworkRecord(networkId, {
+    ...previous,
+    ...changeState,
+    core,
+    online: nextOnline,
+    baseRate,
+    rate,
+    energy,
+    energyCap,
+    version: previous.version ?? 0,
+  });
+
+  return readNetworkRecord(networkId);
+}
+
+export function setNetworkPowerState(networkId, online, details = {}) {
+  return writeNetworkPowerState(networkId, readNetworkRecord(networkId), online, details);
+}
+
+export function setNetworkPowerStateFromRecord(networkId, previous, online, details = {}) {
+  return writeNetworkPowerState(networkId, previous, online, details);
 }
 
 function appendNetworkChange(previous, itemKey, before, after, reason) {
@@ -355,7 +419,7 @@ export function removeFromNetwork(networkId, itemKey, amount) {
   itemKey = normalizeItemKey(itemKey);
   const network = readNetworkRecord(networkId);
   let remaining = Math.floor(Number(amount) || 0);
-  if (!network || remaining <= 0) return remaining;
+  if (!network || network.online === false || remaining <= 0) return remaining;
   const requested = remaining;
   const before = Number(network.totals?.[itemKey] ?? 0);
 
@@ -428,7 +492,7 @@ export function addToNetwork(networkId, itemKey, amount) {
   itemKey = normalizeItemKey(itemKey);
   const network = readNetworkRecord(networkId);
   let remaining = Math.floor(Number(amount) || 0);
-  if (!network || remaining <= 0) return remaining;
+  if (!network || network.online === false || remaining <= 0) return remaining;
   const requested = remaining;
   const before = Number(network.totals?.[itemKey] ?? 0);
 
@@ -464,6 +528,15 @@ export function addManyToNetwork(networkId, itemAmounts, reason = "insert") {
   const network = readNetworkRecord(networkId);
   const remainingByKey = {};
   if (!network || !itemAmounts || typeof itemAmounts !== "object") return remainingByKey;
+  if (network.online === false) {
+    for (const itemKey of Object.keys(itemAmounts)) {
+      const normalizedKey = normalizeItemKey(itemKey);
+      const amount = Math.floor(Number(itemAmounts[itemKey]) || 0);
+      if (!normalizedKey || amount <= 0) continue;
+      remainingByKey[normalizedKey] = (remainingByKey[normalizedKey] ?? 0) + amount;
+    }
+    return remainingByKey;
+  }
 
   const requests = [];
   for (const itemKey of Object.keys(itemAmounts)) {

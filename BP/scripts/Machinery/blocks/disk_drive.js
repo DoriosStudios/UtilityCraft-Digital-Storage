@@ -11,6 +11,7 @@ import { updateNetworkAround } from "Machinery/storage/network_manager.js";
 const INFO_SLOT = 0;
 const CELL_START = 1;
 const CELL_END = 9;
+const INFO_REFRESH_TICKS = 100;
 
 export const cellCapacities = {
   ...CELL_CAPACITIES,
@@ -71,12 +72,26 @@ function syncCellLore(container, slot, cellItem, data) {
   return true;
 }
 
+function shouldRefreshDiskInfo(entity, force = false) {
+  if (force) return true;
+
+  const currentTick = system.currentTick ?? 0;
+  const lastTick = Math.floor(Number(entity.getDynamicProperty("disk_info_tick") ?? -INFO_REFRESH_TICKS));
+  if (currentTick - lastTick < INFO_REFRESH_TICKS) return false;
+
+  entity.setDynamicProperty("disk_info_tick", currentTick);
+  return true;
+}
+
 export function saveCellData(container, slot, cellItem, dataObj) {
   const saved = writeCellData(cellItem, dataObj);
   syncCellLore(container, slot, cellItem, saved ?? dataObj);
   try {
     const entity = container?.entity;
-    if (entity) entity.setDynamicProperty("disk_info_state", "");
+    if (entity) {
+      entity.setDynamicProperty("disk_info_state", "");
+      entity.setDynamicProperty("disk_info_tick", -INFO_REFRESH_TICKS);
+    }
   } catch { }
 }
 
@@ -100,6 +115,7 @@ DoriosAPI.register.blockComponent("disk_drive", {
         inv.setItem(INFO_SLOT, label);
         entity.setDynamicProperty("disk_info_state", "");
         entity.setDynamicProperty("disk_cell_state", "");
+        entity.setDynamicProperty("disk_info_tick", 0);
         updateNetworkAround(block);
       }, 1);
     });
@@ -112,6 +128,8 @@ DoriosAPI.register.blockComponent("disk_drive", {
     if (!entity) return;
     const inv = entity.getComponent("minecraft:inventory")?.container;
     if (!inv) return;
+    if (!shouldRefreshDiskInfo(entity)) return;
+
     let totalStored = 0;
     let totalCap = 0;
     let cells = 0;

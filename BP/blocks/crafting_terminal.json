@@ -26,7 +26,7 @@
 					"output_type": "simple"
 				},
 				"machine": {
-					"rate_speed_base": 20
+					"rate_speed_base": 0
 				}
 			},
 			"minecraft:geometry": "geometry.utilitycraft_block_2",

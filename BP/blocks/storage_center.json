@@ -18,7 +18,7 @@
 		"components": {
 			"utilitycraft:storage_center": {
 				"entity": {
-					"inventory_size": 1,
+					"inventory_size": 2,
 					"input_range": [
 						-1,
 						-1
@@ -29,7 +29,8 @@
 					]
 				},
 				"machine": {
-					"rate_speed_base": 0
+					"rate_speed_base": 10,
+					"energy_cap": 512000
 				}
 			},
 			"minecraft:geometry": "geometry.utilitycraft_block_2",
@@ -41,8 +42,8 @@
 			},
 			"minecraft:tick": {
 				"interval_range": [
-					40,
-					40
+					2,
+					2
 				]
 			},
 			"minecraft:destructible_by_mining": {
@@ -50,6 +51,7 @@
 			},
 			"minecraft:destructible_by_explosion": false,
 			"tag:dorios:machine": {},
+			"tag:dorios:energy": {},
 			"tag:dorios:item": {},
 			"tag:ucds:item_network": {},
 			"tag:minecraft:is_pickaxe_item_destructible": {}

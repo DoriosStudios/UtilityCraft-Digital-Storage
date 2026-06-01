@@ -718,7 +718,7 @@ export class Terminal extends BasicMachine {
       purgeItemFromNetwork(networkId, itemKey, "render_error");
       try {
         inv.setItem(slot, createTaggedFiller(fillerId, fillerName, entity, slot));
-      } catch {}
+      } catch { }
       delete renderedSlots[itemKey];
       entity.setDynamicProperty("rendered_slot_keys", JSON.stringify(renderedSlots));
       entity.setDynamicProperty("force_refresh", true);
@@ -762,7 +762,7 @@ export class Terminal extends BasicMachine {
       entity.setDynamicProperty("force_refresh", true);
       return false;
     }
-
+    entity.runCommand("say hel")
     const token = Terminal.beginChunkedRender(entity);
     try {
       const safeTotals = networkTotals ?? {};
