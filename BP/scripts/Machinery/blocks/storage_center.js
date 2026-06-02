@@ -10,11 +10,10 @@ import {
   getNetworkIdForBlock,
   updateNetworkAround,
 } from "Machinery/storage/network_manager.js";
-import { readNetworkRecord, setNetworkPowerStateFromRecord } from "Machinery/storage/storage_db.js";
+import { readNetworkMeta, readNetworkRecord, setNetworkPowerStateFromRecord } from "Machinery/storage/storage_db.js";
 
 const ENERGY_SLOT = 0;
 const INFO_SLOT = 1;
-const DISK_SLOTS = 9;
 const NETWORK_BLOCK_COUNT_PROPERTY = "ucds_network_block_count";
 const NETWORK_BASE_RATE_PROPERTY = "ucds_network_base_rate";
 const NETWORK_RATE_PROPERTY = "ucds_network_rate";
@@ -51,35 +50,42 @@ function getCoreTag(block) {
   return `${block.dimension.id}|[${Math.floor(x)},${Math.floor(y)},${Math.floor(z)}]`;
 }
 
+function getNetworkWarning(block, network, energyState) {
+  if (!network) return "Disconnected";
+  if (network.online) return "None";
+
+  const core = getCoreTag(block);
+  if (network.core && network.core !== core) return "Another Storage Center is core";
+  if (!network.core) return "Core not registered";
+
+  const storedEnergy = Math.max(0, Math.floor(Number(energyState?.energy ?? network.energy ?? 0)));
+  if (storedEnergy <= 0) return "No energy";
+
+  return "Network offline";
+}
+
 function getNetworkInfoLore(network) {
   if (!network) {
     return [
       " \u00A7r\u00A77- Network: \u00A7cDisconnected",
       " \u00A7r\u00A77- Stored: \u00A7f0 \u00A77/ \u00A7f0",
       " \u00A7r\u00A77- Usage: \u00A7f0.0%",
-      " \u00A7r\u00A77- Disks: \u00A7f0/0",
-      " \u00A7r\u00A77- Blocks: \u00A7f0",
-      " \u00A7r\u00A77- Item Types: \u00A7f0",
+      " \u00A7r\u00A77- Warning: \u00A7cDisconnected",
     ];
   }
 
   const used = Math.max(0, Math.floor(Number(network.used) || 0));
   const capacity = Math.max(0, Math.floor(Number(network.capacity) || 0));
-  const drives = Array.isArray(network.drives) ? network.drives.length : 0;
-  const cells = Array.isArray(network.cells) ? network.cells.length : 0;
-  const maxCells = drives * DISK_SLOTS;
-  const itemTypes = Math.max(0, Math.floor(Number(network.itemTypes ?? 0)));
-  const blockCount = Math.max(0, Math.floor(Number(network.blockCount) || 0));
   const baseRate = Math.max(0, Math.floor(Number(network.baseRate) || 0));
+  const warning = typeof network.warning === "string" ? network.warning : "None";
+  const warningColor = warning === "None" ? "\u00A7a" : "\u00A7c";
 
   return [
     ` \u00A7r\u00A77- Network: ${network.online ? "\u00A7aOnline" : "\u00A7cOffline"}`,
     ` \u00A7r\u00A77- Rate: \u00A7f${formatStorageAmount(baseRate)} DE/t`,
     ` \u00A7r\u00A77- Stored: \u00A7f${formatStorageAmount(used)} \u00A77/ \u00A7f${formatStorageAmount(capacity)}`,
     ` \u00A7r\u00A77- Usage: \u00A7f${formatUsagePercent(used, capacity)}`,
-    ` \u00A7r\u00A77- Disks: \u00A7f${cells}/${maxCells}`,
-    ` \u00A7r\u00A77- Blocks: \u00A7f${blockCount}`,
-    ` \u00A7r\u00A77- Item Types: \u00A7f${itemTypes}`,
+    ` \u00A7r\u00A77- Warning: ${warningColor}${warning}`,
   ];
 }
 
@@ -90,12 +96,9 @@ function setInfoItem(inv, entity, network) {
       network.online ? 1 : 0,
       network.baseRate ?? 0,
       network.rate ?? 0,
-      network.blockCount ?? 0,
       network.used ?? 0,
       network.capacity ?? 0,
-      (network.cells ?? []).length,
-      (network.drives ?? []).length,
-      network.itemTypes ?? 0,
+      network.warning ?? "",
     ].join("|")
     : "disconnected";
 
@@ -139,6 +142,10 @@ function getCachedNetworkId(block, entity) {
   return Number.isInteger(cached) && cached > 0 ? cached : getNetworkIdForBlock(block);
 }
 
+function readCachedNetworkMeta(block, entity) {
+  return readNetworkMeta(getCachedNetworkId(block, entity));
+}
+
 function isNetworkCore(entity) {
   const value = entity.getDynamicProperty(NETWORK_IS_CORE_PROPERTY);
   return typeof value === "boolean" ? value : true;
@@ -167,16 +174,24 @@ function updateEnergyState(entity, settings, consumeEnergy = false) {
   };
 }
 
-function publishNetworkPowerState(block, entity, energyState) {
+function publishNetworkPowerState(block, entity, energyState, currentNetwork = undefined) {
   const networkId = getCachedNetworkId(block, entity);
-  const network = readNetworkRecord(networkId);
+  const network = currentNetwork ?? readNetworkRecord(networkId);
   if (!network) return undefined;
 
   const core = getCoreTag(block);
   if (network.core && network.core !== core) {
     entity.setDynamicProperty(NETWORK_IS_CORE_PROPERTY, false);
     entity.setDynamicProperty(POWER_ONLINE_PROPERTY, network.online === true);
-    return network;
+    return {
+      ...network,
+      warning: getNetworkWarning(block, network, energyState),
+      blockCount: energyState.blockCount,
+      baseRate: energyState.baseRate,
+      rate: energyState.rate,
+      energy: energyState.energy,
+      energyCap: energyState.energyCap,
+    };
   }
 
   const wasOnline = network.online === true;
@@ -195,12 +210,12 @@ function publishNetworkPowerState(block, entity, energyState) {
 
   return {
     ...nextNetwork,
-    itemTypes: Object.keys(nextNetwork.totals ?? {}).length,
     blockCount: energyState.blockCount,
     baseRate: energyState.baseRate,
     rate: energyState.rate,
     energy: energyState.energy,
     energyCap: energyState.energyCap,
+    warning: getNetworkWarning(block, nextNetwork, energyState),
   };
 }
 
@@ -208,16 +223,18 @@ function readNetworkInfo(block, entity, energyState) {
   const networkId = getCachedNetworkId(block, entity);
   const network = readNetworkRecord(networkId);
   if (!network) return undefined;
-  const itemTypes = Object.keys(network.totals ?? {}).length;
+  if (!network.core && isNetworkCore(entity)) {
+    return publishNetworkPowerState(block, entity, energyState, network);
+  }
 
   return {
     ...network,
-    itemTypes,
     blockCount: energyState.blockCount,
     baseRate: energyState.baseRate,
     rate: energyState.rate,
     energy: energyState.energy,
     energyCap: energyState.energyCap,
+    warning: getNetworkWarning(block, network, energyState),
   };
 }
 
@@ -273,9 +290,16 @@ DoriosAPI.register.blockComponent("storage_center", {
     const activeCore = isNetworkCore(entity);
     const energyState = updateEnergyState(entity, settings, activeCore && shouldProcess());
     const previousOnline = entity.getDynamicProperty(POWER_ONLINE_PROPERTY);
+    const networkMeta = activeCore ? readCachedNetworkMeta(block, entity) : undefined;
     let network;
 
-    if (activeCore && previousOnline !== energyState.online) {
+    if (
+      activeCore &&
+      (
+        previousOnline !== energyState.online ||
+        (networkMeta && networkMeta.online !== energyState.online)
+      )
+    ) {
       network = publishNetworkPowerState(block, entity, energyState);
     }
 

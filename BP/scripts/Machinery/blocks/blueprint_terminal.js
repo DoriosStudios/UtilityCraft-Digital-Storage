@@ -686,6 +686,13 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   let networkVersion = networkSnapshot.version;
   const lastNetworkVersion = entity.getDynamicProperty("last_network_version") ?? -1;
   const hasNetworkSnapshot = Boolean(networkSnapshot.networkId);
+  const wasNetworkAvailable = entity.getDynamicProperty("last_network_available") === true;
+  if (hasNetworkSnapshot !== wasNetworkAvailable) {
+    forceRefresh = true;
+    entity.setDynamicProperty("force_refresh", true);
+    entity.setDynamicProperty("last_rendered_page", -1);
+  }
+  entity.setDynamicProperty("last_network_available", hasNetworkSnapshot);
   const hasRenderedNetworkItems = !hasNetworkSnapshot && (
     Object.keys(getRenderedSlotMap(entity)).length > 0 ||
     hasVisibleVirtualStorageItems(inv)
