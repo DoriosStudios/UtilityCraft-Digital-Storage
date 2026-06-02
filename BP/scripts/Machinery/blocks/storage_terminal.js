@@ -17,7 +17,6 @@ import {
 } from "Machinery/storage/storage_db.js";
 import {
   applyVirtualLore,
-  needsVirtualLoreRewrite,
 } from "Machinery/storage/virtual_item_codec.js";
 
 // Constant
@@ -41,6 +40,7 @@ const RENDER_SETTINGS = {
   },
   ignoreTick: false,
 };
+const BURN_SLOT_TICKS = 2;
 const BUTTON_RELEASE_TICKS = 6;
 const PAGE_CHANGE_DELAY_TICKS = 4;
 const GRID_REPAIR_TICKS = 200;
@@ -273,14 +273,6 @@ function removeItemsFromNetwork(nodes, itemKey, amount) {
 function addItemsToNetwork(nodes, itemToAdd) {
   return Terminal.addItemsToNetwork(nodes, itemToAdd, isStorageCell);
 }
-function hasBurnSlotItem(inv) {
-  const burnItem = inv.getItem(BURN_SLOT);
-  if (burnItem && burnItem.typeId !== "utilitycraft:storage_filler") {
-    return true;
-  }
-
-  return false;
-}
 function hasActionableStorageItems(inv) {
   for (let i = STORAGE_START; i <= STORAGE_END; i++) {
     const item = inv.getItem(i);
@@ -310,6 +302,15 @@ function setCountLabel(machine, inv, slot) {
   Terminal.setCountLabel(machine, inv, slot, {
     countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
   });
+}
+function createLabelWriter(inv) {
+  return {
+    setLabel(text, slot = 1) {
+      const baseItem = inv.getItem(slot) ?? new ItemStack("utilitycraft:arrow_indicator_90");
+      baseItem.nameTag = text;
+      inv.setItem(slot, baseItem);
+    },
+  };
 }
 function findVisibleVirtualSlot(inv, itemKey) {
   return Terminal.findVisibleVirtualSlot(inv, itemKey, {
@@ -395,6 +396,53 @@ function isRenderedItemVisible(entity, inv, itemKey) {
     storageEnd: STORAGE_END,
   });
 }
+function findFreeStorageSlot(inv) {
+  for (let slot = STORAGE_START; slot <= STORAGE_END; slot++) {
+    const item = inv.getItem(slot);
+    if (!item || item.typeId === "utilitycraft:storage_filler") return slot;
+  }
+
+  return -1;
+}
+function renderVirtualItemAtSlot(entity, inv, machine, networkId, itemKey, count, currentQty, slot) {
+  const virtualItemTest = createItemFromKey(itemKey, 1);
+  const maxStack = virtualItemTest.maxAmount ?? 64;
+  const renderAmount = Math.min(currentQty, count, maxStack);
+  const virtualItem = createItemFromKey(itemKey, renderAmount);
+  const currentLore = virtualItem.getLore() || [];
+  applyVirtualLore(
+    virtualItem,
+    [...currentLore, `${LORE_DISPLAY}${count}`],
+    networkId,
+    itemKey,
+  );
+  inv.setItem(slot, virtualItem);
+  Terminal.syncBlueprintDataAtSlot(entity, slot, virtualItem);
+  setCountLabel(machine, inv, slot);
+
+  const renderedSlots = getRenderedSlotMap(entity);
+  renderedSlots[itemKey] = slot;
+  entity.setDynamicProperty("rendered_slot_keys", JSON.stringify(renderedSlots));
+}
+function updateOrAppendVisibleVirtualItem(entity, inv, machine, networkId, itemKey, count, currentQty) {
+  const renderedSlots = getRenderedSlotMap(entity);
+  if (Number.isInteger(renderedSlots[itemKey]) || isRenderedItemVisible(entity, inv, itemKey)) {
+    return updateVisibleVirtualItem(entity, inv, machine, networkId, itemKey, count, currentQty);
+  }
+
+  if (count <= 0) return true;
+
+  const freeSlot = findFreeStorageSlot(inv);
+  if (freeSlot < 0) return false;
+
+  try {
+    renderVirtualItemAtSlot(entity, inv, machine, networkId, itemKey, count, currentQty, freeSlot);
+    return true;
+  } catch {
+    entity.setDynamicProperty("force_refresh", true);
+    return false;
+  }
+}
 function applyNetworkDeltas(entity, inv, machine, networkRecord, networkId, currentQty) {
   return Terminal.applyNetworkDeltas(
     entity,
@@ -413,6 +461,86 @@ function applyNetworkDeltas(entity, inv, machine, networkRecord, networkId, curr
 }
 function syncTerminalNetworkState(entity, networkRecord, networkTotals, networkVersion) {
   Terminal.syncNetworkState(entity, networkRecord, networkTotals, networkVersion);
+}
+function shouldProcessBurnSlot(entity) {
+  const currentTick = system.currentTick ?? 0;
+  const lastTick = Math.floor(Number(entity.getDynamicProperty("last_burn_slot_tick") ?? -BURN_SLOT_TICKS));
+  if (currentTick - lastTick < BURN_SLOT_TICKS) return false;
+
+  entity.setDynamicProperty("last_burn_slot_tick", currentTick);
+  return true;
+}
+function syncAfterBurnSlotChange(entity, inv, machine, networkId, updatedNetwork, itemKey, currentQty) {
+  const newCount = Number(updatedNetwork?.totals?.[itemKey] ?? 0);
+  const handled = updateOrAppendVisibleVirtualItem(
+    entity,
+    inv,
+    machine,
+    networkId,
+    itemKey,
+    newCount,
+    currentQty,
+  );
+  syncTerminalNetworkState(
+    entity,
+    updatedNetwork,
+    updatedNetwork?.totals ?? {},
+    updatedNetwork?.version ?? 0,
+  );
+  if (!handled) entity.setDynamicProperty("force_refresh", true);
+}
+function processBurnSlotEvery2Ticks(block, entity) {
+  if (!entity || !entity.isValid || entity.getDynamicProperty("is_proxy")) return;
+  if (!shouldProcessBurnSlot(entity)) return;
+
+  const inv = entity.getComponent("minecraft:inventory")?.container;
+  if (!inv) return;
+
+  let burnItem = inv.getItem(BURN_SLOT);
+  if (!burnItem) return;
+
+  if (burnItem.typeId === "utilitycraft:storage_filler") {
+    inv.setItem(BURN_SLOT, undefined);
+    return;
+  }
+
+  const nodes = getConnectedInventories(block);
+  if (!nodes?.networkId) return;
+
+  const machine = createLabelWriter(inv);
+  const currentQty = entity.getDynamicProperty("extract_quantity") ?? 1;
+  const storedCount = getStoredCount(burnItem);
+
+  if (storedCount !== -1) {
+    const itemKey = getItemKey(burnItem);
+    const take = Math.min(burnItem.maxAmount, countItemsInNetwork(nodes, itemKey));
+    if (take <= 0) return;
+
+    inv.setItem(BURN_SLOT, undefined);
+    removeItemsFromNetwork(nodes, itemKey, take);
+    returnToPlayer(block, createItemFromKey(itemKey, take));
+
+    const updatedNetwork = readNetworkRecord(nodes.networkId);
+    syncAfterBurnSlotChange(entity, inv, machine, nodes.networkId, updatedNetwork, itemKey, currentQty);
+    return;
+  }
+
+  if (isStorageCell(burnItem)) return;
+
+  const originalAmount = burnItem.amount;
+  const itemKey = getItemKey(burnItem);
+  const remaining = addItemsToNetwork(nodes, burnItem);
+  if (remaining >= originalAmount) return;
+
+  inv.setItem(
+    BURN_SLOT,
+    remaining === 0
+      ? undefined
+      : createItemFromKey(itemKey, remaining),
+  );
+
+  const updatedNetwork = readNetworkRecord(nodes.networkId);
+  syncAfterBurnSlotChange(entity, inv, machine, nodes.networkId, updatedNetwork, itemKey, currentQty);
 }
 async function renderStorageTerminalPage(
   entity,
@@ -509,12 +637,10 @@ function runStorageTerminalTick(block, machineEntity, settings) {
     entity.setDynamicProperty("force_refresh", true);
     entity.setDynamicProperty("last_rendered_page", -1);
   }
-  const hasPendingBurnSlot = hasBurnSlotItem(inv);
   const canUseNetworkDeltas =
     hasNetworkSnapshot &&
     !forceRefresh &&
     !controlsChanged &&
-    !hasPendingBurnSlot &&
     currentPage === lastRendered &&
     currentQty === lastQty &&
     currentSort === lastSort &&
@@ -573,10 +699,9 @@ function runStorageTerminalTick(block, machineEntity, settings) {
     return;
   }
   const shouldScanInput =
-    forceRefresh || controlsChanged || hasPendingBurnSlot || currentTick % 10 === 0;
+    forceRefresh || controlsChanged || currentTick % 10 === 0;
   const hasPendingInput =
-    hasPendingBurnSlot ||
-    (shouldScanInput ? hasActionableStorageItems(inv) : false);
+    shouldScanInput ? hasActionableStorageItems(inv) : false;
   if (
     !forceRefresh &&
     !controlsChanged &&
@@ -625,72 +750,6 @@ function runStorageTerminalTick(block, machineEntity, settings) {
   let nodes = getConnectedInventories(block);
   let networkTotals = Object.assign({}, networkSnapshot.totals);
   let hasNetwork = nodes.length > 0;
-  let currentBurnItem = inv.getItem(BURN_SLOT);
-  if (
-    currentBurnItem &&
-    currentBurnItem.typeId === "utilitycraft:storage_filler"
-  ) {
-    inv.setItem(BURN_SLOT, undefined);
-    currentBurnItem = undefined;
-  }
-  if (currentBurnItem && getStoredCount(currentBurnItem) !== -1) {
-    let itemKey = getItemKey(currentBurnItem);
-    let maxStack = currentBurnItem.maxAmount;
-    inv.setItem(BURN_SLOT, undefined);
-    let available = countItemsInNetwork(nodes, itemKey);
-    let take = Math.min(maxStack, available);
-    if (take > 0) {
-      removeItemsFromNetwork(nodes, itemKey, take);
-      returnToPlayer(block, createItemFromKey(itemKey, take));
-      const updatedNetwork = readNetworkRecord(nodes.networkId);
-      const newCount = Number(updatedNetwork?.totals?.[itemKey] ?? 0);
-      if (newCount <= 0) {
-        const updatedTotals = updatedNetwork?.totals ?? {};
-        const nextPageCount = getPageCountFromTotals(updatedTotals);
-        const nextPage = Math.max(0, Math.min(currentPage, nextPageCount - 1));
-        if (nextPage !== currentPage) entity.setDynamicProperty("page", nextPage);
-        renderStorageTerminalPage(
-          entity,
-          inv,
-          machine,
-          nodes.networkId,
-          hasNetwork,
-          updatedTotals,
-          nextPage,
-          nextPageCount,
-          currentQty,
-          currentSort,
-        );
-        syncTerminalNetworkState(
-          entity,
-          updatedNetwork,
-          updatedTotals,
-          updatedNetwork?.version ?? networkVersion,
-        );
-        entity.setDynamicProperty("force_refresh", false);
-        return;
-      }
-      updateVisibleVirtualItem(
-        entity,
-        inv,
-        machine,
-        nodes.networkId,
-        itemKey,
-        newCount,
-        currentQty,
-      );
-      entity.setDynamicProperty("last_network_version", updatedNetwork?.version ?? networkVersion);
-      entity.setDynamicProperty(
-        "last_network_change_seq",
-        Math.floor(Number(updatedNetwork?.changeSeq ?? 0)),
-      );
-      entity.setDynamicProperty(
-        "last_network_state",
-        JSON.stringify(updatedNetwork?.totals ?? {}),
-      );
-      return;
-    }
-  }
   for (let i = STORAGE_START; i <= STORAGE_END; i++) {
     let item = inv.getItem(i);
     if (!item) continue;
@@ -713,25 +772,21 @@ function runStorageTerminalTick(block, machineEntity, settings) {
       );
       const updatedNetwork = readNetworkRecord(nodes.networkId);
       const newCount = Number(updatedNetwork?.totals?.[itemKey] ?? 0);
-      const renderedSlots = getRenderedSlotMap(entity);
-      if (Number.isInteger(renderedSlots[itemKey])) {
-        updateVisibleVirtualItem(
+      const handledVisibleUpdate = updateOrAppendVisibleVirtualItem(
+        entity,
+        inv,
+        machine,
+        nodes.networkId,
+        itemKey,
+        newCount,
+        currentQty,
+      );
+      if (handledVisibleUpdate) {
+        syncTerminalNetworkState(
           entity,
-          inv,
-          machine,
-          nodes.networkId,
-          itemKey,
-          newCount,
-          currentQty,
-        );
-        entity.setDynamicProperty("last_network_version", updatedNetwork?.version ?? networkVersion);
-        entity.setDynamicProperty(
-          "last_network_change_seq",
-          Math.floor(Number(updatedNetwork?.changeSeq ?? 0)),
-        );
-        entity.setDynamicProperty(
-          "last_network_state",
-          JSON.stringify(updatedNetwork?.totals ?? {}),
+          updatedNetwork,
+          updatedNetwork?.totals ?? {},
+          updatedNetwork?.version ?? networkVersion,
         );
       } else {
         syncTerminalNetworkState(
@@ -740,58 +795,11 @@ function runStorageTerminalTick(block, machineEntity, settings) {
           updatedNetwork?.totals ?? {},
           updatedNetwork?.version ?? networkVersion,
         );
+        entity.setDynamicProperty("force_refresh", true);
       }
     }
   }
 
-  if (hasNetwork) {
-    let burnItem = inv.getItem(BURN_SLOT);
-    if (burnItem && getStoredCount(burnItem) === -1) {
-      let originalAmount = burnItem.amount;
-      let itemKey = getItemKey(burnItem);
-      let remaining = addItemsToNetwork(nodes, burnItem);
-      if (remaining < originalAmount) {
-        inv.setItem(
-          BURN_SLOT,
-          remaining === 0
-            ? undefined
-            : createItemFromKey(itemKey, remaining),
-        );
-        const updatedNetwork = readNetworkRecord(nodes.networkId);
-        const newCount = Number(updatedNetwork?.totals?.[itemKey] ?? 0);
-        const renderedSlots = getRenderedSlotMap(entity);
-        if (Number.isInteger(renderedSlots[itemKey])) {
-          updateVisibleVirtualItem(
-            entity,
-            inv,
-            machine,
-            nodes.networkId,
-            itemKey,
-            newCount,
-            currentQty,
-          );
-          entity.setDynamicProperty("last_network_version", updatedNetwork?.version ?? networkVersion);
-          entity.setDynamicProperty(
-            "last_network_change_seq",
-            Math.floor(Number(updatedNetwork?.changeSeq ?? 0)),
-          );
-          entity.setDynamicProperty(
-            "last_network_state",
-            JSON.stringify(updatedNetwork?.totals ?? {}),
-          );
-          return;
-        } else {
-          syncTerminalNetworkState(
-            entity,
-            updatedNetwork,
-            updatedNetwork?.totals ?? {},
-            updatedNetwork?.version ?? networkVersion,
-          );
-          return;
-        }
-      }
-    }
-  }
   if (hasNetwork) {
     const latestNetwork = readNetworkRecord(nodes.networkId);
     if (latestNetwork) {
@@ -835,6 +843,7 @@ DoriosAPI.register.blockComponent("storage_terminal", {
     const { block } = e;
     const machineEntity = getMachineEntity(block);
     if (!machineEntity || !machineEntity.isValid) return;
+    processBurnSlotEvery2Ticks(block, machineEntity);
     runStorageTerminalTick(block, machineEntity, settings);
   },
   onPlayerBreak(e) {
