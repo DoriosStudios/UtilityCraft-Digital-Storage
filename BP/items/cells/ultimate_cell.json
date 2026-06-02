@@ -9,7 +9,14 @@
 		},
 		"components": {
 			"minecraft:icon": "utilitycraft_ultimate_storage_cell",
-         "minecraft:max_stack_size": 1
+			"minecraft:max_stack_size": 1,
+			"minecraft:durability": {
+				"max_durability": 1000,
+				"damage_chance": {
+					"min": 100,
+					"max": 100
+				}
+			}
 		}
 	}
 }

@@ -762,7 +762,6 @@ export class Terminal extends BasicMachine {
       entity.setDynamicProperty("force_refresh", true);
       return false;
     }
-    entity.runCommand("say hel")
     const token = Terminal.beginChunkedRender(entity);
     try {
       const safeTotals = networkTotals ?? {};

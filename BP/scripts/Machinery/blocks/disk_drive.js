@@ -6,6 +6,7 @@ import {
   readCellData,
   writeCellData,
 } from "Machinery/storage/storage_db.js";
+import { syncCellDurabilityFromData } from "Machinery/storage/cell_durability.js";
 import { updateNetworkAround } from "Machinery/storage/network_manager.js";
 
 const INFO_SLOT = 0;
@@ -65,9 +66,18 @@ function cellLoreMatches(cellItem, data) {
   );
 }
 
-function syncCellLore(container, slot, cellItem, data) {
-  if (!cellItem || !data || cellLoreMatches(cellItem, data)) return false;
-  cellItem.setLore(getCellLore(data));
+function syncCellState(container, slot, cellItem, data) {
+  if (!cellItem || !data) return false;
+
+  let changed = false;
+  if (!cellLoreMatches(cellItem, data)) {
+    cellItem.setLore(getCellLore(data));
+    changed = true;
+  }
+
+  changed = syncCellDurabilityFromData(cellItem, data) || changed;
+  if (!changed) return false;
+
   container.setItem(slot, cellItem);
   return true;
 }
@@ -85,7 +95,7 @@ function shouldRefreshDiskInfo(entity, force = false) {
 
 export function saveCellData(container, slot, cellItem, dataObj) {
   const saved = writeCellData(cellItem, dataObj);
-  syncCellLore(container, slot, cellItem, saved ?? dataObj);
+  syncCellState(container, slot, cellItem, saved ?? dataObj);
   try {
     const entity = container?.entity;
     if (entity) {
@@ -139,8 +149,8 @@ DoriosAPI.register.blockComponent("disk_drive", {
       const previousCellId = getCellId(cell);
       let data = cell ? readCellData(cell, true) : undefined;
       if (data) {
-        const loreUpdated = syncCellLore(inv, i, cell, data);
-        if (!previousCellId && data.cellId && !loreUpdated) inv.setItem(i, cell);
+        const cellUpdated = syncCellState(inv, i, cell, data);
+        if (!previousCellId && data.cellId && !cellUpdated) inv.setItem(i, cell);
         cells++;
         totalStored += data.totalItems;
         totalCap += data.capacity;
