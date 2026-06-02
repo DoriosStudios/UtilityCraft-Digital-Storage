@@ -94,7 +94,7 @@
     "type": "panel",
     "size": [
       "100%",
-      216
+      450
     ],
     "anchor_from": "top_left",
     "anchor_to": "top_left",
@@ -110,9 +110,9 @@
           ],
           "grid_dimensions": [
             9,
-            12
+            25
           ],
-          "maximum_grid_items": 108,
+          "maximum_grid_items": 225,
           "collection_name": "container_items",
           "grid_item_template": "sh.grid_item_template",
           "layer": 2
@@ -127,15 +127,15 @@
             2,
             -10
           ],
-          "$collection_index_1": 108,
-          "$collection_index_2": 109,
-          "$collection_index_3": 110,
-          "$collection_index_4": 111,
-          "$collection_index_5": 112,
-          "$collection_index_6": 113,
-          "$collection_index_7": 114,
-          "$collection_index_8": 115,
-          "$collection_index_9": 116,
+          "$collection_index_1": 225,
+          "$collection_index_2": 226,
+          "$collection_index_3": 227,
+          "$collection_index_4": 228,
+          "$collection_index_5": 229,
+          "$collection_index_6": 230,
+          "$collection_index_7": 231,
+          "$collection_index_8": 232,
+          "$collection_index_9": 233,
           "$collection_index_10": 117,
           "$collection_index_11": 118,
           "$collection_index_12": 119,
@@ -253,7 +253,7 @@
       0,
       0
     ],
-    "$burn_index|default": 119,
+    "$burn_index|default": 236,
     "controls": [
       {
         "search_bar@common.text_edit_box": {

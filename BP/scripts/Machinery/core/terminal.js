@@ -20,12 +20,12 @@ import { createTaggedFiller } from "Machinery/storage/filler_restore.js";
 import { syncBlueprintDataAtSlot as syncBlueprintSlotData } from "Machinery/core/blueprint.js";
 
 const DEFAULT_STORAGE_START = 0;
-const DEFAULT_STORAGE_END = 107;
-const DEFAULT_STORAGE_SLOTS = 108;
+const DEFAULT_STORAGE_END = 224;
+const DEFAULT_STORAGE_SLOTS = 225;
 const DEFAULT_MAX_PAGES = 27;
-const DEFAULT_COUNT_LABEL_BASE_SLOT = 108;
+const DEFAULT_COUNT_LABEL_BASE_SLOT = 225;
 const DEFAULT_COUNT_LABEL_COLUMNS = 9;
-const DEFAULT_COUNT_LABEL_ROWS = 12;
+const DEFAULT_COUNT_LABEL_ROWS = 25;
 const DEFAULT_COUNT_LABEL_ITEM = "utilitycraft:ui_filler";
 const DEFAULT_STORAGE_FILLER = "utilitycraft:storage_filler";
 const DEFAULT_STORAGE_FILLER_NAME = "§rStorage Slot";

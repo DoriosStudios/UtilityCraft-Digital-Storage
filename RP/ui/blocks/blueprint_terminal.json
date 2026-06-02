@@ -46,7 +46,7 @@
             {
                 "next_button@sh.button": {
                     "layer": 10,
-                    "$index": 120,
+                    "$index": 237,
                     "$button_size": [22, 22],
                     "$default_texture": "textures/ui/buttons/next/button",
                     "$hover_texture": "textures/ui/buttons/next/selected",
@@ -60,7 +60,7 @@
             {
                 "previous_button@sh.button": {
                     "layer": 10,
-                    "$index": 121,
+                    "$index": 238,
                     "$button_size": [22, 22],
                     "$default_texture": "textures/ui/buttons/previous/button",
                     "$hover_texture": "textures/ui/buttons/previous/selected",
@@ -74,7 +74,7 @@
             {
                 "quantity_button@sh.button": {
                     "layer": 10,
-                    "$index": 122,
+                    "$index": 239,
                     "$default_texture": "textures/ui/buttons/quantity/button",
                     "$hover_texture": "textures/ui/buttons/quantity/selected",
                     "$pressed_texture": "textures/ui/buttons/quantity/pressed",
@@ -88,7 +88,7 @@
             {
                 "sort_button@sh.button": {
                     "layer": 10,
-                    "$index": 123,
+                    "$index": 240,
                     "$default_texture": "textures/ui/buttons/sort/button",
                     "$hover_texture": "textures/ui/buttons/sort/selected",
                     "$pressed_texture": "textures/ui/buttons/sort/pressed",
@@ -138,13 +138,13 @@
                         {
                             "blueprint_panel@sh.blueprint_panel": {
                                 "offset": [ -114, -32 ],
-                                "$blueprint_index": 124,
-                                "$output_index": 125,
-                                "$info_index": 126,
-                                "$quantity_index": 127,
-                                "$mode_index": 128,
-                                "$craft_index": 129,
-                                "$remove_index": 130
+                                "$blueprint_index": 241,
+                                "$output_index": 242,
+                                "$info_index": 243,
+                                "$quantity_index": 244,
+                                "$mode_index": 245,
+                                "$craft_index": 246,
+                                "$remove_index": 247
                             }
                         },
                         {

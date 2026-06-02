@@ -7,7 +7,7 @@
     "anchor_to": "top_left",
     "size": [
       18,
-      432
+      540
     ],
     "layer": 1,
     "text_alignment": "left",
@@ -27,12 +27,12 @@
     "anchor_to": "top_left",
     "size": [
       162,
-      216
+      450
     ],
     "collection_name": "container_items",
     "$item_collection_name": "container_items",
     "$text_scale|default": 0.55,
-    "$line_padding|default": 22.6,
+    "$line_padding|default": 22.725,
     "controls": [
       {
         "column_001@sh.count_column_label": {
@@ -116,14 +116,14 @@
         }
       }
     ],
-    "$collection_index_1|default": 108,
-    "$collection_index_2|default": 109,
-    "$collection_index_3|default": 110,
-    "$collection_index_4|default": 111,
-    "$collection_index_5|default": 112,
-    "$collection_index_6|default": 113,
-    "$collection_index_7|default": 114,
-    "$collection_index_8|default": 115,
-    "$collection_index_9|default": 116
+    "$collection_index_1|default": 225,
+    "$collection_index_2|default": 226,
+    "$collection_index_3|default": 227,
+    "$collection_index_4|default": 228,
+    "$collection_index_5|default": 229,
+    "$collection_index_6|default": 230,
+    "$collection_index_7|default": 231,
+    "$collection_index_8|default": 232,
+    "$collection_index_9|default": 233
   }
 }

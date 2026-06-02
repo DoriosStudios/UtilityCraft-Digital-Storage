@@ -10,26 +10,26 @@ import { applyVirtualLore, needsVirtualLoreRewrite } from "Machinery/storage/vir
 
 // Constant
 
-const BURN_SLOT = 119;
+const BURN_SLOT = 236;
 const STORAGE_START = 0;
-const STORAGE_END = 107;
-const COUNT_LABEL_BASE_SLOT = 108;
-const NEXT_SLOT = 120;
-const PREVIOUS_SLOT = 121;
-const QUANTITY_SLOT = 122;
-const SORT_SLOT = 123;
-const CRAFTING_BLUEPRINT_SLOT = 124;
-const CRAFTING_OUTPUT_SLOT = 125;
-const CRAFTING_INFO_PANEL_SLOT = 126;
-const CRAFT_QTY_SLOT = 127;
-const OUTPUT_MODE_SLOT = 128;
-const CRAFT_BUTTON_SLOT = 129;
-const REMOVE_RECIPE_SLOT = 130;
-const STORAGE_SLOTS = 108;
+const STORAGE_END = 224;
+const COUNT_LABEL_BASE_SLOT = 225;
+const NEXT_SLOT = 237;
+const PREVIOUS_SLOT = 238;
+const QUANTITY_SLOT = 239;
+const SORT_SLOT = 240;
+const CRAFTING_BLUEPRINT_SLOT = 241;
+const CRAFTING_OUTPUT_SLOT = 242;
+const CRAFTING_INFO_PANEL_SLOT = 243;
+const CRAFT_QTY_SLOT = 244;
+const OUTPUT_MODE_SLOT = 245;
+const CRAFT_BUTTON_SLOT = 246;
+const REMOVE_RECIPE_SLOT = 247;
+const STORAGE_SLOTS = 225;
 const LORE_DISPLAY = "§r§7- Count: §f";
 const MAX_PAGES = 27;
 const OUTPUT_BLUEPRINT_ITEM = "utilitycraft:blueprint";
-const RESERVED_FILLER_SLOTS = [117, 118];
+const RESERVED_FILLER_SLOTS = [234, 235];
 const CONTROL_SLOTS = [
   PREVIOUS_SLOT,
   NEXT_SLOT,
