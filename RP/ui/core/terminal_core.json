@@ -125,7 +125,7 @@
           "layer": 20,
           "offset": [
             2,
-            12
+            -10
           ],
           "$collection_index_1": 108,
           "$collection_index_2": 109,
@@ -253,7 +253,7 @@
       0,
       0
     ],
-    "$burn_index|default": 218,
+    "$burn_index|default": 119,
     "controls": [
       {
         "search_bar@common.text_edit_box": {

@@ -1,4 +1,4 @@
-import { system } from "@minecraft/server";
+import { ItemStack, system } from "@minecraft/server";
 import { BasicMachine, Machine } from "DoriosCore/index.js";
 import { spawnEntity } from "DoriosCore/utils/entity.js";
 import { getNetworkNodes, updateNetworkAround } from "Machinery/storage/network_manager.js";
@@ -24,6 +24,9 @@ const DEFAULT_STORAGE_END = 107;
 const DEFAULT_STORAGE_SLOTS = 108;
 const DEFAULT_MAX_PAGES = 27;
 const DEFAULT_COUNT_LABEL_BASE_SLOT = 108;
+const DEFAULT_COUNT_LABEL_COLUMNS = 9;
+const DEFAULT_COUNT_LABEL_ROWS = 12;
+const DEFAULT_COUNT_LABEL_ITEM = "utilitycraft:ui_filler";
 const DEFAULT_STORAGE_FILLER = "utilitycraft:storage_filler";
 const DEFAULT_STORAGE_FILLER_NAME = "§rStorage Slot";
 const DEFAULT_LORE_DISPLAY = "§r§7- Count: §f";
@@ -150,7 +153,9 @@ export class Terminal extends BasicMachine {
    * @param {object} [options] Grid options.
    * @param {number} [options.storageStart=0] First storage slot.
    * @param {number} [options.storageEnd=107] Last storage slot.
-   * @param {number} [options.countLabelBaseSlot=108] First count label slot.
+   * @param {number} [options.countLabelBaseSlot=108] First count label column slot.
+   * @param {number} [options.countLabelColumns=9] Label column count.
+   * @param {number} [options.countLabelRows=12] Label rows per column.
    * @param {string} [options.fillerId="utilitycraft:storage_filler"] Filler item id.
    * @param {string} [options.fillerName] Filler display name.
    * @returns {boolean} True when the grid should be rendered again.
@@ -161,6 +166,8 @@ export class Terminal extends BasicMachine {
       storageStart = DEFAULT_STORAGE_START,
       storageEnd = DEFAULT_STORAGE_END,
       countLabelBaseSlot = DEFAULT_COUNT_LABEL_BASE_SLOT,
+      countLabelColumns = DEFAULT_COUNT_LABEL_COLUMNS,
+      countLabelRows = DEFAULT_COUNT_LABEL_ROWS,
       fillerId = DEFAULT_STORAGE_FILLER,
       fillerName = DEFAULT_STORAGE_FILLER_NAME,
     } = {},
@@ -169,7 +176,12 @@ export class Terminal extends BasicMachine {
       const item = inv.getItem(slot);
       if (!item) return true;
       if (item.typeId === fillerId && item.nameTag !== fillerName) return true;
-      if (!inv.getItem(countLabelBaseSlot + slot - storageStart)) return true;
+    }
+
+    for (let column = 0; column < countLabelColumns; column++) {
+      const labelItem = inv.getItem(countLabelBaseSlot + column);
+      if (!labelItem || labelItem.typeId !== DEFAULT_COUNT_LABEL_ITEM) return true;
+      if ((labelItem.getLore() ?? []).length < countLabelRows) return true;
     }
     return false;
   }
@@ -592,7 +604,9 @@ export class Terminal extends BasicMachine {
    * @param {import("@minecraft/server").Container} inv Terminal inventory.
    * @param {number} slot Storage slot.
    * @param {object} [options] Rendering options.
-   * @param {number} [options.countLabelBaseSlot=110] Label slot offset.
+   * @param {number} [options.countLabelBaseSlot=108] First label column slot.
+   * @param {number} [options.countLabelColumns=9] Label column count.
+   * @param {number} [options.countLabelRows=12] Label rows per column.
    * @param {string} [options.fillerId="utilitycraft:storage_filler"] Filler item id.
    */
   static setCountLabel(
@@ -601,6 +615,8 @@ export class Terminal extends BasicMachine {
     slot,
     {
       countLabelBaseSlot = DEFAULT_COUNT_LABEL_BASE_SLOT,
+      countLabelColumns = DEFAULT_COUNT_LABEL_COLUMNS,
+      countLabelRows = DEFAULT_COUNT_LABEL_ROWS,
       fillerId = DEFAULT_STORAGE_FILLER,
     } = {},
   ) {
@@ -613,7 +629,27 @@ export class Terminal extends BasicMachine {
         labelText = `§r§f${valStr}`;
       }
     }
-    machine.setLabel(labelText, countLabelBaseSlot + slot);
+    const relativeSlot = slot - DEFAULT_STORAGE_START;
+    if (relativeSlot < 0) return;
+
+    const column = relativeSlot % countLabelColumns;
+    const row = Math.floor(relativeSlot / countLabelColumns);
+    if (column < 0 || column >= countLabelColumns || row < 0 || row >= countLabelRows) return;
+
+    const labelSlot = countLabelBaseSlot + column;
+    let labelItem = inv.getItem(labelSlot);
+    if (!labelItem || labelItem.typeId !== DEFAULT_COUNT_LABEL_ITEM) {
+      labelItem = new ItemStack(DEFAULT_COUNT_LABEL_ITEM, 1);
+    }
+    if (labelItem.nameTag !== " ") labelItem.nameTag = " ";
+
+    const lore = labelItem.getLore() ?? [];
+    while (lore.length < countLabelRows) lore.push(" ");
+    if (lore[row] === labelText) return;
+
+    lore[row] = labelText;
+    labelItem.setLore(lore.slice(0, countLabelRows));
+    inv.setItem(labelSlot, labelItem);
   }
 
   /**

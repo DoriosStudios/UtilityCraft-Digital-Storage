@@ -21,19 +21,19 @@ import {
 
 // Constant
 
-const BURN_SLOT = 218;
+const BURN_SLOT = 119;
 const STORAGE_START = 0;
 const STORAGE_END = 107;
 const COUNT_LABEL_BASE_SLOT = 108;
-const NEXT_SLOT = 219;
-const PREVIOUS_SLOT = 220;
-const QUANTITY_SLOT = 221;
-const SORT_SLOT = 222;
+const NEXT_SLOT = 120;
+const PREVIOUS_SLOT = 121;
+const QUANTITY_SLOT = 122;
+const SORT_SLOT = 123;
 const LORE_DISPLAY = "§r§7- Count: §f";
 const MAX_PAGES = 27;
 const STORAGE_SLOTS = 108;
 const CONTROL_SLOTS = [PREVIOUS_SLOT, NEXT_SLOT, QUANTITY_SLOT, SORT_SLOT];
-const RESERVED_FILLER_SLOTS = [216, 217];
+const RESERVED_FILLER_SLOTS = [117, 118];
 const RENDER_SETTINGS = {
   machine: {
     rate_speed_base: 0,

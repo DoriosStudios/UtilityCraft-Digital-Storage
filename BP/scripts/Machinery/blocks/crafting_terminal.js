@@ -11,26 +11,26 @@ import { crafterRecipes } from "Config/recipes/crafter.js";
 
 // Constant
 
-const BURN_SLOT = 218;
+const BURN_SLOT = 119;
 const STORAGE_START = 0;
 const STORAGE_END = 107;
 const COUNT_LABEL_BASE_SLOT = 108;
-const NEXT_SLOT = 219;
-const PREVIOUS_SLOT = 220;
-const QUANTITY_SLOT = 221;
-const SORT_SLOT = 222;
-const CRAFT_QTY_SLOT = 223;
-const REMOVE_RECIPE_SLOT = 224;
-const CRAFTING_BLUEPRINT_SLOT = 225;
-const CRAFTING_GRID = [226, 227, 228, 229, 230, 231, 232, 233, 234];
-const OUTPUT_SLOT = 235;
-const CRAFT_BUTTON_SLOT = 236;
-const OUTPUT_MODE_SLOT = 237;
+const NEXT_SLOT = 120;
+const PREVIOUS_SLOT = 121;
+const QUANTITY_SLOT = 122;
+const SORT_SLOT = 123;
+const CRAFT_QTY_SLOT = 124;
+const REMOVE_RECIPE_SLOT = 125;
+const CRAFTING_BLUEPRINT_SLOT = 126;
+const CRAFTING_GRID = [127, 128, 129, 130, 131, 132, 133, 134, 135];
+const OUTPUT_SLOT = 136;
+const CRAFT_BUTTON_SLOT = 137;
+const OUTPUT_MODE_SLOT = 138;
 const LORE_DISPLAY = "§r§7- Count: §f";
 const MAX_PAGES = 27;
 const STORAGE_SLOTS = 108;
 const OUTPUT_BLUEPRINT_ITEM = "utilitycraft:blueprint";
-const RESERVED_FILLER_SLOTS = [216, 217];
+const RESERVED_FILLER_SLOTS = [117, 118];
 const ITEM_EXPORTER = "utilitycraft:item_exporter";
 const ITEM_IMPORTER = "utilitycraft:item_importer";
 const MC_MAPS = {
