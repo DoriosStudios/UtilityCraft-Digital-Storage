@@ -42,7 +42,6 @@ const RENDER_SETTINGS = {
 };
 const BURN_SLOT_TICKS = 2;
 const BUTTON_RELEASE_TICKS = 6;
-const PAGE_CHANGE_DELAY_TICKS = 4;
 const GRID_REPAIR_TICKS = 200;
 
 // Main Work (Functions)
@@ -105,7 +104,7 @@ function refreshStorageTerminalControls(entity) {
   } catch (e) {}
 }
 function canChangePage(entity) {
-  return Terminal.canChangePage(entity, PAGE_CHANGE_DELAY_TICKS);
+  return Terminal.canChangePage(entity, Terminal.getPageChangeDelayTicks());
 }
 function markPageChanged(entity) {
   Terminal.markPageChanged(entity);
@@ -115,7 +114,7 @@ function setupStorageTerminalEntity(entity, block) {
     nameTag: "entity.utilitycraft:storage_terminal.name",
     machineId: "utilitycraft:storage_terminal",
     page: 0,
-    pageChangeDelayTicks: PAGE_CHANGE_DELAY_TICKS,
+    pageChangeDelayTicks: Terminal.getPageChangeDelayTicks(),
     extraProperties: {
       rendered_order: "[]",
       sort_requested: true,
@@ -579,7 +578,7 @@ async function renderStorageTerminalPage(
     storageSlots: STORAGE_SLOTS,
     countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
     loreDisplay: LORE_DISPLAY,
-    spreadTicks: PAGE_CHANGE_DELAY_TICKS,
+    spreadTicks: Terminal.getPageChangeDelayTicks(),
   });
 }
 function runStorageTerminalTick(block, machineEntity, settings) {

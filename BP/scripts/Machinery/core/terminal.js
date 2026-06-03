@@ -30,7 +30,6 @@ const DEFAULT_COUNT_LABEL_ITEM = "utilitycraft:ui_filler";
 const DEFAULT_STORAGE_FILLER = "utilitycraft:storage_filler";
 const DEFAULT_STORAGE_FILLER_NAME = "§rStorage Slot";
 const DEFAULT_LORE_DISPLAY = "§r§7- Count: §f";
-const DEFAULT_PAGE_CHANGE_DELAY_TICKS = 40;
 
 /**
  * Shared base class for Digital Storage terminal machines.
@@ -134,6 +133,12 @@ export class Terminal extends BasicMachine {
     });
   }
 
+  static getPageChangeDelayTicks() {
+    const tickSpeed = Math.floor(Number(globalThis.tickSpeed));
+    const baseTickSpeed = Number.isFinite(tickSpeed) && tickSpeed > 0 ? tickSpeed : 20;
+    return Math.max(1, baseTickSpeed * 2);
+  }
+
   static createUiFiller(entity, slot, nameTag = " ") {
     return createTaggedFiller("utilitycraft:ui_filler", nameTag, entity, slot);
   }
@@ -223,10 +228,10 @@ export class Terminal extends BasicMachine {
    * Checks whether enough ticks passed since the last page change.
    *
    * @param {import("@minecraft/server").Entity} entity Terminal entity.
-   * @param {number} [delayTicks=4] Minimum tick delay.
+   * @param {number} [delayTicks] Minimum tick delay.
    * @returns {boolean} True when a new page change is allowed.
    */
-  static canChangePage(entity, delayTicks = DEFAULT_PAGE_CHANGE_DELAY_TICKS) {
+  static canChangePage(entity, delayTicks = Terminal.getPageChangeDelayTicks()) {
     const currentTick = system.currentTick ?? 0;
     const lastTick =
       entity.getDynamicProperty("last_page_change_tick") ?? -delayTicks;
@@ -320,7 +325,7 @@ export class Terminal extends BasicMachine {
    * @param {string} options.nameTag Entity display name.
    * @param {string} [options.machineId] Machine identifier.
    * @param {number} [options.page=0] Initial page index.
-   * @param {number} [options.pageChangeDelayTicks=4] Initial page delay offset.
+   * @param {number} [options.pageChangeDelayTicks] Initial page delay offset.
    * @param {Record<string, boolean|number|string>} [options.extraProperties] Additional dynamic properties.
    */
   static setupBaseEntity(
@@ -330,7 +335,7 @@ export class Terminal extends BasicMachine {
       nameTag,
       machineId,
       page = 0,
-      pageChangeDelayTicks = DEFAULT_PAGE_CHANGE_DELAY_TICKS,
+      pageChangeDelayTicks = Terminal.getPageChangeDelayTicks(),
       extraProperties = {},
     },
   ) {
@@ -792,7 +797,7 @@ export class Terminal extends BasicMachine {
     loreDisplay = DEFAULT_LORE_DISPLAY,
     fillerId = DEFAULT_STORAGE_FILLER,
     fillerName = DEFAULT_STORAGE_FILLER_NAME,
-    spreadTicks = DEFAULT_PAGE_CHANGE_DELAY_TICKS,
+    spreadTicks = Terminal.getPageChangeDelayTicks(),
   }) {
     if (Terminal.isChunkedRenderActive(entity)) {
       entity.setDynamicProperty("force_refresh", true);

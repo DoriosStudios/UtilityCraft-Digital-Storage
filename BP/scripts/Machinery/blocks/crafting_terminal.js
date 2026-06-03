@@ -57,7 +57,6 @@ const RENDER_SETTINGS = {
   ignoreTick: false,
 };
 const BUTTON_RELEASE_TICKS = 6;
-const PAGE_CHANGE_DELAY_TICKS = 4;
 const GRID_REPAIR_TICKS = 200;
 
 // Main Work (Functions)
@@ -140,7 +139,7 @@ function refreshCraftingTerminalControls(entity) {
   } catch (e) {}
 }
 function canChangePage(entity) {
-  return Terminal.canChangePage(entity, PAGE_CHANGE_DELAY_TICKS);
+  return Terminal.canChangePage(entity, Terminal.getPageChangeDelayTicks());
 }
 function markPageChanged(entity) {
   Terminal.markPageChanged(entity);
@@ -237,7 +236,7 @@ function setupCraftingTerminalEntity(entity, block) {
   Terminal.setupBaseEntity(entity, block, {
     nameTag: "entity.utilitycraft:crafting_terminal.name",
     page: -1,
-    pageChangeDelayTicks: PAGE_CHANGE_DELAY_TICKS,
+    pageChangeDelayTicks: Terminal.getPageChangeDelayTicks(),
     extraProperties: {
       craft_qty: 1,
       rendered_order: "[]",
@@ -776,7 +775,7 @@ async function renderCraftingTerminalPage(
     storageSlots: STORAGE_SLOTS,
     countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
     loreDisplay: LORE_DISPLAY,
-    spreadTicks: PAGE_CHANGE_DELAY_TICKS,
+    spreadTicks: Terminal.getPageChangeDelayTicks(),
   });
 }
 function runCraftingStorageTerminalTick(block, machineEntity, settings) {
