@@ -65,12 +65,14 @@ function resolveVirtualItem(player, item, slot) {
   if (extracted <= 0) return true;
 
   const realItem = createItemFromKey(virtual.itemKey, extracted);
-  if (slot >= 0 && slot < inventory.size && !inventory.getItem(slot)) {
-    inventory.setItem(slot, realItem);
-    syncBlueprintDataForPlayerSlot(player, slot, realItem);
-  } else {
-    const overflow = inventory.addItem(realItem);
-    if (overflow) player.dimension.spawnItem(overflow, player.location);
+  const overflow = inventory.addItem(realItem);
+  if (overflow) {
+    if (slot >= 0 && slot < inventory.size && !inventory.getItem(slot)) {
+      inventory.setItem(slot, overflow);
+      syncBlueprintDataForPlayerSlot(player, slot, overflow);
+    } else {
+      player.dimension.spawnItem(overflow, player.location);
+    }
   }
   player.playSound("random.pop");
   return true;
