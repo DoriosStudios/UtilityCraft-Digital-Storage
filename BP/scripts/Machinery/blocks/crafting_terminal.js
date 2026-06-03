@@ -93,7 +93,7 @@ function getOutputMode(entity) {
 }
 function renderCraftingTerminalControls(entity, inv, currentPage, pageCount, currentQty, currentCraftQty, currentSort) {
   const qtyItem = new ItemStack("utilitycraft:ui_filler", 1);
-  qtyItem.nameTag = `§r§7- Quantity: §f${currentQty}`;
+  qtyItem.nameTag = `§r§fx${currentQty}`;
   inv.setItem(QUANTITY_SLOT, qtyItem);
   const craftQtyItem = new ItemStack("utilitycraft:ui_filler", 1);
   craftQtyItem.nameTag = `§r§fx${currentCraftQty}`;

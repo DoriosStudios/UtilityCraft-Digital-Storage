@@ -91,7 +91,7 @@ function renderBlueprintTerminalControls(entity, inv, currentPage, pageCount, cu
   nextItem.nameTag = `§r§7- Next Page §f${currentPage + 1}/${pageCount}`;
   inv.setItem(NEXT_SLOT, nextItem);
   const qtyItem = new ItemStack("utilitycraft:ui_filler", 1);
-  qtyItem.nameTag = `§r§7- Quantity: §f${currentQty}`;
+  qtyItem.nameTag = `§r§fx${currentQty}`;
   inv.setItem(QUANTITY_SLOT, qtyItem);
   const craftQtyItem = new ItemStack("utilitycraft:ui_filler", 1);
   craftQtyItem.nameTag = `§r§fx${currentCraftQty}`;

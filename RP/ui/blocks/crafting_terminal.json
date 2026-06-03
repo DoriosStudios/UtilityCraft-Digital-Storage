@@ -105,12 +105,13 @@
             },
             // Quantity Button
             {
-                "quantity_button@sh.button": {
+                "quantity_button@uc.dynamic_button": {
                     "layer": 10,
                     "$index": 239,
-                    "$default_texture": "textures/ui/buttons/quantity/button",
-                    "$hover_texture": "textures/ui/buttons/quantity/selected",
-                    "$pressed_texture": "textures/ui/buttons/quantity/pressed",
+                    "$default_texture": "textures/ui/buttons/button",
+                    "$hover_texture": "textures/ui/buttons/button_selected",
+                    "$pressed_texture": "textures/ui/buttons/button_pressed",
+                    "$text_scale": 1,
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
                     "offset": [

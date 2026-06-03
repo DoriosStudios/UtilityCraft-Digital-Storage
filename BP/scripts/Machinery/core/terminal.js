@@ -136,7 +136,7 @@ export class Terminal extends BasicMachine {
   static getPageChangeDelayTicks() {
     const tickSpeed = Math.floor(Number(globalThis.tickSpeed));
     const baseTickSpeed = Number.isFinite(tickSpeed) && tickSpeed > 0 ? tickSpeed : 20;
-    return Math.max(1, baseTickSpeed * 2);
+    return Math.max(1, baseTickSpeed);
   }
 
   static createUiFiller(entity, slot, nameTag = " ") {
