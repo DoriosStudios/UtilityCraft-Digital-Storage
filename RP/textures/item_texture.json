@@ -17,6 +17,9 @@
      "utilitycraft_ultimate_storage_cell": {
       "textures": "textures/items/cells/ultimate_storage_cell"
     },
+     "utilitycraft_storage_part": {
+      "textures": "textures/items/parts/storage_part"
+    },
      "utilitycraft_basic_storage_part": {
       "textures": "textures/items/parts/basic_storage_part"
     },

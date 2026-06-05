@@ -2,13 +2,13 @@
   "format_version": "1.26.0",
   "minecraft:item": {
     "description": {
-      "identifier": "utilitycraft:storage_core",
+      "identifier": "utilitycraft:storage_part",
       "menu_category": {
         "category": "items"
       }
     },
     "components": {
-      "minecraft:icon": "utilitycraft_storage_core",
+      "minecraft:icon": "utilitycraft_storage_part",
       "minecraft:max_stack_size": 64
     }
   }

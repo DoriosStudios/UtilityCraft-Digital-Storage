@@ -35,6 +35,7 @@ item.utilitycraft:basic_storage_cell=§eBasic Storage Cell\n§7- Max Capacity: �
 item.utilitycraft:advanced_storage_cell=§cAdvanced Storage Cell\n§7- Max Capacity: §f16.4k
 item.utilitycraft:expert_storage_cell=§bExpert Storage Cell\n§7- Max Capacity: §f65.5k
 item.utilitycraft:ultimate_storage_cell=§8Ultimate Storage Cell\n§7- Max Capacity: §f409.6k
+item.utilitycraft:storage_part=Storage Part
 item.utilitycraft:basic_storage_part=§eBasic Storage Part
 item.utilitycraft:advanced_storage_part=§cAdvanced Storage Part
 item.utilitycraft:expert_storage_part=§bExpert Storage Part
