@@ -41,10 +41,11 @@
                     },
                     {
                         "group_identifier": {
-                            "icon": "utilitycraft:basic_storage_part",
+                            "icon": "utilitycraft:storage_part",
                             "name": "dorios:itemGroup.name.parts"
                         },
                         "items": [
+                            "utilitycraft:storage_part",
                             "utilitycraft:basic_storage_part",
                             "utilitycraft:advanced_storage_part",
                             "utilitycraft:expert_storage_part",

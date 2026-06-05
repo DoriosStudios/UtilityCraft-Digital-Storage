@@ -11,26 +11,26 @@ import { crafterRecipes } from "Config/recipes/crafter.js";
 
 // Constant
 
-const BURN_SLOT = 218;
+const BURN_SLOT = 236;
 const STORAGE_START = 0;
-const STORAGE_END = 107;
-const COUNT_LABEL_BASE_SLOT = 108;
-const NEXT_SLOT = 219;
-const PREVIOUS_SLOT = 220;
-const QUANTITY_SLOT = 221;
-const SORT_SLOT = 222;
-const CRAFT_QTY_SLOT = 223;
-const REMOVE_RECIPE_SLOT = 224;
-const CRAFTING_BLUEPRINT_SLOT = 225;
-const CRAFTING_GRID = [226, 227, 228, 229, 230, 231, 232, 233, 234];
-const OUTPUT_SLOT = 235;
-const CRAFT_BUTTON_SLOT = 236;
-const OUTPUT_MODE_SLOT = 237;
+const STORAGE_END = 224;
+const COUNT_LABEL_BASE_SLOT = 225;
+const NEXT_SLOT = 237;
+const PREVIOUS_SLOT = 238;
+const QUANTITY_SLOT = 239;
+const SORT_SLOT = 240;
+const CRAFT_QTY_SLOT = 241;
+const REMOVE_RECIPE_SLOT = 242;
+const CRAFTING_BLUEPRINT_SLOT = 243;
+const CRAFTING_GRID = [244, 245, 246, 247, 248, 249, 250, 251, 252];
+const OUTPUT_SLOT = 253;
+const CRAFT_BUTTON_SLOT = 254;
+const OUTPUT_MODE_SLOT = 255;
 const LORE_DISPLAY = "§r§7- Count: §f";
 const MAX_PAGES = 27;
-const STORAGE_SLOTS = 108;
+const STORAGE_SLOTS = 225;
 const OUTPUT_BLUEPRINT_ITEM = "utilitycraft:blueprint";
-const RESERVED_FILLER_SLOTS = [216, 217];
+const RESERVED_FILLER_SLOTS = [234, 235];
 const ITEM_EXPORTER = "utilitycraft:item_exporter";
 const ITEM_IMPORTER = "utilitycraft:item_importer";
 const MC_MAPS = {
@@ -57,7 +57,6 @@ const RENDER_SETTINGS = {
   ignoreTick: false,
 };
 const BUTTON_RELEASE_TICKS = 6;
-const PAGE_CHANGE_DELAY_TICKS = 4;
 const GRID_REPAIR_TICKS = 200;
 
 // Main Work (Functions)
@@ -94,7 +93,7 @@ function getOutputMode(entity) {
 }
 function renderCraftingTerminalControls(entity, inv, currentPage, pageCount, currentQty, currentCraftQty, currentSort) {
   const qtyItem = new ItemStack("utilitycraft:ui_filler", 1);
-  qtyItem.nameTag = `§r§7- Quantity: §f${currentQty}`;
+  qtyItem.nameTag = `§r§fx${currentQty}`;
   inv.setItem(QUANTITY_SLOT, qtyItem);
   const craftQtyItem = new ItemStack("utilitycraft:ui_filler", 1);
   craftQtyItem.nameTag = `§r§fx${currentCraftQty}`;
@@ -140,7 +139,7 @@ function refreshCraftingTerminalControls(entity) {
   } catch (e) {}
 }
 function canChangePage(entity) {
-  return Terminal.canChangePage(entity, PAGE_CHANGE_DELAY_TICKS);
+  return Terminal.canChangePage(entity, Terminal.getPageChangeDelayTicks());
 }
 function markPageChanged(entity) {
   Terminal.markPageChanged(entity);
@@ -237,7 +236,7 @@ function setupCraftingTerminalEntity(entity, block) {
   Terminal.setupBaseEntity(entity, block, {
     nameTag: "entity.utilitycraft:crafting_terminal.name",
     page: -1,
-    pageChangeDelayTicks: PAGE_CHANGE_DELAY_TICKS,
+    pageChangeDelayTicks: Terminal.getPageChangeDelayTicks(),
     extraProperties: {
       craft_qty: 1,
       rendered_order: "[]",
@@ -776,7 +775,7 @@ async function renderCraftingTerminalPage(
     storageSlots: STORAGE_SLOTS,
     countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
     loreDisplay: LORE_DISPLAY,
-    spreadTicks: PAGE_CHANGE_DELAY_TICKS,
+    spreadTicks: Terminal.getPageChangeDelayTicks(),
   });
 }
 function runCraftingStorageTerminalTick(block, machineEntity, settings) {

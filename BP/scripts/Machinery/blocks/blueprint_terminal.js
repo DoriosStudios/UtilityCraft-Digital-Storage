@@ -10,26 +10,26 @@ import { applyVirtualLore, needsVirtualLoreRewrite } from "Machinery/storage/vir
 
 // Constant
 
-const BURN_SLOT = 218;
+const BURN_SLOT = 236;
 const STORAGE_START = 0;
-const STORAGE_END = 107;
-const COUNT_LABEL_BASE_SLOT = 108;
-const NEXT_SLOT = 219;
-const PREVIOUS_SLOT = 220;
-const QUANTITY_SLOT = 221;
-const SORT_SLOT = 222;
-const CRAFTING_BLUEPRINT_SLOT = 223;
-const CRAFTING_OUTPUT_SLOT = 224;
-const CRAFTING_INFO_PANEL_SLOT = 225;
-const CRAFT_QTY_SLOT = 226;
-const OUTPUT_MODE_SLOT = 227;
-const CRAFT_BUTTON_SLOT = 228;
-const REMOVE_RECIPE_SLOT = 229;
-const STORAGE_SLOTS = 108;
+const STORAGE_END = 224;
+const COUNT_LABEL_BASE_SLOT = 225;
+const NEXT_SLOT = 237;
+const PREVIOUS_SLOT = 238;
+const QUANTITY_SLOT = 239;
+const SORT_SLOT = 240;
+const CRAFTING_BLUEPRINT_SLOT = 241;
+const CRAFTING_OUTPUT_SLOT = 242;
+const CRAFTING_INFO_PANEL_SLOT = 243;
+const CRAFT_QTY_SLOT = 244;
+const OUTPUT_MODE_SLOT = 245;
+const CRAFT_BUTTON_SLOT = 246;
+const REMOVE_RECIPE_SLOT = 247;
+const STORAGE_SLOTS = 225;
 const LORE_DISPLAY = "§r§7- Count: §f";
 const MAX_PAGES = 27;
 const OUTPUT_BLUEPRINT_ITEM = "utilitycraft:blueprint";
-const RESERVED_FILLER_SLOTS = [216, 217];
+const RESERVED_FILLER_SLOTS = [234, 235];
 const CONTROL_SLOTS = [
   PREVIOUS_SLOT,
   NEXT_SLOT,
@@ -49,7 +49,6 @@ const RENDER_SETTINGS = {
   ignoreTick: false,
 };
 const BUTTON_RELEASE_TICKS = 6;
-const PAGE_CHANGE_DELAY_TICKS = 4;
 const GRID_REPAIR_TICKS = 200;
 
 // Main Work (Functions)
@@ -92,7 +91,7 @@ function renderBlueprintTerminalControls(entity, inv, currentPage, pageCount, cu
   nextItem.nameTag = `§r§7- Next Page §f${currentPage + 1}/${pageCount}`;
   inv.setItem(NEXT_SLOT, nextItem);
   const qtyItem = new ItemStack("utilitycraft:ui_filler", 1);
-  qtyItem.nameTag = `§r§7- Quantity: §f${currentQty}`;
+  qtyItem.nameTag = `§r§fx${currentQty}`;
   inv.setItem(QUANTITY_SLOT, qtyItem);
   const craftQtyItem = new ItemStack("utilitycraft:ui_filler", 1);
   craftQtyItem.nameTag = `§r§fx${currentCraftQty}`;
@@ -131,7 +130,7 @@ function refreshBlueprintTerminalControls(entity) {
   } catch (e) {}
 }
 function canChangePage(entity) {
-  return Terminal.canChangePage(entity, PAGE_CHANGE_DELAY_TICKS);
+  return Terminal.canChangePage(entity, Terminal.getPageChangeDelayTicks());
 }
 function markPageChanged(entity) {
   Terminal.markPageChanged(entity);
@@ -320,7 +319,7 @@ function setupCraftingTerminalEntity(entity, block) {
     nameTag: "entity.utilitycraft:blueprint_terminal.name",
     machineId: "utilitycraft:blueprint_terminal",
     page: -1,
-    pageChangeDelayTicks: PAGE_CHANGE_DELAY_TICKS,
+    pageChangeDelayTicks: Terminal.getPageChangeDelayTicks(),
     extraProperties: {
       craft_qty: 1,
       rendered_order: "[]",
@@ -638,7 +637,7 @@ async function renderBlueprintTerminalPage(
     storageSlots: STORAGE_SLOTS,
     countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
     loreDisplay: LORE_DISPLAY,
-    spreadTicks: PAGE_CHANGE_DELAY_TICKS,
+    spreadTicks: Terminal.getPageChangeDelayTicks(),
   });
 }
 function runCraftingStorageTerminalTick(block, machineEntity, settings) {

@@ -55,6 +55,10 @@ function coordTag(location) {
   return `[${Math.floor(location.x)},${Math.floor(location.y)},${Math.floor(location.z)}]`;
 }
 
+function entityNetworkTag(entity) {
+  return `${entity.dimension.id}|${coordTag(entity.location)}`;
+}
+
 function readCoordTag(tag) {
   const [x, y, z] = tag
     .slice(tag.indexOf("[") + 1, tag.lastIndexOf("]"))
@@ -86,8 +90,28 @@ function getMachineEntityAt(block) {
   return block.dimension.getEntitiesAtBlockLocation(block.location).find((entity) => MACHINE_TYPES.has(entity.typeId));
 }
 
+function networkContainsBlock(block, network) {
+  if (!network) return false;
+  if (isConduit(block)) return true;
+
+  const entity = getMachineEntityAt(block);
+  if (!entity) return false;
+
+  const tag = entityNetworkTag(entity);
+  if (entity.typeId === "utilitycraft:storage_center") {
+    return network.core === tag || network.cores?.includes(tag);
+  }
+  if (entity.typeId === "utilitycraft:disk_drive") {
+    return network.drives?.includes(tag);
+  }
+  return network.terminals?.includes(tag);
+}
+
 function canAccessNetworkRecord(block, network) {
-  return !!network && (network.online !== false || block?.typeId === "utilitycraft:storage_center");
+  return !!network && networkContainsBlock(block, network) && (
+    network.online !== false ||
+    block?.typeId === "utilitycraft:storage_center"
+  );
 }
 
 function setNetworkTags(entity, networkId) {
@@ -101,16 +125,34 @@ function setNetworkTags(entity, networkId) {
   entity.setDynamicProperty("ucds_network_id", networkId);
 }
 
+function clearNetworkTags(entity) {
+  for (const tag of entity.getTags()) {
+    if (tag.startsWith("ucds_net_")) entity.removeTag(tag);
+  }
+  entity.setDynamicProperty("ucds_network_id", undefined);
+  blockNetworkCache.delete(locKey(entity.dimension, entity.location));
+}
+
 function getNetworkBaseRate(entity) {
   return Math.max(0, Math.floor(Number(NETWORK_BASE_RATES[entity?.typeId] ?? 0)));
 }
 
+function isNetworkAnchor(entity) {
+  return entity?.typeId === "utilitycraft:storage_center" ||
+    entity?.typeId === "utilitycraft:disk_drive";
+}
+
 function resolveNetworkId(entities) {
+  const entityTags = new Set(entities.map(entityNetworkTag));
   const ids = entities
     .map((entity) => entity.getDynamicProperty("ucds_network_id"))
     .filter((id) => Number.isInteger(id) && id > 0);
+  const reusableIds = ids.filter((id) => {
+    const network = readNetworkMeta(id);
+    return !network?.core || entityTags.has(network.core);
+  });
 
-  return ids.length > 0 ? Math.min(...ids) : allocateNetworkId();
+  return reusableIds.length > 0 ? Math.min(...reusableIds) : allocateNetworkId();
 }
 
 function updateConduitGeometry(block) {
@@ -174,6 +216,14 @@ export function rebuildNetworkFromBlock(block) {
 
   const { conduits, entities } = scanNetwork(block);
   if (entities.length === 0 && conduits.length === 0) return undefined;
+  if (!entities.some(isNetworkAnchor)) {
+    for (const entity of entities) clearNetworkTags(entity);
+    for (const conduit of conduits) {
+      blockNetworkCache.delete(locKey(conduit.dimension, conduit.location));
+      updateConduitGeometry(conduit);
+    }
+    return undefined;
+  }
 
   const networkId = resolveNetworkId(entities);
   const cells = [];
@@ -271,11 +321,12 @@ export function updateNetworkAround(block) {
 }
 
 export function getNetworkIdForBlock(block) {
-  const cached = blockNetworkCache.get(locKey(block.dimension, block.location));
+  const key = locKey(block.dimension, block.location);
+  const cached = blockNetworkCache.get(key);
   if (cached) {
     const cachedRecord = readNetworkMeta(cached);
     if (canAccessNetworkRecord(block, cachedRecord)) return cached;
-    if (cachedRecord) return undefined;
+    blockNetworkCache.delete(key);
   }
 
   const entity = getMachineEntityAt(block);
@@ -283,10 +334,10 @@ export function getNetworkIdForBlock(block) {
   if (Number.isInteger(entityNetworkId)) {
     const entityRecord = readNetworkMeta(entityNetworkId);
     if (canAccessNetworkRecord(block, entityRecord)) {
-      blockNetworkCache.set(locKey(block.dimension, block.location), entityNetworkId);
+      blockNetworkCache.set(key, entityNetworkId);
       return entityNetworkId;
     }
-    if (entityRecord) return undefined;
+    clearNetworkTags(entity);
   }
 
   const rebuiltNetworkId = rebuildNetworkFromBlock(block);

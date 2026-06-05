@@ -1,4 +1,4 @@
-import { system } from "@minecraft/server";
+import { ItemStack, system } from "@minecraft/server";
 import { BasicMachine, Machine } from "DoriosCore/index.js";
 import { spawnEntity } from "DoriosCore/utils/entity.js";
 import { getNetworkNodes, updateNetworkAround } from "Machinery/storage/network_manager.js";
@@ -20,14 +20,16 @@ import { createTaggedFiller } from "Machinery/storage/filler_restore.js";
 import { syncBlueprintDataAtSlot as syncBlueprintSlotData } from "Machinery/core/blueprint.js";
 
 const DEFAULT_STORAGE_START = 0;
-const DEFAULT_STORAGE_END = 107;
-const DEFAULT_STORAGE_SLOTS = 108;
+const DEFAULT_STORAGE_END = 224;
+const DEFAULT_STORAGE_SLOTS = 225;
 const DEFAULT_MAX_PAGES = 27;
-const DEFAULT_COUNT_LABEL_BASE_SLOT = 108;
+const DEFAULT_COUNT_LABEL_BASE_SLOT = 225;
+const DEFAULT_COUNT_LABEL_COLUMNS = 9;
+const DEFAULT_COUNT_LABEL_ROWS = 25;
+const DEFAULT_COUNT_LABEL_ITEM = "utilitycraft:ui_filler";
 const DEFAULT_STORAGE_FILLER = "utilitycraft:storage_filler";
 const DEFAULT_STORAGE_FILLER_NAME = "§rStorage Slot";
 const DEFAULT_LORE_DISPLAY = "§r§7- Count: §f";
-const DEFAULT_PAGE_CHANGE_DELAY_TICKS = 40;
 
 /**
  * Shared base class for Digital Storage terminal machines.
@@ -131,6 +133,12 @@ export class Terminal extends BasicMachine {
     });
   }
 
+  static getPageChangeDelayTicks() {
+    const tickSpeed = Math.floor(Number(globalThis.tickSpeed));
+    const baseTickSpeed = Number.isFinite(tickSpeed) && tickSpeed > 0 ? tickSpeed : 20;
+    return Math.max(1, baseTickSpeed);
+  }
+
   static createUiFiller(entity, slot, nameTag = " ") {
     return createTaggedFiller("utilitycraft:ui_filler", nameTag, entity, slot);
   }
@@ -150,7 +158,9 @@ export class Terminal extends BasicMachine {
    * @param {object} [options] Grid options.
    * @param {number} [options.storageStart=0] First storage slot.
    * @param {number} [options.storageEnd=107] Last storage slot.
-   * @param {number} [options.countLabelBaseSlot=108] First count label slot.
+   * @param {number} [options.countLabelBaseSlot=108] First count label column slot.
+   * @param {number} [options.countLabelColumns=9] Label column count.
+   * @param {number} [options.countLabelRows=12] Label rows per column.
    * @param {string} [options.fillerId="utilitycraft:storage_filler"] Filler item id.
    * @param {string} [options.fillerName] Filler display name.
    * @returns {boolean} True when the grid should be rendered again.
@@ -161,6 +171,8 @@ export class Terminal extends BasicMachine {
       storageStart = DEFAULT_STORAGE_START,
       storageEnd = DEFAULT_STORAGE_END,
       countLabelBaseSlot = DEFAULT_COUNT_LABEL_BASE_SLOT,
+      countLabelColumns = DEFAULT_COUNT_LABEL_COLUMNS,
+      countLabelRows = DEFAULT_COUNT_LABEL_ROWS,
       fillerId = DEFAULT_STORAGE_FILLER,
       fillerName = DEFAULT_STORAGE_FILLER_NAME,
     } = {},
@@ -169,7 +181,12 @@ export class Terminal extends BasicMachine {
       const item = inv.getItem(slot);
       if (!item) return true;
       if (item.typeId === fillerId && item.nameTag !== fillerName) return true;
-      if (!inv.getItem(countLabelBaseSlot + slot - storageStart)) return true;
+    }
+
+    for (let column = 0; column < countLabelColumns; column++) {
+      const labelItem = inv.getItem(countLabelBaseSlot + column);
+      if (!labelItem || labelItem.typeId !== DEFAULT_COUNT_LABEL_ITEM) return true;
+      if ((labelItem.getLore() ?? []).length < countLabelRows) return true;
     }
     return false;
   }
@@ -211,10 +228,10 @@ export class Terminal extends BasicMachine {
    * Checks whether enough ticks passed since the last page change.
    *
    * @param {import("@minecraft/server").Entity} entity Terminal entity.
-   * @param {number} [delayTicks=4] Minimum tick delay.
+   * @param {number} [delayTicks] Minimum tick delay.
    * @returns {boolean} True when a new page change is allowed.
    */
-  static canChangePage(entity, delayTicks = DEFAULT_PAGE_CHANGE_DELAY_TICKS) {
+  static canChangePage(entity, delayTicks = Terminal.getPageChangeDelayTicks()) {
     const currentTick = system.currentTick ?? 0;
     const lastTick =
       entity.getDynamicProperty("last_page_change_tick") ?? -delayTicks;
@@ -308,7 +325,7 @@ export class Terminal extends BasicMachine {
    * @param {string} options.nameTag Entity display name.
    * @param {string} [options.machineId] Machine identifier.
    * @param {number} [options.page=0] Initial page index.
-   * @param {number} [options.pageChangeDelayTicks=4] Initial page delay offset.
+   * @param {number} [options.pageChangeDelayTicks] Initial page delay offset.
    * @param {Record<string, boolean|number|string>} [options.extraProperties] Additional dynamic properties.
    */
   static setupBaseEntity(
@@ -318,7 +335,7 @@ export class Terminal extends BasicMachine {
       nameTag,
       machineId,
       page = 0,
-      pageChangeDelayTicks = DEFAULT_PAGE_CHANGE_DELAY_TICKS,
+      pageChangeDelayTicks = Terminal.getPageChangeDelayTicks(),
       extraProperties = {},
     },
   ) {
@@ -592,7 +609,9 @@ export class Terminal extends BasicMachine {
    * @param {import("@minecraft/server").Container} inv Terminal inventory.
    * @param {number} slot Storage slot.
    * @param {object} [options] Rendering options.
-   * @param {number} [options.countLabelBaseSlot=110] Label slot offset.
+   * @param {number} [options.countLabelBaseSlot=108] First label column slot.
+   * @param {number} [options.countLabelColumns=9] Label column count.
+   * @param {number} [options.countLabelRows=12] Label rows per column.
    * @param {string} [options.fillerId="utilitycraft:storage_filler"] Filler item id.
    */
   static setCountLabel(
@@ -601,6 +620,8 @@ export class Terminal extends BasicMachine {
     slot,
     {
       countLabelBaseSlot = DEFAULT_COUNT_LABEL_BASE_SLOT,
+      countLabelColumns = DEFAULT_COUNT_LABEL_COLUMNS,
+      countLabelRows = DEFAULT_COUNT_LABEL_ROWS,
       fillerId = DEFAULT_STORAGE_FILLER,
     } = {},
   ) {
@@ -613,7 +634,27 @@ export class Terminal extends BasicMachine {
         labelText = `§r§f${valStr}`;
       }
     }
-    machine.setLabel(labelText, countLabelBaseSlot + slot);
+    const relativeSlot = slot - DEFAULT_STORAGE_START;
+    if (relativeSlot < 0) return;
+
+    const column = relativeSlot % countLabelColumns;
+    const row = Math.floor(relativeSlot / countLabelColumns);
+    if (column < 0 || column >= countLabelColumns || row < 0 || row >= countLabelRows) return;
+
+    const labelSlot = countLabelBaseSlot + column;
+    let labelItem = inv.getItem(labelSlot);
+    if (!labelItem || labelItem.typeId !== DEFAULT_COUNT_LABEL_ITEM) {
+      labelItem = new ItemStack(DEFAULT_COUNT_LABEL_ITEM, 1);
+    }
+    if (labelItem.nameTag !== " ") labelItem.nameTag = " ";
+
+    const lore = labelItem.getLore() ?? [];
+    while (lore.length < countLabelRows) lore.push(" ");
+    if (lore[row] === labelText) return;
+
+    lore[row] = labelText;
+    labelItem.setLore(lore.slice(0, countLabelRows));
+    inv.setItem(labelSlot, labelItem);
   }
 
   /**
@@ -756,7 +797,7 @@ export class Terminal extends BasicMachine {
     loreDisplay = DEFAULT_LORE_DISPLAY,
     fillerId = DEFAULT_STORAGE_FILLER,
     fillerName = DEFAULT_STORAGE_FILLER_NAME,
-    spreadTicks = DEFAULT_PAGE_CHANGE_DELAY_TICKS,
+    spreadTicks = Terminal.getPageChangeDelayTicks(),
   }) {
     if (Terminal.isChunkedRenderActive(entity)) {
       entity.setDynamicProperty("force_refresh", true);

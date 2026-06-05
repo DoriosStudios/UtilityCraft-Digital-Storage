@@ -21,19 +21,19 @@ import {
 
 // Constant
 
-const BURN_SLOT = 218;
+const BURN_SLOT = 236;
 const STORAGE_START = 0;
-const STORAGE_END = 107;
-const COUNT_LABEL_BASE_SLOT = 108;
-const NEXT_SLOT = 219;
-const PREVIOUS_SLOT = 220;
-const QUANTITY_SLOT = 221;
-const SORT_SLOT = 222;
+const STORAGE_END = 224;
+const COUNT_LABEL_BASE_SLOT = 225;
+const NEXT_SLOT = 237;
+const PREVIOUS_SLOT = 238;
+const QUANTITY_SLOT = 239;
+const SORT_SLOT = 240;
 const LORE_DISPLAY = "§r§7- Count: §f";
 const MAX_PAGES = 27;
-const STORAGE_SLOTS = 108;
+const STORAGE_SLOTS = 225;
 const CONTROL_SLOTS = [PREVIOUS_SLOT, NEXT_SLOT, QUANTITY_SLOT, SORT_SLOT];
-const RESERVED_FILLER_SLOTS = [216, 217];
+const RESERVED_FILLER_SLOTS = [234, 235];
 const RENDER_SETTINGS = {
   machine: {
     rate_speed_base: 0,
@@ -42,7 +42,6 @@ const RENDER_SETTINGS = {
 };
 const BURN_SLOT_TICKS = 2;
 const BUTTON_RELEASE_TICKS = 6;
-const PAGE_CHANGE_DELAY_TICKS = 4;
 const GRID_REPAIR_TICKS = 200;
 
 // Main Work (Functions)
@@ -74,7 +73,7 @@ function renderTerminalControls(entity, inv, currentPage, pageCount, currentQty,
   nextItem.nameTag = `§r§7- Next Page §f${currentPage + 1}/${pageCount}`;
   inv.setItem(NEXT_SLOT, nextItem);
   const qtyItem = new ItemStack("utilitycraft:ui_filler", 1);
-  qtyItem.nameTag = `§r§7- Quantity: §f${currentQty}`;
+  qtyItem.nameTag = `§r§fx${currentQty}`;
   inv.setItem(QUANTITY_SLOT, qtyItem);
   const sortItem = new ItemStack("utilitycraft:ui_filler", 1);
   sortItem.nameTag = `§r§7- Sort By: §f${currentSort === "name" ? "Name" : "Count"}`;
@@ -105,7 +104,7 @@ function refreshStorageTerminalControls(entity) {
   } catch (e) {}
 }
 function canChangePage(entity) {
-  return Terminal.canChangePage(entity, PAGE_CHANGE_DELAY_TICKS);
+  return Terminal.canChangePage(entity, Terminal.getPageChangeDelayTicks());
 }
 function markPageChanged(entity) {
   Terminal.markPageChanged(entity);
@@ -115,7 +114,7 @@ function setupStorageTerminalEntity(entity, block) {
     nameTag: "entity.utilitycraft:storage_terminal.name",
     machineId: "utilitycraft:storage_terminal",
     page: 0,
-    pageChangeDelayTicks: PAGE_CHANGE_DELAY_TICKS,
+    pageChangeDelayTicks: Terminal.getPageChangeDelayTicks(),
     extraProperties: {
       rendered_order: "[]",
       sort_requested: true,
@@ -579,7 +578,7 @@ async function renderStorageTerminalPage(
     storageSlots: STORAGE_SLOTS,
     countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
     loreDisplay: LORE_DISPLAY,
-    spreadTicks: PAGE_CHANGE_DELAY_TICKS,
+    spreadTicks: Terminal.getPageChangeDelayTicks(),
   });
 }
 function runStorageTerminalTick(block, machineEntity, settings) {
@@ -737,7 +736,7 @@ function runStorageTerminalTick(block, machineEntity, settings) {
     nextItem.nameTag = `§r§7- Next Page §f${currentPage + 1}/${pageCount}`;
     inv.setItem(NEXT_SLOT, nextItem);
     const qtyItem = new ItemStack("utilitycraft:ui_filler", 1);
-    qtyItem.nameTag = `§r§7- Quantity: §f${currentQty}`;
+    qtyItem.nameTag = `§r§fx${currentQty}`;
     inv.setItem(QUANTITY_SLOT, qtyItem);
     const sortItem = new ItemStack("utilitycraft:ui_filler", 1);
     sortItem.nameTag = `§r§7- Sort By: §f${currentSort === "name" ? "Name" : "Count"}`;

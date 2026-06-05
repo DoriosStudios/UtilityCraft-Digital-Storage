@@ -67,7 +67,7 @@
             {
                 "next_button@sh.button": {
                     "layer": 10,
-                    "$index": 219,
+                    "$index": 237,
                     "$button_size": [
                         22,
                         22
@@ -87,7 +87,7 @@
             {
                 "previous_button@sh.button": {
                     "layer": 10,
-                    "$index": 220,
+                    "$index": 238,
                     "$button_size": [
                         22,
                         22
@@ -105,12 +105,13 @@
             },
             // Quantity Button
             {
-                "quantity_button@sh.button": {
+                "quantity_button@uc.dynamic_button": {
                     "layer": 10,
-                    "$index": 221,
-                    "$default_texture": "textures/ui/buttons/quantity/button",
-                    "$hover_texture": "textures/ui/buttons/quantity/selected",
-                    "$pressed_texture": "textures/ui/buttons/quantity/pressed",
+                    "$index": 239,
+                    "$default_texture": "textures/ui/buttons/button",
+                    "$hover_texture": "textures/ui/buttons/button_selected",
+                    "$pressed_texture": "textures/ui/buttons/button_pressed",
+                    "$text_scale": 1,
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
                     "offset": [
@@ -127,7 +128,7 @@
             {
                 "sort_button@sh.button": {
                     "layer": 10,
-                    "$index": 222,
+                    "$index": 240,
                     "$default_texture": "textures/ui/buttons/sort/button",
                     "$hover_texture": "textures/ui/buttons/sort/selected",
                     "$pressed_texture": "textures/ui/buttons/sort/pressed",
@@ -204,21 +205,21 @@
                                     -114,
                                     -32
                                 ],
-                                "$quantity_index": 223,
-                                "$remove_index": 224,
-                                "$blueprint_index": 225,
-                                "$grid_index_1": 226,
-                                "$grid_index_2": 227,
-                                "$grid_index_3": 228,
-                                "$grid_index_4": 229,
-                                "$grid_index_5": 230,
-                                "$grid_index_6": 231,
-                                "$grid_index_7": 232,
-                                "$grid_index_8": 233,
-                                "$grid_index_9": 234,
-                                "$output_index": 235,
-                                "$craft_index": 236,
-                                "$mode_index": 237
+                                "$quantity_index": 241,
+                                "$remove_index": 242,
+                                "$blueprint_index": 243,
+                                "$grid_index_1": 244,
+                                "$grid_index_2": 245,
+                                "$grid_index_3": 246,
+                                "$grid_index_4": 247,
+                                "$grid_index_5": 248,
+                                "$grid_index_6": 249,
+                                "$grid_index_7": 250,
+                                "$grid_index_8": 251,
+                                "$grid_index_9": 252,
+                                "$output_index": 253,
+                                "$craft_index": 254,
+                                "$mode_index": 255
                             }
                         },
                         {

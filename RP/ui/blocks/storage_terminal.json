@@ -46,7 +46,7 @@
             {
                 "next_button@sh.button": {
                     "layer": 10,
-                    "$index": 219,
+                    "$index": 237,
                     "$default_texture": "textures/ui/buttons/next/button",
                     "$hover_texture": "textures/ui/buttons/next/selected",
                     "$pressed_texture": "textures/ui/buttons/next/pressed",
@@ -59,7 +59,7 @@
             {
                 "previous_button@sh.button": {
                     "layer": 10,
-                    "$index": 220,
+                    "$index": 238,
                     "$default_texture": "textures/ui/buttons/previous/button",
                     "$hover_texture": "textures/ui/buttons/previous/selected",
                     "$pressed_texture": "textures/ui/buttons/previous/pressed",
@@ -70,12 +70,13 @@
                 }
             },
             {
-                "quantity_button@sh.button": {
+                "quantity_button@uc.dynamic_button": {
                     "layer": 10,
-                    "$index": 221,
-                    "$default_texture": "textures/ui/buttons/quantity/button",
-                    "$hover_texture": "textures/ui/buttons/quantity/selected",
-                    "$pressed_texture": "textures/ui/buttons/quantity/pressed",
+                    "$index": 239,
+                    "$default_texture": "textures/ui/buttons/button",
+                    "$hover_texture": "textures/ui/buttons/button_selected",
+                    "$pressed_texture": "textures/ui/buttons/button_pressed",
+                    "$text_scale": 1,
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
                     "offset": [ 106, 90 ],
@@ -85,7 +86,7 @@
             {
                 "sort_button@sh.button": {
                     "layer": 10,
-                    "$index": 222,
+                    "$index": 240,
                     "$default_texture": "textures/ui/buttons/sort/button",
                     "$hover_texture": "textures/ui/buttons/sort/selected",
                     "$pressed_texture": "textures/ui/buttons/sort/pressed",
