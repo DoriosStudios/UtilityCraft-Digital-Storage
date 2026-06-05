@@ -35,6 +35,9 @@
      "utilitycraft_storage_core": {
       "textures": "textures/items/storage_core"
     },
+     "utilitycraft_fluxite": {
+      "textures": "textures/items/fluxite"
+    },
      "utilitycraft_wireless_panel_off": {
       "textures": "textures/items/wireless/wireless_panel_off"
     },

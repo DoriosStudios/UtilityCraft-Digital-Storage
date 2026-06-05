@@ -41,6 +41,7 @@ item.utilitycraft:advanced_storage_part=§cAdvanced Storage Part
 item.utilitycraft:expert_storage_part=§bExpert Storage Part
 item.utilitycraft:ultimate_storage_part=§8Ultimate Storage Part
 item.utilitycraft:storage_core=Storage Core
+item.utilitycraft:fluxite=Fluxite
 item.utilitycraft:wireless_panel_off=Wireless Panel-Off
 item.utilitycraft:wireless_panel_on=Wireless Panel-On\n§7- Link with a terminal to use
 item.utilitycraft:wireless_crafting_panel_off=Wireless Crafting Panel-Off
@@ -53,6 +54,7 @@ item.utilitycraft:wireless_crafting_panel_on=Wireless Crafting Panel-On\n§7- Li
 dorios:itemGroup.name.storage=Storage
 dorios:itemGroup.name.cells=Cells
 dorios:itemGroup.name.parts=Parts
+dorios:itemGroup.name.materials=Materials
 dorios:itemGroup.name.wireless=Wireless
 
 #################

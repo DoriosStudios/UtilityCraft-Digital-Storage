@@ -51,6 +51,15 @@
                             "utilitycraft:expert_storage_part",
                             "utilitycraft:ultimate_storage_part"
                         ]
+                    },
+                    {
+                        "group_identifier": {
+                            "icon": "utilitycraft:fluxite",
+                            "name": "dorios:itemGroup.name.materials"
+                        },
+                        "items": [
+                            "utilitycraft:fluxite"
+                        ]
                     }
                 ]
             }
