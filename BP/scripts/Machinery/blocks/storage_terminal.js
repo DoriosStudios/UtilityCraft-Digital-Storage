@@ -32,6 +32,8 @@ const SORT_SLOT = 240;
 const LORE_DISPLAY = "§r§7- Count: §f";
 const MAX_PAGES = 27;
 const STORAGE_SLOTS = 225;
+const COUNT_LABEL_COLUMNS = 9;
+const COUNT_LABEL_ROWS = 25;
 const CONTROL_SLOTS = [PREVIOUS_SLOT, NEXT_SLOT, QUANTITY_SLOT, SORT_SLOT];
 const RESERVED_FILLER_SLOTS = [234, 235];
 const RENDER_SETTINGS = {
@@ -83,6 +85,55 @@ function renderTerminalControls(entity, inv, currentPage, pageCount, currentQty,
   entity.setDynamicProperty("last_rendered_qty", currentQty);
   entity.setDynamicProperty("last_rendered_sort", currentSort);
 }
+function createCountLabelFiller(entity, slot) {
+  const item = Terminal.createUiFiller(entity, slot);
+  item.setLore(Array(COUNT_LABEL_ROWS).fill(" "));
+  return item;
+}
+function initializeStorageTerminalInventory(entity) {
+  const inv = entity.getComponent("minecraft:inventory")?.container;
+  if (!inv) return false;
+
+  for (let slot = STORAGE_START; slot <= STORAGE_END; slot++) {
+    const item = inv.getItem(slot);
+    if (!item || item.typeId === "utilitycraft:storage_filler") {
+      inv.setItem(slot, Terminal.createStorageFiller(entity, slot));
+    }
+  }
+
+  for (let column = 0; column < COUNT_LABEL_COLUMNS; column++) {
+    const slot = COUNT_LABEL_BASE_SLOT + column;
+    inv.setItem(slot, createCountLabelFiller(entity, slot));
+  }
+
+  Terminal.repairFillerSlots(inv, RESERVED_FILLER_SLOTS, { entity });
+  renderTerminalControls(entity, inv, 0, 1, 1, "count");
+  return true;
+}
+function repairCountLabelSlots(block, entity, inv) {
+  for (let column = 0; column < COUNT_LABEL_COLUMNS; column++) {
+    const slot = COUNT_LABEL_BASE_SLOT + column;
+    const item = inv.getItem(slot);
+    const lore = item?.getLore?.() ?? [];
+    if (
+      item &&
+      item.typeId === "utilitycraft:ui_filler" &&
+      item.nameTag === " " &&
+      lore.length >= COUNT_LABEL_ROWS
+    ) {
+      continue;
+    }
+
+    if (
+      item &&
+      item.typeId !== "utilitycraft:ui_filler" &&
+      item.typeId !== "utilitycraft:storage_filler"
+    ) {
+      returnToPlayer(block, item);
+    }
+    inv.setItem(slot, createCountLabelFiller(entity, slot));
+  }
+}
 function refreshStorageTerminalControls(entity) {
   try {
     if (!entity || !entity.isValid) return;
@@ -120,6 +171,9 @@ function setupStorageTerminalEntity(entity, block) {
       sort_requested: true,
     },
   });
+  if (!initializeStorageTerminalInventory(entity)) {
+    system.runTimeout(() => initializeStorageTerminalInventory(entity), 1);
+  }
 }
 function isStorageCell(item) {
   if (!item) return false;
@@ -589,6 +643,7 @@ function runStorageTerminalTick(block, machineEntity, settings) {
   const machine = new Terminal(block, settings);
   if (!machine || !machine.valid) return;
   const inv = entity.getComponent("minecraft:inventory").container;
+  repairCountLabelSlots(block, entity, inv);
   Terminal.repairFillerSlots(inv, RESERVED_FILLER_SLOTS, {
     entity,
     onBlockedItem: (item) => returnToPlayer(block, item),
