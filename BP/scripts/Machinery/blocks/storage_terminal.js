@@ -388,6 +388,13 @@ function getRenderedOrder(entity) {
     return [];
   }
 }
+function appendRenderedOrder(entity, itemKey) {
+  const order = getRenderedOrder(entity);
+  if (order.includes(itemKey)) return;
+
+  order.push(itemKey);
+  entity.setDynamicProperty("rendered_order", JSON.stringify(order));
+}
 function sortItemKeys(keys, networkTotals, sortMode) {
   return keys.sort((a, b) => {
     if (sortMode === "name") {
@@ -476,6 +483,7 @@ function renderVirtualItemAtSlot(entity, inv, machine, networkId, itemKey, count
   const renderedSlots = getRenderedSlotMap(entity);
   renderedSlots[itemKey] = slot;
   entity.setDynamicProperty("rendered_slot_keys", JSON.stringify(renderedSlots));
+  appendRenderedOrder(entity, itemKey);
 }
 function updateOrAppendVisibleVirtualItem(entity, inv, machine, networkId, itemKey, count, currentQty) {
   const renderedSlots = getRenderedSlotMap(entity);
@@ -691,10 +699,15 @@ function runStorageTerminalTick(block, machineEntity, settings) {
     entity.setDynamicProperty("force_refresh", true);
     entity.setDynamicProperty("last_rendered_page", -1);
   }
+  const shouldScanInput =
+    forceRefresh || controlsChanged || currentTick % 10 === 0;
+  const hasPendingInput =
+    shouldScanInput ? hasActionableStorageItems(inv) : false;
   const canUseNetworkDeltas =
     hasNetworkSnapshot &&
     !forceRefresh &&
     !controlsChanged &&
+    !hasPendingInput &&
     currentPage === lastRendered &&
     currentQty === lastQty &&
     currentSort === lastSort &&
@@ -752,10 +765,6 @@ function runStorageTerminalTick(block, machineEntity, settings) {
     );
     return;
   }
-  const shouldScanInput =
-    forceRefresh || controlsChanged || currentTick % 10 === 0;
-  const hasPendingInput =
-    shouldScanInput ? hasActionableStorageItems(inv) : false;
   if (
     !forceRefresh &&
     !controlsChanged &&

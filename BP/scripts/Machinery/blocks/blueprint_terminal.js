@@ -587,6 +587,13 @@ function getRenderedOrder(entity) {
     return [];
   }
 }
+function appendRenderedOrder(entity, itemKey) {
+  const order = getRenderedOrder(entity);
+  if (order.includes(itemKey)) return;
+
+  order.push(itemKey);
+  entity.setDynamicProperty("rendered_order", JSON.stringify(order));
+}
 function sortItemKeys(keys, networkTotals, sortMode) {
   return keys.sort((a, b) => {
     if (sortMode === "name") {
@@ -641,6 +648,54 @@ function isRenderedItemVisible(entity, inv, itemKey) {
     storageStart: STORAGE_START,
     storageEnd: STORAGE_END,
   });
+}
+function findFreeStorageSlot(inv) {
+  for (let slot = STORAGE_START; slot <= STORAGE_END; slot++) {
+    const item = inv.getItem(slot);
+    if (!item || item.typeId === "utilitycraft:storage_filler") return slot;
+  }
+
+  return -1;
+}
+function renderVirtualItemAtSlot(entity, inv, machine, networkId, itemKey, count, currentQty, slot) {
+  const virtualItemTest = createItemFromKey(itemKey, 1);
+  const maxStack = virtualItemTest.maxAmount ?? 64;
+  const renderAmount = Math.min(currentQty, count, maxStack);
+  const virtualItem = createItemFromKey(itemKey, renderAmount);
+  const currentLore = virtualItem.getLore() || [];
+  applyVirtualLore(
+    virtualItem,
+    [...currentLore, `${LORE_DISPLAY}${count}`],
+    networkId,
+    itemKey,
+  );
+  inv.setItem(slot, virtualItem);
+  Terminal.syncBlueprintDataAtSlot(entity, slot, virtualItem);
+  setCountLabel(machine, inv, slot);
+
+  const renderedSlots = getRenderedSlotMap(entity);
+  renderedSlots[itemKey] = slot;
+  entity.setDynamicProperty("rendered_slot_keys", JSON.stringify(renderedSlots));
+  appendRenderedOrder(entity, itemKey);
+}
+function updateOrAppendVisibleVirtualItem(entity, inv, machine, networkId, itemKey, count, currentQty) {
+  const renderedSlots = getRenderedSlotMap(entity);
+  if (Number.isInteger(renderedSlots[itemKey]) || isRenderedItemVisible(entity, inv, itemKey)) {
+    return updateVisibleVirtualItem(entity, inv, machine, networkId, itemKey, count, currentQty);
+  }
+
+  if (count <= 0) return true;
+
+  const freeSlot = findFreeStorageSlot(inv);
+  if (freeSlot < 0) return false;
+
+  try {
+    renderVirtualItemAtSlot(entity, inv, machine, networkId, itemKey, count, currentQty, freeSlot);
+    return true;
+  } catch {
+    entity.setDynamicProperty("force_refresh", true);
+    return false;
+  }
 }
 function applyNetworkDeltas(entity, inv, machine, networkRecord, networkId, currentQty) {
   return Terminal.applyNetworkDeltas(entity, inv, machine, networkRecord, networkId, currentQty, {
@@ -922,11 +977,14 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
         const updatedNetwork = readNetworkRecord(nodes.networkId);
         const updatedTotals = updatedNetwork?.totals ?? {};
         const newCount = Number(updatedTotals[itemKey] ?? 0);
-        if (isRenderedItemVisible(entity, inv, itemKey)) {
-          updateVisibleVirtualItem(entity, inv, machine, nodes.networkId, itemKey, newCount, currentQty);
+        if (updateOrAppendVisibleVirtualItem(entity, inv, machine, nodes.networkId, itemKey, newCount, currentQty)) {
           syncTerminalNetworkState(entity, updatedNetwork, updatedTotals, updatedNetwork?.version ?? networkVersion);
+          if (!forceRefresh) {
+            entity.setDynamicProperty("force_refresh", false);
+          }
           return;
         }
+        entity.setDynamicProperty("force_refresh", true);
         syncTerminalNetworkState(entity, updatedNetwork, updatedTotals, updatedNetwork?.version ?? networkVersion);
         return;
       }
