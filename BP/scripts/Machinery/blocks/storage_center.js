@@ -1,8 +1,7 @@
 import { ItemStack, system } from "@minecraft/server";
-import { EnergyStorage, Machine } from "DoriosCore/index.js";
+import { BasicMachine, EnergyStorage, Machine } from "DoriosCore/index.js";
 import {
   getEnergyAndFluidFromItem,
-  shouldProcess,
   spawnEntity,
   updateAdjacentNetwork,
 } from "DoriosCore/utils/entity.js";
@@ -23,12 +22,6 @@ const POWER_ONLINE_PROPERTY = "storage_center_power_online";
 const DEFAULT_BASE_RATE = 10;
 const DEFAULT_ENERGY_CAP = 512000;
 const LABEL_REFRESH_TICKS = 100;
-
-function getStorageCenterEntity(block) {
-  return block.dimension
-    .getEntitiesAtBlockLocation(block.location)
-    .find((entity) => entity.typeId === "utilitycraft:storage_center");
-}
 
 function formatStorageAmount(value) {
   const amount = Math.max(0, Math.floor(Number(value) || 0));
@@ -151,10 +144,12 @@ function isNetworkCore(entity) {
   return typeof value === "boolean" ? value : true;
 }
 
-function updateEnergyState(entity, settings, consumeEnergy = false) {
-  const energy = new EnergyStorage(entity);
+function updateEnergyState(machine, settings, consumeEnergy = false) {
+  const { entity, energy } = machine;
   energy.setCap(settings?.machine?.energy_cap ?? DEFAULT_ENERGY_CAP);
-  const { blockCount, baseRate, rate } = getNetworkRates(entity, settings);
+  const { blockCount, baseRate } = getNetworkRates(entity, settings);
+  machine.setRate(baseRate);
+  const rate = machine.rate;
   if (consumeEnergy && rate > 0) {
     const available = energy.get();
     const consumed = Math.min(available, rate);
@@ -162,7 +157,7 @@ function updateEnergyState(entity, settings, consumeEnergy = false) {
   }
   const stored = energy.get();
   const cap = energy.getCap();
-  energy.display(ENERGY_SLOT);
+  machine.displayEnergy(ENERGY_SLOT);
 
   return {
     blockCount,
@@ -273,7 +268,17 @@ DoriosAPI.register.blockComponent("storage_center", {
       updateNetworkAround(block);
       updateAdjacentNetwork(block);
       system.runTimeout(() => {
-        const energyState = updateEnergyState(entity, settings);
+        const energy = new EnergyStorage(entity);
+        energy.setCap(settings?.machine?.energy_cap ?? DEFAULT_ENERGY_CAP);
+        const energyState = {
+          blockCount: getNetworkBlockCount(entity),
+          baseRate: Math.max(0, Math.floor(Number(entity.getDynamicProperty(NETWORK_BASE_RATE_PROPERTY) ?? settings?.machine?.rate_speed_base ?? DEFAULT_BASE_RATE))),
+          rate: Math.max(0, Math.floor(Number(entity.getDynamicProperty(NETWORK_RATE_PROPERTY) ?? (settings?.machine?.rate_speed_base ?? DEFAULT_BASE_RATE) * Math.max(1, Math.floor(Number(globalThis.tickSpeed ?? 1)))))),
+          energy: energy.get(),
+          energyCap: energy.getCap(),
+          online: energy.get() > 0,
+        };
+        energy.display(ENERGY_SLOT);
         const network = publishNetworkPowerState(block, entity, energyState);
         if (inv) setInfoItem(inv, entity, network);
       }, 4);
@@ -281,14 +286,13 @@ DoriosAPI.register.blockComponent("storage_center", {
   },
 
   onTick({ block }, { params: settings }) {
-    const entity = getStorageCenterEntity(block);
-    if (!entity || !entity.isValid) return;
+    const machine = new BasicMachine(block, settings?.machine?.rate_speed_base ?? DEFAULT_BASE_RATE);
+    if (!machine.valid) return;
 
-    const inv = entity.getComponent("minecraft:inventory")?.container;
-    if (!inv) return;
+    const { entity, container: inv } = machine;
 
     const activeCore = isNetworkCore(entity);
-    const energyState = updateEnergyState(entity, settings, activeCore && shouldProcess());
+    const energyState = updateEnergyState(machine, settings, activeCore);
     const previousOnline = entity.getDynamicProperty(POWER_ONLINE_PROPERTY);
     const networkMeta = activeCore ? readCachedNetworkMeta(block, entity) : undefined;
     let network;
