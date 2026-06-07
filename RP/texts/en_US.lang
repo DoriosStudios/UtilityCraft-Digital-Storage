@@ -5,20 +5,20 @@ pack.description=Made By: SHADOW1GO1
 ####    BLOCKS    ####
 ######################
 
-tile.utilitycraft:storage_terminal.name=Storage Terminal\n§7- A Terminal For Soting Items
-tile.utilitycraft:blueprint_terminal.name=Blueprint Terminal\n§7- A Terminal For Soting Items And Crafting\n§7- Accepted upgrades:\n   §a§7 §b§7
-tile.utilitycraft:crafting_terminal.name=Crafting Terminal\n§7- A Terminal For Soting Items And Crafting\n§7- Accepted upgrades:\n   §a§7 §b§7
-tile.utilitycraft:disk_drive.name=Disk Drive\n§7- A Disk For Storage Cells
-tile.utilitycraft:ds_item_conduit.name=Digital Storage Conduit\n§7- Links digital storage machines
-tile.utilitycraft:import_buffer.name=Import Buffer
-tile.utilitycraft:export_buffer.name=Export Buffer
-tile.utilitycraft:storage_center.name=Storage Center
+tile.utilitycraft:storage_terminal.name=Storage Terminal\n§7- Access items in a digital storage network\n§9UC: Digital Storage
+tile.utilitycraft:blueprint_terminal.name=Blueprint Terminal\n§7- Access network items and manage crafting blueprints\n§7- Accepted upgrades:\n   §a§7\n§9UC: Digital Storage
+tile.utilitycraft:crafting_terminal.name=Crafting Terminal\n§7- Access network items and craft from storage\n§7- Accepted upgrades:\n   §a§7\n§9UC: Digital Storage
+tile.utilitycraft:storage_cell_drive.name=Storage Cell Drive\n§7- Holds storage cells for the digital network\n§9UC: Digital Storage
+tile.utilitycraft:network_cable.name=Network Cable\n§7- Links digital storage blocks into a network\n§9UC: Digital Storage
+tile.utilitycraft:import_buffer.name=Import Buffer\n§7- Sends items into connected digital storage\n§9UC: Digital Storage
+tile.utilitycraft:export_buffer.name=Export Buffer\n§7- Pulls filtered items out of connected digital storage\n§9UC: Digital Storage
+tile.utilitycraft:storage_center.name=Storage Center\n§7- Powers and controls a digital storage network\n§9UC: Digital Storage
 
 #######################
 ####    Entities   ####
 #######################
 
-entity.utilitycraft:disk_drive.name=Disk Drive
+entity.utilitycraft:storage_cell_drive.name=Storage Cell Drive
 entity.utilitycraft:crafting_terminal.name=§fCrafting Terminal
 entity.utilitycraft:blueprint_terminal.name=§fBlueprint Terminal
 entity.utilitycraft:storage_terminal.name=§fStorage Terminal
@@ -30,22 +30,23 @@ entity.utilitycraft:storage_center.name=Storage Center
 ####    ITEMS    ####
 #####################
 
-item.utilitycraft:storage_cell=Storage Cell\n§7- Max Capacity: §f1k
-item.utilitycraft:basic_storage_cell=§eBasic Storage Cell\n§7- Max Capacity: §f4.1k
-item.utilitycraft:advanced_storage_cell=§cAdvanced Storage Cell\n§7- Max Capacity: §f16.4k
-item.utilitycraft:expert_storage_cell=§bExpert Storage Cell\n§7- Max Capacity: §f65.5k
-item.utilitycraft:ultimate_storage_cell=§8Ultimate Storage Cell\n§7- Max Capacity: §f409.6k
-item.utilitycraft:storage_part=Storage Part
-item.utilitycraft:basic_storage_part=§eBasic Storage Part
-item.utilitycraft:advanced_storage_part=§cAdvanced Storage Part
-item.utilitycraft:expert_storage_part=§bExpert Storage Part
-item.utilitycraft:ultimate_storage_part=§8Ultimate Storage Part
-item.utilitycraft:storage_core=Storage Core
-item.utilitycraft:fluxite=Fluxite
-item.utilitycraft:wireless_panel_off=Wireless Panel-Off
-item.utilitycraft:wireless_panel_on=Wireless Panel-On\n§7- Link with a terminal to use
-item.utilitycraft:wireless_crafting_panel_off=Wireless Crafting Panel-Off
-item.utilitycraft:wireless_crafting_panel_on=Wireless Crafting Panel-On\n§7- Link with a terminal to use
+item.utilitycraft:storage_cell=Storage Cell\n§7- Max Capacity: §f1k\n§9UC: Digital Storage
+item.utilitycraft:basic_storage_cell=§eBasic Storage Cell\n§7- Max Capacity: §f4.1k\n§9UC: Digital Storage
+item.utilitycraft:advanced_storage_cell=§cAdvanced Storage Cell\n§7- Max Capacity: §f16.4k\n§9UC: Digital Storage
+item.utilitycraft:expert_storage_cell=§bExpert Storage Cell\n§7- Max Capacity: §f65.5k\n§9UC: Digital Storage
+item.utilitycraft:ultimate_storage_cell=§8Ultimate Storage Cell\n§7- Max Capacity: §f409.6k\n§9UC: Digital Storage
+item.utilitycraft:storage_part=Storage Part\n§9UC: Digital Storage
+item.utilitycraft:basic_storage_part=§eBasic Storage Part\n§9UC: Digital Storage
+item.utilitycraft:advanced_storage_part=§cAdvanced Storage Part\n§9UC: Digital Storage
+item.utilitycraft:expert_storage_part=§bExpert Storage Part\n§9UC: Digital Storage
+item.utilitycraft:ultimate_storage_part=§8Ultimate Storage Part\n§9UC: Digital Storage
+item.utilitycraft:storage_core=Storage Core\n§9UC: Digital Storage
+item.utilitycraft:fluxite=Fluxite\n§9UC: Digital Storage
+item.utilitycraft:storage_filler=Storage Filler\n§9UC: Digital Storage
+item.utilitycraft:wireless_panel_off=Wireless Panel-Off\n§9UC: Digital Storage
+item.utilitycraft:wireless_panel_on=Wireless Panel-On\n§7- Link with a terminal to use\n§9UC: Digital Storage
+item.utilitycraft:wireless_crafting_panel_off=Wireless Crafting Panel-Off\n§9UC: Digital Storage
+item.utilitycraft:wireless_crafting_panel_on=Wireless Crafting Panel-On\n§7- Link with a terminal to use\n§9UC: Digital Storage
 
 ####################
 ####   GROUPS   ####

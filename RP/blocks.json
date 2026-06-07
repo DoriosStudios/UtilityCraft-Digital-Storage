@@ -1,6 +1,6 @@
 {
 	"format_version": "1.1.0",
-	"utilitycraft:ds_item_conduit": {
+	"utilitycraft:network_cable": {
 		"sound": "metal"
 	}
 }

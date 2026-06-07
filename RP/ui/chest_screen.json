@@ -23,8 +23,8 @@
             "$screen_bg_content": "common.screen_background"
           },
           {
-            "requires": "($temp_container_title = 'entity.utilitycraft:disk_drive.name')",
-            "$screen_content": "disk_drive.utility_panel",
+            "requires": "($temp_container_title = 'entity.utilitycraft:storage_cell_drive.name')",
+            "$screen_content": "storage_cell_drive.utility_panel",
             "$screen_bg_content": "common.screen_background"
           },
           {
@@ -64,8 +64,8 @@
             "$screen_bg_content": "common.screen_background"
           },
           {
-            "requires": "($temp_container_title = 'entity.utilitycraft:disk_drive.name')",
-            "$screen_content": "disk_drive.utility_panel",
+            "requires": "($temp_container_title = 'entity.utilitycraft:storage_cell_drive.name')",
+            "$screen_content": "storage_cell_drive.utility_panel",
             "$screen_bg_content": "common.screen_background"
           },
           {

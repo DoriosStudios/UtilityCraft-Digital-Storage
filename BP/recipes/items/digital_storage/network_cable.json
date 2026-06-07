@@ -1,0 +1,30 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "utilitycraft:network_cable"
+    },
+    "tags": [
+      "utilitycraft_workbench"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "F": {
+        "item": "utilitycraft:fluxite"
+      }
+    },
+    "pattern": [
+      "IFI"
+    ],
+    "result": {
+      "item": "utilitycraft:network_cable"
+    },
+    "unlock": [
+      {
+        "item": "utilitycraft:fluxite"
+      }
+    ]
+  }
+}

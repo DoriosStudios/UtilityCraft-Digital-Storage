@@ -1,0 +1,41 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "utilitycraft:import_buffer_from_item_importer_yellow"
+    },
+    "tags": [
+      "utilitycraft_workbench"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "F": {
+        "item": "utilitycraft:fluxite"
+      },
+      "R": {
+        "item": "minecraft:redstone"
+      },
+      "C": {
+        "item": "utilitycraft:storage_core"
+      },
+      "E": {
+        "item": "utilitycraft:item_importer_yellow"
+      }
+    },
+    "pattern": [
+      "IFI",
+      "RCR",
+      "IEI"
+    ],
+    "result": {
+      "item": "utilitycraft:import_buffer"
+    },
+    "unlock": [
+      {
+        "item": "utilitycraft:item_importer_yellow"
+      }
+    ]
+  }
+}

@@ -3,7 +3,7 @@
 import { ItemStack, system } from "@minecraft/server";
 import { ButtonManager } from "DoriosCore/index.js";
 import { Terminal } from "Machinery/core/terminal.js";
-import { getCellData, cellCapacities } from "Machinery/blocks/disk_drive.js";
+import { getCellData, cellCapacities } from "Machinery/blocks/storage_cell_drive.js";
 import { getNetworkIdForBlock, updateNetworkAround } from "Machinery/storage/network_manager.js";
 import { readNetworkMeta, readNetworkRecord } from "Machinery/storage/storage_db.js";
 import { applyVirtualLore, needsVirtualLoreRewrite } from "Machinery/storage/virtual_item_codec.js";

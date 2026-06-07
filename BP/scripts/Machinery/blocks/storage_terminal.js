@@ -6,7 +6,7 @@ import { Terminal } from "Machinery/core/terminal.js";
 import {
   getCellData,
   cellCapacities,
-} from "Machinery/blocks/disk_drive.js";
+} from "Machinery/blocks/storage_cell_drive.js";
 import {
   getNetworkIdForBlock,
   updateNetworkAround,

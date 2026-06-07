@@ -13,11 +13,11 @@
 		"utilitycraft_blueprint_terminal": {
 			"textures": "textures/blocks/blueprint_terminal"
 		},
-		"utilitycraft_disk_drive": {
-			"textures": "textures/blocks/disk_drive"
+		"utilitycraft_storage_cell_drive": {
+			"textures": "textures/blocks/storage_cell_drive"
 		},
-		"utilitycraft_ds_item_conduit": {
-			"textures": "textures/blocks/ds_item_conduit"
+		"utilitycraft_network_cable": {
+			"textures": "textures/blocks/network_cable"
 		},
 		"utilitycraft_import_buffer": {
 			"textures": "textures/blocks/import_buffer"

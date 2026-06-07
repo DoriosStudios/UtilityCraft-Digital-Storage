@@ -3,7 +3,7 @@
     "ui/blocks/storage_terminal.json",
     "ui/blocks/crafting_terminal.json",
     "ui/blocks/blueprint_terminal.json",
-    "ui/blocks/disk_drive.json",
+    "ui/blocks/storage_cell_drive.json",
     "ui/blocks/storage_center.json",
     "ui/blocks/export_buffer.json",
     "ui/core/terminal_core.json",

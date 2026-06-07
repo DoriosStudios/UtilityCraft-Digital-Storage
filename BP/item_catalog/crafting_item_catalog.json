@@ -16,9 +16,9 @@
                             "utilitycraft:blueprint_terminal",
                             "utilitycraft:import_buffer",
                             "utilitycraft:export_buffer",
-                            "utilitycraft:disk_drive",
+                            "utilitycraft:storage_cell_drive",
                             "utilitycraft:storage_center",
-                            "utilitycraft:ds_item_conduit"
+                            "utilitycraft:network_cable"
                         ]
                     }
                 ]

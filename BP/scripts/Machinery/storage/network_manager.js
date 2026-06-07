@@ -12,11 +12,11 @@ import {
 export const UPDATE_NETWORK_EVENT_ID = "utilitycraft:ds_update_network";
 
 export const DS_CONDUITS = [
-  "utilitycraft:ds_item_conduit",
+  "utilitycraft:network_cable",
 ];
 
 const MACHINE_TYPES = new Set([
-  "utilitycraft:disk_drive",
+  "utilitycraft:storage_cell_drive",
   "utilitycraft:storage_center",
   "utilitycraft:storage_terminal",
   "utilitycraft:crafting_terminal",
@@ -44,7 +44,7 @@ const NETWORK_BASE_RATES = {
   "utilitycraft:storage_terminal": 2,
   "utilitycraft:crafting_terminal": 4,
   "utilitycraft:blueprint_terminal": 4,
-  "utilitycraft:disk_drive": 5,
+  "utilitycraft:storage_cell_drive": 5,
 };
 
 function locKey(dimension, location) {
@@ -73,7 +73,7 @@ function isConduit(block) {
 
 function isStorageNode(block) {
   return !!block && (
-    block.typeId === "utilitycraft:disk_drive" ||
+    block.typeId === "utilitycraft:storage_cell_drive" ||
     block.typeId === "utilitycraft:storage_center" ||
     block.typeId === "utilitycraft:storage_terminal" ||
     block.typeId === "utilitycraft:crafting_terminal" ||
@@ -101,7 +101,7 @@ function networkContainsBlock(block, network) {
   if (entity.typeId === "utilitycraft:storage_center") {
     return network.core === tag || network.cores?.includes(tag);
   }
-  if (entity.typeId === "utilitycraft:disk_drive") {
+  if (entity.typeId === "utilitycraft:storage_cell_drive") {
     return network.drives?.includes(tag);
   }
   return network.terminals?.includes(tag);
@@ -139,7 +139,7 @@ function getNetworkBaseRate(entity) {
 
 function isNetworkAnchor(entity) {
   return entity?.typeId === "utilitycraft:storage_center" ||
-    entity?.typeId === "utilitycraft:disk_drive";
+    entity?.typeId === "utilitycraft:storage_cell_drive";
 }
 
 function resolveNetworkId(entities) {
@@ -240,7 +240,7 @@ export function rebuildNetworkFromBlock(block) {
       continue;
     }
 
-    if (entity.typeId === "utilitycraft:disk_drive") {
+    if (entity.typeId === "utilitycraft:storage_cell_drive") {
       drives.push(`${entity.dimension.id}|${coordTag(entity.location)}`);
       const container = entity.getComponent("minecraft:inventory")?.container;
       if (container) {
@@ -363,7 +363,7 @@ export function getNetworkNodes(block) {
     const position = readCoordTag(coord);
     const driveBlock = block.dimension.getBlock(position);
     if (!driveBlock) continue;
-    const driveEntity = getEntityAt(driveBlock, "utilitycraft:disk_drive");
+    const driveEntity = getEntityAt(driveBlock, "utilitycraft:storage_cell_drive");
     const container = driveEntity?.getComponent("minecraft:inventory")?.container;
     if (container) nodes.push({ container, isDrive: true, networkId });
   }

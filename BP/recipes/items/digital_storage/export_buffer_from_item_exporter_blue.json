@@ -1,0 +1,41 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "utilitycraft:export_buffer_from_item_exporter_blue"
+    },
+    "tags": [
+      "utilitycraft_workbench"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "F": {
+        "item": "utilitycraft:fluxite"
+      },
+      "R": {
+        "item": "minecraft:redstone"
+      },
+      "C": {
+        "item": "utilitycraft:storage_core"
+      },
+      "E": {
+        "item": "utilitycraft:item_exporter_blue"
+      }
+    },
+    "pattern": [
+      "IFI",
+      "RCR",
+      "IEI"
+    ],
+    "result": {
+      "item": "utilitycraft:export_buffer"
+    },
+    "unlock": [
+      {
+        "item": "utilitycraft:item_exporter_blue"
+      }
+    ]
+  }
+}

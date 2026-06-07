@@ -1,0 +1,44 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "utilitycraft:storage_cell_drive"
+    },
+    "tags": [
+      "utilitycraft_workbench"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "F": {
+        "item": "utilitycraft:fluxite"
+      },
+      "Q": {
+        "item": "minecraft:quartz"
+      },
+      "C": {
+        "item": "utilitycraft:storage_core"
+      },
+      "H": {
+        "item": "minecraft:chest"
+      }
+    },
+    "pattern": [
+      "IFI",
+      "QCQ",
+      "IHI"
+    ],
+    "result": {
+      "item": "utilitycraft:storage_cell_drive"
+    },
+    "unlock": [
+      {
+        "item": "utilitycraft:storage_core"
+      },
+      {
+        "item": "minecraft:chest"
+      }
+    ]
+  }
+}

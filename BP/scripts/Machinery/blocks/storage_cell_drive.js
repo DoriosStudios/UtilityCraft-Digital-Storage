@@ -105,22 +105,22 @@ export function saveCellData(container, slot, cellItem, dataObj) {
   } catch { }
 }
 
-DoriosAPI.register.blockComponent("disk_drive", {
+DoriosAPI.register.blockComponent("storage_cell_drive", {
   beforeOnPlayerPlace(e, { params: settings }) {
     const { block } = e;
     system.run(() => {
       const { x, y, z } = block.center();
-      const entity = block.dimension.spawnEntity("utilitycraft:disk_drive", {
+      const entity = block.dimension.spawnEntity("utilitycraft:storage_cell_drive", {
         x,
         y: y - 0.25,
         z,
       });
-      entity.nameTag = "entity.utilitycraft:disk_drive.name";
+      entity.nameTag = "entity.utilitycraft:storage_cell_drive.name";
       system.runTimeout(() => {
         const inv = entity.getComponent("minecraft:inventory")?.container;
         if (!inv) return;
         let label = new ItemStack("utilitycraft:ui_filler", 1);
-        label.nameTag = "\n\u00A7r\u00A7bDisk Info:";
+        label.nameTag = "\n\u00A7r\u00A7bCell Drive Info:";
         label.setLore(getDiskInfoLore(0, 0, 0));
         inv.setItem(INFO_SLOT, label);
         entity.setDynamicProperty("disk_info_state", "");
@@ -134,7 +134,7 @@ DoriosAPI.register.blockComponent("disk_drive", {
     const { block } = e;
     const entity = block.dimension
       .getEntitiesAtBlockLocation(block.location)
-      .find((ent) => ent.typeId === "utilitycraft:disk_drive");
+      .find((ent) => ent.typeId === "utilitycraft:storage_cell_drive");
     if (!entity) return;
     const inv = entity.getComponent("minecraft:inventory")?.container;
     if (!inv) return;
@@ -164,7 +164,7 @@ DoriosAPI.register.blockComponent("disk_drive", {
     if (infoState !== lastInfoState) {
       entity.setDynamicProperty("disk_info_state", infoState);
       let label = new ItemStack("utilitycraft:ui_filler", 1);
-      label.nameTag = "\n\u00A7r\u00A7bDisk Info:";
+      label.nameTag = "\n\u00A7r\u00A7bCell Drive Info:";
       label.setLore(getDiskInfoLore(cells, totalStored, totalCap));
       inv.setItem(INFO_SLOT, label);
     }

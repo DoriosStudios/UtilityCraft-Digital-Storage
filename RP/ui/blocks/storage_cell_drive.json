@@ -1,6 +1,6 @@
 {
-    "namespace": "disk_drive",
-    "disk_drive_top": {
+    "namespace": "storage_cell_drive",
+    "storage_cell_drive_top": {
         "type": "collection_panel",
         "anchor_from": "center",
         "anchor_to": "center",
@@ -58,9 +58,9 @@
                 }
             },
             {
-                "disk_drive_overlay": {
+                "storage_cell_drive_overlay": {
                     "type": "image",
-                    "texture": "textures/ui/overlay/disk_drive_overlay",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
                     "anchor_from": "top_left",
                     "anchor_to": "top_left",
                     "size": [
@@ -75,9 +75,9 @@
                 }
             },
             {
-                "disk_drive_overlay": {
+                "storage_cell_drive_overlay": {
                     "type": "image",
-                    "texture": "textures/ui/overlay/disk_drive_overlay",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
                     "anchor_from": "top_left",
                     "anchor_to": "top_left",
                     "size": [
@@ -92,9 +92,9 @@
                 }
             },
             {
-                "disk_drive_overlay": {
+                "storage_cell_drive_overlay": {
                     "type": "image",
-                    "texture": "textures/ui/overlay/disk_drive_overlay",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
                     "anchor_from": "top_left",
                     "anchor_to": "top_left",
                     "size": [
@@ -109,9 +109,9 @@
                 }
             },
             {
-                "disk_drive_overlay": {
+                "storage_cell_drive_overlay": {
                     "type": "image",
-                    "texture": "textures/ui/overlay/disk_drive_overlay",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
                     "anchor_from": "top_left",
                     "anchor_to": "top_left",
                     "size": [
@@ -126,9 +126,9 @@
                 }
             },
             {
-                "disk_drive_overlay": {
+                "storage_cell_drive_overlay": {
                     "type": "image",
-                    "texture": "textures/ui/overlay/disk_drive_overlay",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
                     "anchor_from": "top_left",
                     "anchor_to": "top_left",
                     "size": [
@@ -143,9 +143,9 @@
                 }
             },
             {
-                "disk_drive_overlay": {
+                "storage_cell_drive_overlay": {
                     "type": "image",
-                    "texture": "textures/ui/overlay/disk_drive_overlay",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
                     "anchor_from": "top_left",
                     "anchor_to": "top_left",
                     "size": [
@@ -160,9 +160,9 @@
                 }
             },
             {
-                "disk_drive_overlay": {
+                "storage_cell_drive_overlay": {
                     "type": "image",
-                    "texture": "textures/ui/overlay/disk_drive_overlay",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
                     "anchor_from": "top_left",
                     "anchor_to": "top_left",
                     "size": [
@@ -177,9 +177,9 @@
                 }
             },
             {
-                "disk_drive_overlay": {
+                "storage_cell_drive_overlay": {
                     "type": "image",
-                    "texture": "textures/ui/overlay/disk_drive_overlay",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
                     "anchor_from": "top_left",
                     "anchor_to": "top_left",
                     "size": [
@@ -194,9 +194,9 @@
                 }
             },
             {
-                "disk_drive_overlay": {
+                "storage_cell_drive_overlay": {
                     "type": "image",
-                    "texture": "textures/ui/overlay/disk_drive_overlay",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
                     "anchor_from": "top_left",
                     "anchor_to": "top_left",
                     "size": [
@@ -242,7 +242,7 @@
                                 "layer": 5,
                                 "controls": [
                                     {
-                                        "disk_drive_top@disk_drive.disk_drive_top": {}
+                                        "storage_cell_drive_top@storage_cell_drive.storage_cell_drive_top": {}
                                     },
                                     {
                                         "inventory_panel_bottom_half_with_label@common.inventory_panel_bottom_half_with_label": {}
