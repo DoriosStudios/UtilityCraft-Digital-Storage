@@ -1,6 +1,6 @@
 {
   "resource_pack_name": "Digital Storage",
-  "texture_name": "atlas.item",
+  "texture_name": "atlas.items",
   "texture_data": {
      "utilitycraft_storage_cell": {
       "textures": "textures/items/cells/storage_cell"
