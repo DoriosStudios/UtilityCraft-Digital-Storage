@@ -28,6 +28,8 @@ const REMOVE_RECIPE_SLOT = 247;
 const STORAGE_SLOTS = 225;
 const LORE_DISPLAY = "§r§7- Count: §f";
 const MAX_PAGES = 27;
+const COUNT_LABEL_COLUMNS = 9;
+const COUNT_LABEL_ROWS = 25;
 const OUTPUT_BLUEPRINT_ITEM = "utilitycraft:blueprint";
 const RESERVED_FILLER_SLOTS = [234, 235];
 const CONTROL_SLOTS = [
@@ -114,6 +116,55 @@ function renderBlueprintTerminalControls(entity, inv, currentPage, pageCount, cu
   entity.setDynamicProperty("last_rendered_craft_qty", currentCraftQty);
   entity.setDynamicProperty("last_rendered_sort", currentSort);
   entity.setDynamicProperty("last_rendered_output_mode", getOutputMode(entity));
+}
+function createCountLabelFiller(entity, slot) {
+  const item = Terminal.createUiFiller(entity, slot);
+  item.setLore(Array(COUNT_LABEL_ROWS).fill(" "));
+  return item;
+}
+function initializeBlueprintTerminalInventory(entity) {
+  const inv = entity.getComponent("minecraft:inventory")?.container;
+  if (!inv) return false;
+
+  for (let slot = STORAGE_START; slot <= STORAGE_END; slot++) {
+    const item = inv.getItem(slot);
+    if (!item || item.typeId === "utilitycraft:storage_filler") {
+      inv.setItem(slot, Terminal.createStorageFiller(entity, slot));
+    }
+  }
+
+  for (let column = 0; column < COUNT_LABEL_COLUMNS; column++) {
+    const slot = COUNT_LABEL_BASE_SLOT + column;
+    inv.setItem(slot, createCountLabelFiller(entity, slot));
+  }
+
+  Terminal.repairFillerSlots(inv, RESERVED_FILLER_SLOTS, { entity });
+  renderBlueprintTerminalControls(entity, inv, 0, 1, 1, 1, "count");
+  return true;
+}
+function repairCountLabelSlots(block, entity, inv) {
+  for (let column = 0; column < COUNT_LABEL_COLUMNS; column++) {
+    const slot = COUNT_LABEL_BASE_SLOT + column;
+    const item = inv.getItem(slot);
+    const lore = item?.getLore?.() ?? [];
+    if (
+      item &&
+      item.typeId === "utilitycraft:ui_filler" &&
+      item.nameTag === " " &&
+      lore.length >= COUNT_LABEL_ROWS
+    ) {
+      continue;
+    }
+
+    if (
+      item &&
+      item.typeId !== "utilitycraft:ui_filler" &&
+      item.typeId !== "utilitycraft:storage_filler"
+    ) {
+      returnToPlayer(block, item);
+    }
+    inv.setItem(slot, createCountLabelFiller(entity, slot));
+  }
 }
 function refreshBlueprintTerminalControls(entity) {
   try {
@@ -332,6 +383,9 @@ function setupCraftingTerminalEntity(entity, block) {
       preview_item_key: "",
     },
   });
+  if (!initializeBlueprintTerminalInventory(entity)) {
+    system.runTimeout(() => initializeBlueprintTerminalInventory(entity), 1);
+  }
 }
 ButtonManager.registerMachineButton("blueprint_terminal", CONTROL_SLOTS, ({ entity, slot }) => {
   if (!entity || !entity.isValid) return;
@@ -649,6 +703,7 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   const machine = new Terminal(block, settings);
   if (!machine || !machine.valid) return;
   const inv = entity.getComponent("minecraft:inventory").container;
+  repairCountLabelSlots(block, entity, inv);
   Terminal.repairFillerSlots(inv, RESERVED_FILLER_SLOTS, {
     entity,
     onBlockedItem: (item) => returnToPlayer(block, item),
