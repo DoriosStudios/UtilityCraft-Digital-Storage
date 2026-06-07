@@ -806,6 +806,7 @@ function renderVirtualItemAtSlot(entity, inv, machine, networkId, itemKey, count
     [...currentLore, `${LORE_DISPLAY}${count}`],
     networkId,
     itemKey,
+    { entityId: entity.id, slot },
   );
   inv.setItem(slot, virtualItem);
   Terminal.syncBlueprintDataAtSlot(entity, slot, virtualItem);

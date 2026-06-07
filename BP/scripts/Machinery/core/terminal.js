@@ -752,6 +752,7 @@ export class Terminal extends BasicMachine {
         [...currentLore, `${loreDisplay}${count}`],
         networkId,
         itemKey,
+        { entityId: entity.id, slot },
       );
       inv.setItem(slot, virtualItem);
       Terminal.syncBlueprintDataAtSlot(entity, slot, virtualItem);
@@ -842,6 +843,7 @@ export class Terminal extends BasicMachine {
               [...currentLore, `${loreDisplay}${safeTotals[key]}`],
               networkId,
               key,
+              { entityId: entity.id, slot: currentSlot },
             );
             const existingKey = existingItem ? Terminal.getItemKey(existingItem) : null;
             if (

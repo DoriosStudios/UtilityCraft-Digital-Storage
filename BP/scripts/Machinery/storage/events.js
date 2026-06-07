@@ -5,11 +5,22 @@ import {
   restoreTaggedFiller,
   RESTORABLE_FILLER_TYPES,
 } from "./filler_restore.js";
-import { readVirtualItemData } from "./virtual_item_codec.js";
-import { removeFromNetwork } from "./storage_db.js";
+import { applyVirtualLore, readVirtualItemData } from "./virtual_item_codec.js";
+import { readNetworkRecord, removeFromNetwork } from "./storage_db.js";
+import { Terminal } from "Machinery/core/terminal.js";
 import { readBlueprintData, syncBlueprintDataAtSlot } from "Machinery/core/blueprint.js";
 
 const recentBlueprintSyncs = new Map();
+const TERMINAL_ENTITY_TYPES = new Set([
+  "utilitycraft:storage_terminal",
+  "utilitycraft:crafting_terminal",
+  "utilitycraft:blueprint_terminal",
+]);
+const STORAGE_START = 0;
+const STORAGE_END = 224;
+const COUNT_LABEL_BASE_SLOT = 225;
+const STORAGE_FILLER = "utilitycraft:storage_filler";
+const LORE_DISPLAY = "§r§7- Count: §f";
 
 function getInventory(player) {
   return (player.getComponent("inventory") || player.getComponent("minecraft:inventory"))?.container;
@@ -40,6 +51,79 @@ function syncBlueprintDataForPlayerSlot(player, slot, item) {
   }, 20);
 }
 
+function getRenderedSlotMap(entity) {
+  const raw = entity.getDynamicProperty("rendered_slot_keys");
+  if (typeof raw !== "string" || raw.length === 0) return {};
+
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function restoreRenderedTerminalSlot(virtual, currentQtyHint = 1) {
+  if (!virtual?.entityId || !Number.isInteger(virtual.slot)) return false;
+  if (virtual.slot < STORAGE_START || virtual.slot > STORAGE_END) return false;
+
+  let entity;
+  try {
+    entity = world.getEntity(virtual.entityId);
+  } catch {
+    return false;
+  }
+  if (!entity?.isValid || !TERMINAL_ENTITY_TYPES.has(entity.typeId)) return false;
+
+  const inventory = entity.getComponent("minecraft:inventory")?.container;
+  if (!inventory) return false;
+
+  const renderedSlots = getRenderedSlotMap(entity);
+  if (renderedSlots[virtual.itemKey] !== virtual.slot) return false;
+
+  const current = inventory.getItem(virtual.slot);
+  if (current && current.typeId !== STORAGE_FILLER) {
+    const currentVirtual = readVirtualItemData(current);
+    if (
+      !currentVirtual ||
+      currentVirtual.networkId !== virtual.networkId ||
+      currentVirtual.itemKey !== virtual.itemKey
+    ) {
+      return false;
+    }
+  }
+
+  const network = readNetworkRecord(virtual.networkId);
+  const count = Number(network?.totals?.[virtual.itemKey] ?? 0);
+
+  try {
+    const requestedQty =
+      Math.floor(Number(entity.getDynamicProperty("extract_quantity"))) ||
+      Math.floor(Number(currentQtyHint)) ||
+      1;
+    const testItem = createItemFromKey(virtual.itemKey, 1);
+    const maxStack = testItem.maxAmount ?? 64;
+    const renderAmount = Math.max(1, Math.min(requestedQty, count, maxStack));
+    const virtualItem = createItemFromKey(virtual.itemKey, renderAmount);
+    const currentLore = virtualItem.getLore() || [];
+    applyVirtualLore(
+      virtualItem,
+      [...currentLore, `${LORE_DISPLAY}${count}`],
+      virtual.networkId,
+      virtual.itemKey,
+      { entityId: entity.id, slot: virtual.slot },
+    );
+    inventory.setItem(virtual.slot, virtualItem);
+    Terminal.syncBlueprintDataAtSlot(entity, virtual.slot, virtualItem);
+    Terminal.setCountLabel(null, inventory, virtual.slot, {
+      countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function resolveVirtualItem(player, item, slot) {
   if (!item) return;
 
@@ -62,6 +146,7 @@ function resolveVirtualItem(player, item, slot) {
   inventory.setItem(slot, undefined);
   const remaining = removeFromNetwork(virtual.networkId, virtual.itemKey, amount);
   const extracted = amount - remaining;
+  restoreRenderedTerminalSlot(virtual, amount);
   if (extracted <= 0) return true;
 
   const realItem = createItemFromKey(virtual.itemKey, extracted);
@@ -114,6 +199,7 @@ world.afterEvents.entitySpawn.subscribe(({ entity }) => {
 
   const remaining = removeFromNetwork(virtual.networkId, virtual.itemKey, item.amount);
   const extracted = item.amount - remaining;
+  restoreRenderedTerminalSlot(virtual, item.amount);
   if (extracted <= 0) return;
 
   dimension.spawnItem(createItemFromKey(virtual.itemKey, extracted), location);
