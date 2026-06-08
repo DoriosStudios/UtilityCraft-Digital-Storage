@@ -44,7 +44,7 @@
 		]
 	},
 	"regolith": {
-		"dataPath": "./packs/data",
+		"dataPath": "./data",
 		"filterDefinitions": {},
 		"formatVersion": "1.8.0",
 		"profiles": {
