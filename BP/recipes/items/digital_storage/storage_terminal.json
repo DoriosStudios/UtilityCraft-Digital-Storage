@@ -17,13 +17,16 @@
       "R": {
         "item": "minecraft:redstone"
       },
+      "B": {
+        "item": "minecraft:redstone_block"
+      },
       "C": {
         "item": "utilitycraft:storage_core"
       }
     },
     "pattern": [
       "IGI",
-      "RCR",
+      "BCB",
       "IRI"
     ],
     "result": {

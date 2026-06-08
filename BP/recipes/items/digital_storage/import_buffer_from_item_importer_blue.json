@@ -15,7 +15,7 @@
         "item": "utilitycraft:fluxite"
       },
       "R": {
-        "item": "minecraft:redstone"
+        "item": "minecraft:redstone_block"
       },
       "C": {
         "item": "utilitycraft:storage_core"
