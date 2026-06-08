@@ -19,7 +19,8 @@
       "IFI"
     ],
     "result": {
-      "item": "utilitycraft:network_cable"
+      "item": "utilitycraft:network_cable",
+      "count": 8
     },
     "unlock": [
       {
