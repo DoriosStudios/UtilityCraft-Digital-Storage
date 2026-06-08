@@ -1,11 +1,12 @@
 {
+	"$schema": "https://raw.githubusercontent.com/Bedrock-OSS/regolith-schemas/main/config/unified.json",
 	"type": "minecraftBedrock",
-	"name": "UtilityCraft: Digital Storage",
-	"namespace": "utilitycraft",
+	"author": "Dorios Studios",
 	"authors": [
-		"SHADOW1GO1",
 		"Dorios Studios"
 	],
+	"name": "UtilityCraft Digital Storage",
+	"namespace": "utilitycraft",
 	"targetVersion": "1.21.130",
 	"description": "0.1.0",
 	"experimentalGameplay": {
@@ -41,5 +42,28 @@
 				}
 			]
 		]
+	},
+	"regolith": {
+		"dataPath": "./packs/data",
+		"filterDefinitions": {},
+		"formatVersion": "1.8.0",
+		"profiles": {
+			"default": {
+				"export": {
+					"build": "standard",
+					"readOnly": false,
+					"target": "development"
+				},
+				"filters": []
+			},
+			"build": {
+				"export": {
+					"bpName": "project.name + ' BP'",
+					"rpName": "project.name + ' RP'",
+					"target": "local"
+				},
+				"filters": []
+			}
+		}
 	}
 }
