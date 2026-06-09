@@ -433,8 +433,13 @@ world.afterEvents.pistonActivate.subscribe(({ piston, isExpanding, dimension }) 
         z: position.z + direction.z * step,
       });
 
-      if (moved && (isConduit(moved) || isStorageNode(moved))) updateNetworkAround(moved);
-      if (previous && (isConduit(previous) || isStorageNode(previous))) updateNetworkAround(previous);
+      if (
+        (moved && (isConduit(moved) || isStorageNode(moved))) ||
+        (previous && (isConduit(previous) || isStorageNode(previous)))
+      ) {
+        if (moved) updateNetworkAround(moved);
+        if (previous) updateNetworkAround(previous);
+      }
     }
   }, 2);
 });
