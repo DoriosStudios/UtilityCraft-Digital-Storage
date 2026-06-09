@@ -2,3 +2,6 @@
 /builds
 /.regolith
 /.bridge
+/node_modules/.bin
+/node_modules/@esbuild
+/node_modules/esbuild
