@@ -2,6 +2,7 @@ import { system, world } from "@minecraft/server";
 import {
   allocateNetworkId,
   ensureCellId,
+  getCellId,
   isStorageCell,
   readNetworkMeta,
   readNetworkRecord,
@@ -247,10 +248,11 @@ export function rebuildNetworkFromBlock(block) {
         for (let slot = 1; slot <= 9; slot++) {
           const cell = container.getItem(slot);
           if (!isStorageCell(cell)) continue;
+          const previousCellId = getCellId(cell);
           const cellId = ensureCellId(cell);
           if (cellId) {
             cells.push(cellId);
-            container.setItem(slot, cell);
+            if (!previousCellId) container.setItem(slot, cell);
           }
         }
       }
