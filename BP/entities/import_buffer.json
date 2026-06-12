@@ -21,6 +21,7 @@
 		"components": {
 			"minecraft:type_family": {
 				"family": [
+					"inanimate",
 					"dorios:machine",
 					"dorios:container",
 					"dorios:special_container"
