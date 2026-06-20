@@ -1,6 +1,8 @@
 import { world, ItemStack, system } from "@minecraft/server";
-import { loadObjectives } from "../utils/scoreboards.js"
-import { initializeEntity } from "../utils/entity.js"
+import * as Constants from "./constants.js";
+import { OutputTracker } from "./outputTracker.js";
+
+const OPEN_UI_PLAYERS_PROPERTY_ID = "utilitycraft:players";
 
 /** @type {ScoreboardObjective} */
 let maxLiquidsData;
@@ -31,6 +33,7 @@ export class FluidStorage {
     this.entity = entity;
     this.index = index;
     this.scoreId = entity?.scoreboardIdentity;
+    this.shouldUpdateUI = FluidStorage.hasOpenUI(entity);
 
     this.scores = {
       fluid: objectives.get(`fluid_${index}`),
@@ -41,7 +44,18 @@ export class FluidStorage {
 
     this.type = this.getType();
     this.cap = this.getCap();
-    if (this.get() == 0) this.setType("empty");
+    if (this.get() == 0 && !this.hasFixedFluidType()) {
+      this.setType(Constants.EMPTY_FLUID_TYPE);
+    }
+  }
+
+  /**
+   * Checks whether this entity should preserve its fluid type tags while empty.
+   *
+   * @returns {boolean} True when the entity has the constant fluid type tag.
+   */
+  hasFixedFluidType() {
+    return this.entity.hasTag(Constants.CONSTANT_FLUID_TYPE_TAG);
   }
 
   /**
@@ -59,11 +73,26 @@ export class FluidStorage {
   }
 
   /**
+   * Returns whether at least one player currently has this entity container UI open.
+   *
+   * @param {Entity} entity The entity to inspect.
+   * @returns {boolean} Whether the UI is currently open.
+   */
+  static hasOpenUI(entity) {
+    try {
+      const count = Number(entity?.getProperty?.(OPEN_UI_PLAYERS_PROPERTY_ID) ?? 0);
+      return count > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Initializes multiple fluid tanks for an entity and updates maxLiquids.
    *
-   * @param {Entity} entity Machine entity
-   * @param {number} count Amount of supported fluids
-   * @returns {FluidStorage[]} Array of FluidStorage instances
+   * @param {Entity} entity Machine entity.
+   * @param {number} count Amount of supported fluids.
+   * @returns {FluidStorage[]} Array of FluidStorage instances.
    */
   static initializeMultiple(entity, count) {
     // Set scoreboard maxLiquids for this entity
@@ -95,6 +124,11 @@ export class FluidStorage {
    * @returns {void}
    */
   static initializeObjectives(index = 0) {
+    if (!maxLiquidsData) {
+      maxLiquidsData = world.scoreboard.getObjective(Constants.FLUID_OBJECTIVE_NAMES.maxLiquids)
+        ?? world.scoreboard.addObjective(Constants.FLUID_OBJECTIVE_NAMES.maxLiquids, "Max Liquids");
+    }
+
     const definitions = [
       [`fluid_${index}`, `fluid ${index}`],
       [`fluidExp_${index}`, `fluid Exp ${index}`],
@@ -120,10 +154,26 @@ export class FluidStorage {
    * @returns {number}
    */
   static getMaxLiquids(entity) {
-    if (!maxLiquidsData || !entity?.scoreboardIdentity) return 1;
+    if (!entity) return 1;
 
-    const score = maxLiquidsData.getScore(entity.scoreboardIdentity);
-    return score > 0 ? score : 1;
+    let score = 0;
+    if (maxLiquidsData && entity.scoreboardIdentity) {
+      score = maxLiquidsData.getScore(entity.scoreboardIdentity) || 0;
+      if (score > 0) return score;
+    }
+
+    let taggedSlots = 0;
+    for (const tag of entity.getTags()) {
+      const match = tag.match(/^fluid(\d+)Type:/);
+      if (!match) continue;
+
+      const index = Number(match[1]);
+      if (!Number.isNaN(index)) {
+        taggedSlots = Math.max(taggedSlots, index + 1);
+      }
+    }
+
+    return Math.max(1, score, taggedSlots);
   }
 
   /**
@@ -208,7 +258,6 @@ export class FluidStorage {
   static combineValue(value, exp) {
     return (value || 0) * 10 ** (exp || 0);
   }
-
   /**
    * Formats a fluid amount into a human-readable string with units.
    *
@@ -216,16 +265,38 @@ export class FluidStorage {
    * @returns {string} A formatted string with unit suffix (mB, kB, MB).
    */
   static formatFluid(value) {
-    let unit = "mB";
-    if (value >= 1e7) {
-      unit = "MB";
-      value /= 1e6;
-    } else if (value >= 1e4) {
-      unit = "kB";
-      value /= 1e3;
-    }
-    return `${value.toFixed(1)} ${unit}`;
-  }
+    const safeValue = Math.max(0, Number(value) || 0);
+
+    if (safeValue >= 1e21) {
+      return `${(safeValue / 1e21).toFixed(2)} EB`;
+    } // ExaBucket (EB) for extremely large values
+
+    if (safeValue >= 1e18) {
+      return `${(safeValue / 1e18).toFixed(2)} PB`;
+    } // PetaBucket (PB) for very large values
+
+    if (safeValue >= 1e15) {
+      return `${(safeValue / 1e15).toFixed(2)} TB`;
+    } // TeraBucket (TB) for large values
+
+    if (safeValue >= 1e12) {
+      return `${(safeValue / 1e12).toFixed(2)} GB`;
+    } // GigaBucket (GB) for large values
+
+    if (safeValue >= 1e9) {
+      return `${(safeValue / 1e9).toFixed(2)} MB`;
+    } // MegaBucket (MB) for large values
+
+    if (safeValue >= 1e6) {
+      return `${(safeValue / 1e6).toFixed(2)} KB`;
+    } // KiloBucket (KB) for medium values
+
+    if (safeValue >= 1e3) {
+      return `${(safeValue / 1e3).toFixed(1)} B`;
+    } // Bucket (B) for small values
+
+    return `${Math.floor(safeValue)} mB`;
+  } // Milibucket (mB) for very small values
 
   /**
    * Extracts the fluid type and amount from a formatted text like:
@@ -238,8 +309,7 @@ export class FluidStorage {
   static getFluidFromText(input) {
     const cleaned = input.replace(/§./g, "").trim();
 
-    // Match without "Stored"
-    const match = cleaned.match(/(\w+):\s*([\d.]+)\s*(mB|kB|MB|B)/);
+    const match = cleaned.match(/([^:]+):\s*([\d.]+)\s*(mB|B|kB|MB|GB|TB|PB|EB)/i);
     if (!match) return { type: "empty", amount: 0 };
 
     const [, rawType, rawValue, unit] = match;
@@ -247,12 +317,24 @@ export class FluidStorage {
     const multipliers = {
       mB: 1,
       B: 1000,
-      kB: 1000,
-      MB: 1_000_000,
+      kB: 1_000_000,
+      MB: 1_000_000_000,
+      GB: 1_000_000_000_000,
+      TB: 1_000_000_000_000_000,
+      PB: 1_000_000_000_000_000_000,
+      EB: 1_000_000_000_000_000_000_000,
     };
 
-    const amount = parseFloat(rawValue) * (multipliers[unit] ?? 1);
-    const type = rawType.toLowerCase();
+    let normalizedUnit = unit;
+    if (/^mb$/i.test(unit)) {
+      normalizedUnit = "mB";
+    } else if (/^kb$/i.test(unit)) {
+      normalizedUnit = "kB";
+    } else {
+      normalizedUnit = unit.toUpperCase();
+    }
+    const amount = parseFloat(rawValue) * (multipliers[normalizedUnit] ?? 1);
+    const type = rawType.trim().toLowerCase().replace(/\s+/g, "_");
 
     return { type, amount };
   }
@@ -270,6 +352,67 @@ export class FluidStorage {
     return this.itemFluidStorages[id] ?? null;
   }
 
+  /**
+   * Returns the currently selected inventory stack for a player.
+   *
+   * @param {Player} player
+   * @returns {{ slot: number, inventory: Container, item: ItemStack | undefined } | null}
+   */
+  static getSelectedInventoryItem(player) {
+    if (!player) return null;
+
+    const slot = player.selectedSlotIndex ?? 0;
+    const inventory = player.getComponent("minecraft:inventory")?.container;
+    if (!inventory) return null;
+
+    return {
+      slot,
+      inventory,
+      item: inventory.getItem(slot)
+    };
+  }
+
+  /**
+   * Replaces or preserves the held fluid item after a fluid interaction.
+   *
+   * This is safer than decrement + give because it keeps the selected slot stable,
+   * works with stacks, and avoids losing items when the result item equals the input.
+   *
+   * @param {Player} player
+   * @param {string} expectedTypeId
+   * @param {string | undefined} nextTypeId
+   * @returns {boolean}
+   */
+  static replaceHeldFluidItem(player, expectedTypeId, nextTypeId) {
+    if (!player || !expectedTypeId) return false;
+    if (typeof player.isInCreative === "function" && player.isInCreative()) return true;
+    if (expectedTypeId === nextTypeId) return true;
+
+    const selected = FluidStorage.getSelectedInventoryItem(player);
+    if (!selected) return false;
+
+    const { slot, inventory } = selected;
+    const current = inventory.getItem(slot);
+    if (!current || current.typeId !== expectedTypeId) return false;
+
+    if (current.amount > 1) {
+      current.amount -= 1;
+      inventory.setItem(slot, current);
+
+      if (!nextTypeId) return true;
+
+      const overflow = inventory.addItem(new ItemStack(nextTypeId, 1));
+      if (overflow) {
+        player.dimension?.spawnItem?.(overflow, player.location);
+      }
+
+      return true;
+    }
+
+    inventory.setItem(slot, nextTypeId ? new ItemStack(nextTypeId, 1) : undefined);
+    return true;
+  }
+
   // --------------------------------------------------------------------------
   // Core operations
   // --------------------------------------------------------------------------
@@ -281,7 +424,7 @@ export class FluidStorage {
    * @returns {void}
    */
   static initialize(entity) {
-    entity.runCommand(`scoreboard players set @s fluid_0 0`);
+    entity.runCommand(Constants.INITIAL_FLUID_SCORE_COMMAND);
   }
 
   /**
@@ -326,7 +469,7 @@ export class FluidStorage {
     // If target is a tank and has no entity → spawn an empty one
     if (!targetEntity && targetBlock.typeId.includes("fluid_tank")) {
       const type = sourceFluid.getType();
-      if (type == "empty") return false;
+      if (type == Constants.EMPTY_FLUID_TYPE) return false;
       targetEntity = FluidStorage.addfluidToTank(targetBlock, type, 0);
     }
 
@@ -350,13 +493,23 @@ export class FluidStorage {
    */
   static findType(entity, type) {
     const max = FluidStorage.getMaxLiquids(entity);
+    let emptyTank = null;
+
     for (let i = 0; i < max; i++) {
-      const prefix = `fluid${i}Type:${type}`;
-      if (entity.hasTag(`${prefix}`) || entity.hasTag(`fluid${i}Type:empty`)) {
-        return new FluidStorage(entity, i);
+      FluidStorage.initializeObjectives(i);
+
+      const tank = new FluidStorage(entity, i);
+      const tankType = tank.getType();
+
+      // If this type already exists in any slot, keep using that slot
+      // even when it is full so the entity never duplicates a fluid type.
+      if (tankType === type) return tank;
+      if (!emptyTank && tankType === Constants.EMPTY_FLUID_TYPE && tank.getFreeSpace() > 0) {
+        emptyTank = tank;
       }
     }
-    return null;
+
+    return emptyTank;
   }
 
   /**
@@ -386,12 +539,11 @@ export class FluidStorage {
     const percent = ((amount / cap) * 100).toFixed(2);
 
     player.onScreenDisplay.setActionBar(
-      `§b${DoriosAPI.utils.capitalizeFirst(type)}: §f${FluidStorage.formatFluid(amount)}§7 / §f${FluidStorage.formatFluid(cap)} §7(${percent}%)`,
+      `§b${DoriosAPI.utils.formatIdToText(type)}: §f${FluidStorage.formatFluid(amount)}§7 / §f${FluidStorage.formatFluid(cap)} §7(${percent}%)`,
     );
 
     if (!player.isInCreative()) {
-      player.changeItemAmount(player.selectedSlotIndex, -1);
-      if (insert) player.giveItem(insert);
+      FluidStorage.replaceHeldFluidItem(player, mainHand.typeId, insert || undefined);
     }
   }
 
@@ -411,9 +563,9 @@ export class FluidStorage {
   tryInsert(type, amount) {
     if (amount <= 0) return false;
     const currentType = this.getType();
-    if (currentType === "empty" || currentType === type) {
+    if (currentType === Constants.EMPTY_FLUID_TYPE || currentType === type) {
       if (amount <= this.getFreeSpace()) {
-        if (currentType === "empty") this.setType(type);
+        if (currentType === Constants.EMPTY_FLUID_TYPE) this.setType(type);
         this.add(amount);
         return true;
       }
@@ -436,7 +588,19 @@ export class FluidStorage {
     // 1. INSERTION: item adds fluid into tank
     const insertData = FluidStorage.itemFluidStorages[typeId];
     if (insertData) {
-      const { type, amount, output } = insertData;
+      const { type, amount, output, infinite } = insertData;
+
+      if (infinite === true) {
+        const currentType = this.getType();
+        if (currentType !== Constants.EMPTY_FLUID_TYPE && currentType !== type) return false;
+
+        const freeSpace = this.getFreeSpace();
+        if (freeSpace <= 0) return false;
+
+        if (currentType === Constants.EMPTY_FLUID_TYPE) this.setType(type);
+        this.add(freeSpace);
+        return output ?? typeId;
+      }
 
       if (!this.tryInsert(type, amount)) return false;
 
@@ -576,7 +740,7 @@ export class FluidStorage {
    * @returns {number} The amount actually consumed (0 if insufficient).
    */
   consume(amount) {
-    if (this.entity.hasTag("creative")) return amount;
+    if (this.entity.hasTag(Constants.CREATIVE_TAG)) return amount;
     const current = this.get();
     if (current < amount) return 0;
     this.add(-amount);
@@ -624,7 +788,7 @@ export class FluidStorage {
    */
   getType() {
     const tag = this.entity.getTags().find((t) => t.startsWith(`fluid${this.index}Type:`));
-    return tag ? tag.split(":")[1] : "empty";
+    return tag ? tag.split(":")[1] : Constants.EMPTY_FLUID_TYPE;
   }
 
   /**
@@ -674,7 +838,7 @@ export class FluidStorage {
 
     let transferred = 0;
     const type = this.getType();
-    if (!type || type === "empty") return 0;
+    if (!type || type === Constants.EMPTY_FLUID_TYPE) return 0;
 
     // Select order based on mode
     let orderedTargets = [...nodes];
@@ -701,7 +865,7 @@ export class FluidStorage {
       const space = target.getFreeSpace();
       if (space <= 0) return 0;
 
-      if (targetType === "empty") target.setType(type);
+      if (targetType === Constants.EMPTY_FLUID_TYPE) target.setType(type);
 
       const amount = share ? Math.min(share, space, available, speed) : Math.min(space, available, speed);
 
@@ -737,63 +901,54 @@ export class FluidStorage {
   }
 
   /**
-   * Transfers fluid from this tank or machine toward the opposite
-   * direction of its facing axis (`utilitycraft:axis`).
+   * Transfers fluid to this machine's cached fluid output target.
    *
    * ## Behavior
-   * - Reads `utilitycraft:axis` from the source block.
+   * - Reads the cached target from {@link OutputTracker}.
    * - Determines the **opposite direction vector** (e.g. east → west).
-   * - Locates the target block in that opposite direction.
-   * - If the target has the tag `"dorios:fluid"`, tries to transfer fluid to it.
+   * - Refreshes the target once from the block axis when no cache exists.
+   * - Clears stale targets when they no longer support fluid storage.
    * - If the target is a fluid tank with no entity, one is spawned empty first.
    * - Uses {@link FluidStorage.transferTo} to handle transfer and visual updates.
    *
    * @param {Block} block The source block associated with this fluid entity.
    * @param {number} [amount=100] Maximum amount to transfer (in mB).
-   * @returns {boolean} True if a valid transfer occurred, false otherwise.
+   * @returns {boolean} True if fluid was transferred.
    */
   transferFluids(block, amount = 100) {
     if (!block || !this.entity?.isValid) return false;
+    if (this.get() <= 0 || this.getType() === Constants.EMPTY_FLUID_TYPE) return false;
 
-    const facing = block.getState("utilitycraft:axis");
-    if (!facing) return false;
+    const targetLoc = OutputTracker.getOutputTarget(this.entity, "fluid") ?? OutputTracker.refreshOutput(block, "fluid");
+    if (!targetLoc) return false;
 
-    // Opposite direction vectors
-    const opposites = {
-      east: [-1, 0, 0],
-      west: [1, 0, 0],
-      north: [0, 0, 1],
-      south: [0, 0, -1],
-      up: [0, -1, 0],
-      down: [0, 1, 0],
-    };
-
-    const offset = opposites[facing];
-    if (!offset) return false;
-
-    const { x, y, z } = block.location;
-    const targetLoc = { x: x + offset[0], y: y + offset[1], z: z + offset[2] };
     const dim = block.dimension;
     const targetBlock = dim.getBlock(targetLoc);
-    if (!targetBlock) return false;
-
-    // Only proceed if the target block supports fluids
-    if (!targetBlock.hasTag("dorios:fluid") || targetBlock.hasTag("dorios:isTube")) return false;
+    if (!OutputTracker.isOutputTarget(targetBlock, "fluid")) {
+      OutputTracker.clearOutputTarget(this.entity, "fluid");
+      return false;
+    }
 
     let targetEntity = dim.getEntitiesAtBlockLocation(targetLoc)[0];
 
     // If target is a tank and has no entity, spawn an empty one
     if (!targetEntity && targetBlock.typeId.includes("fluid_tank")) {
       const type = this.getType();
-      if (type == "empty") return;
+      if (type == Constants.EMPTY_FLUID_TYPE) return;
       FluidStorage.addfluidToTank(targetBlock, type, 0);
       targetEntity = dim.getEntitiesAtBlockLocation(targetLoc)[0];
     }
 
-    if (!targetEntity) return false;
+    if (!targetEntity) {
+      OutputTracker.clearOutputTarget(this.entity, "fluid");
+      return false;
+    }
 
     const targetFluid = new FluidStorage(targetEntity, 0);
-    if (!targetFluid || targetFluid.getCap() <= 0) return false;
+    if (!targetFluid || targetFluid.getCap() <= 0) {
+      OutputTracker.clearOutputTarget(this.entity, "fluid");
+      return false;
+    }
 
     const transferred = this.transferTo(targetFluid, amount);
     return transferred > 0;
@@ -807,14 +962,14 @@ export class FluidStorage {
    * @returns {number} The actual amount transferred.
    */
   transferTo(other, amount) {
-    if (this.getType() !== other.getType() && other.getType() !== "empty") return 0;
+    if (this.getType() !== other.getType() && other.getType() !== Constants.EMPTY_FLUID_TYPE) return 0;
 
     const transferable = Math.min(amount, this.get(), other.getFreeSpace());
     if (transferable <= 0) return 0;
 
     this.consume(transferable);
     other.add(transferable);
-    if (other.getType() === "empty") other.setType(this.getType());
+    if (other.getType() === Constants.EMPTY_FLUID_TYPE) other.setType(this.getType());
     return transferable;
   }
 
@@ -842,7 +997,9 @@ export class FluidStorage {
    * @param {number} [slot=4] Inventory slot index for the display item.
    * @returns {void}
    */
-  display(slot = 4) {
+  display(slot = Constants.DEFAULT_FLUID_DISPLAY_SLOT) {
+    if (!this.shouldUpdateUI) return;
+
     const inv = this.entity.getComponent("minecraft:inventory")?.container;
     if (!inv) return;
 
@@ -850,14 +1007,14 @@ export class FluidStorage {
     const cap = this.getCap();
     const type = this.getType();
 
-    if (type === "empty") {
-      let emptyBar = new ItemStack("utilitycraft:empty_fluid_bar");
+    if (type === Constants.EMPTY_FLUID_TYPE) {
+      let emptyBar = new ItemStack(Constants.EMPTY_FLUID_BAR_ITEM_ID);
       emptyBar.nameTag = "§rEmpty";
       inv.setItem(slot, emptyBar);
       return;
     }
 
-    const frame = Math.max(0, Math.min(48, Math.floor((fluid / cap) * 48)));
+    const frame = Math.max(0, Math.min(Constants.FLUID_BAR_FRAME_COUNT, Math.floor((fluid / cap) * Constants.FLUID_BAR_FRAME_COUNT)));
     const frameName = frame.toString().padStart(2, "0");
 
     const item = new ItemStack(`utilitycraft:${type}_${frameName}`, 1);
@@ -880,8 +1037,8 @@ export class FluidStorage {
    * @param {Block} block The block representing the tank.
    * @param {string} type The type of fluid to insert.
    * @param {number} amount Amount of fluid to insert in mB.
-   * @returns {Entity} entity if insertion was successful.
-   */
+   * @returns {Entity | undefined} The tank entity if insertion was successful.
+  */
   static addfluidToTank(block, type, amount) {
     const dim = block.dimension;
     const pos = block.location;
@@ -913,12 +1070,6 @@ export class FluidStorage {
    * @returns {number} The tank's base capacity in mB.
    */
   static getTankCapacity(typeId) {
-    const caps = {
-      "utilitycraft:basic_fluid_tank": 8000,
-      "utilitycraft:advanced_fluid_tank": 32000,
-      "utilitycraft:expert_fluid_tank": 128000,
-      "utilitycraft:ultimate_fluid_tank": 512000,
-    };
-    return caps[typeId] ?? 8000;
+    return Constants.FLUID_TANK_CAPACITIES[typeId] ?? Constants.FLUID_TANK_CAPACITIES["utilitycraft:basic_fluid_tank"];
   }
 }

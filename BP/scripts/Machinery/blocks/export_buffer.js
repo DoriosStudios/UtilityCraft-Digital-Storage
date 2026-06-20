@@ -107,10 +107,7 @@ function flushExportBuffer(block, entity) {
 
   const networkId = getNetworkIdForBlock(block);
   const network = readNetworkRecord(networkId);
-  if (!network) {
-    updateNetworkAround(block);
-    return;
-  }
+  if (!network || network.online === false) return;
 
   const filter = getFirstAvailableFilter(container, network.totals ?? {});
   if (!filter) return;

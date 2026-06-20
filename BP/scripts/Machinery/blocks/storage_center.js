@@ -189,7 +189,6 @@ function publishNetworkPowerState(block, entity, energyState, currentNetwork = u
     };
   }
 
-  const wasOnline = network.online === true;
   const nextNetwork = setNetworkPowerStateFromRecord(networkId, network, energyState.online, {
     core,
     baseRate: energyState.baseRate,
@@ -199,9 +198,6 @@ function publishNetworkPowerState(block, entity, energyState, currentNetwork = u
   }) ?? network;
 
   entity.setDynamicProperty(POWER_ONLINE_PROPERTY, nextNetwork.online === true);
-  if (wasOnline !== nextNetwork.online) {
-    updateNetworkAround(block);
-  }
 
   return {
     ...nextNetwork,

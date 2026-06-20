@@ -68,10 +68,12 @@ function flushImportBuffer(block, entity) {
 
   const networkId = getNetworkIdForBlock(block);
   const network = readNetworkRecord(networkId);
-  if (!network || !Array.isArray(network.cells) || network.cells.length === 0) {
-    updateNetworkAround(block);
-    return;
-  }
+  if (
+    !network ||
+    network.online === false ||
+    !Array.isArray(network.cells) ||
+    network.cells.length === 0
+  ) return;
 
   const remainingByKey = addManyToNetwork(networkId, amounts, "import_buffer");
   for (const itemKey of Object.keys(amounts)) {
