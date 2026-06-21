@@ -1,20 +1,22 @@
 import { ItemStack, system } from "@minecraft/server";
-import { ModalFormData } from '@minecraft/server-ui'
+import { ModalFormData } from "@minecraft/server-ui";
 import { BasicMachine } from "./basicMachine";
+import * as Constants from "./constants.js";
 import { EnergyStorage } from "./energyStorage";
 import { FluidStorage } from "./fluidStorage";
+import { TickScheduler } from "./tickScheduler.js";
 import * as Utils from "../utils/entity";
 
 export class Generator extends BasicMachine {
   /**
    * Creates a new Generator instance.
    *
-   * @param {Block} block The block representing the generator.
-   * @param {GeneratorSettings} settings Generator configuration.
+   * @param {import("@minecraft/server").Block} block The block representing the generator.
+   * @param {Object} settings Generator configuration.
    */
   constructor(block, settings) {
     const baseRate = settings?.generator?.rate_speed_base ?? 0;
-    super(block, baseRate);
+    super(block, { rate: baseRate, ignoreTick: settings.ignoreTick });
     if (!this.valid) return;
     this.settings = settings;
   }
@@ -26,7 +28,13 @@ export class Generator extends BasicMachine {
    * - Removes the generator entity.
    * - Skips drop if the player is in Creative mode.
    *
-   * @param {{ block: Block, brokenBlockPermutation: BlockPermutationplayer: Player, dimension: Dimension }} e The event data object containing the dimension, block and player.
+   * @param {{
+   *   block: import("@minecraft/server").Block,
+   *   brokenBlockPermutation: import("@minecraft/server").BlockPermutation,
+   *   player?: import("@minecraft/server").Player,
+   *   dimension: import("@minecraft/server").Dimension
+   * }} e Event data containing the dimension, block, broken permutation, and player.
+   * @returns {boolean} True when a matching generator entity was found and queued for removal.
    */
   static onDestroy(e) {
     const { block, brokenBlockPermutation, player, dimension: dim } = e;
@@ -44,7 +52,7 @@ export class Generator extends BasicMachine {
       lore.push(`§r§7  Energy: ${EnergyStorage.formatEnergyToText(energy.get())}/${EnergyStorage.formatEnergyToText(energy.cap)}`);
     }
 
-    if (fluid.type != "empty") {
+    if (fluid.type != Constants.EMPTY_FLUID_TYPE) {
       const liquidName = DoriosAPI.utils.capitalizeFirst(fluid.type);
       lore.push(`§r§7  ${liquidName}: ${FluidStorage.formatFluid(fluid.get())}/${FluidStorage.formatFluid(fluid.cap)}`);
     }
@@ -65,6 +73,7 @@ export class Generator extends BasicMachine {
           .find((item) => item.getComponent("minecraft:item")?.itemStack?.typeId === blockItemId);
         oldItemEntity?.remove();
       }
+      TickScheduler.releaseTickGroup(entity);
       Utils.dropAllItems(entity);
       entity.remove();
       dim.spawnItem(blockItem, block.center());
@@ -80,8 +89,8 @@ export class Generator extends BasicMachine {
    * player's main hand, then applies those values to the newly created entity.
    *
    * After spawning, the entity's energy capacity, fluid capacity (if defined),
-   * and display elements are initialized. Nearby machines are also registered
-   * and adjacent pipe networks are updated.
+   * and display elements are initialized. Adjacent pipe networks are updated so
+   * connected generators can rebuild their real network tags from placed blocks.
    *
    * @param {{
    *   block: import("@minecraft/server").Block,
@@ -89,7 +98,7 @@ export class Generator extends BasicMachine {
    *   permutationToPlace: import("@minecraft/server").BlockPermutation
    * }} e Event data containing the block location, player, and block permutation.
    *
-   * @param {GeneratorSettings} config Generator configuration used to define
+   * @param {Object} config Generator configuration used to define
    * the entity name, inventory size, and machine capacities.
    *
    * @param {(entity: import("@minecraft/server").Entity) => void} [callback]
@@ -98,12 +107,12 @@ export class Generator extends BasicMachine {
   static spawnEntity(e, config, callback) {
     const { block, player, permutationToPlace } = e;
 
-    const mainHand = player.getComponent("equippable").getEquipment("Mainhand")
+    const mainHand = player.getComponent("equippable").getEquipment("Mainhand");
     const { energy, fluid } = Utils.getEnergyAndFluidFromItem(mainHand);
 
     system.run(() => {
-      const entity = Utils.spawnEntity(block, config)
-      const energyManager = new EnergyStorage(entity)
+      const entity = Utils.spawnEntity(block, config);
+      const energyManager = new EnergyStorage(entity);
       energyManager.setCap(config.generator.energy_cap);
       energyManager.set(energy);
       energyManager.display();
@@ -117,17 +126,14 @@ export class Generator extends BasicMachine {
           fluidManager.set(fluid.amount);
         }
       }
-      this.addNearbyMachines(entity);
-      system.runTimeout(() => {
-        if (callback) try {
+      system.run(() => {
+        if (callback) {
           callback(entity);
-        } catch {
-          system.runTimeout(() => callback(entity), 2)
         }
-      }, 2);
-    })
+      });
+    });
 
-    Utils.updateAdjacentNetwork(block, permutationToPlace)
+    Utils.updateAdjacentNetwork(block, permutationToPlace);
   }
 
   /**
@@ -137,7 +143,10 @@ export class Generator extends BasicMachine {
    * - This is used by energy transfer functions to identify nearby machines.
    * - Adds positions in all cardinal directions: North, South, East, West, Up, Down.
    *
-   * @param {Entity} entity The entity (usually a generator or battery) to tag with nearby positions.
+   * @param {import("@minecraft/server").Entity} entity The entity, usually a generator or battery, to tag with nearby positions.
+   * @returns {void}
+   * @deprecated Network tags are rebuilt through `updatePipes` from real placed
+   * energy blocks. Avoid registering all adjacent positions by default.
    */
   static addNearbyMachines(entity) {
     let { x, y, z } = entity.location;
@@ -166,8 +175,9 @@ export class Generator extends BasicMachine {
    *  - farthest → send to farthest target first.
    *  - round → distribute evenly across all connected targets.
    *
-   * @param {Entity} entity The generator entity.
-   * @param {Player} player The interacting player.
+   * @param {import("@minecraft/server").Entity} entity The generator entity.
+   * @param {import("@minecraft/server").Player} player The interacting player.
+   * @returns {void}
    */
   static openGeneratorTransferModeMenu(entity, player) {
     if (!entity || !player) return;

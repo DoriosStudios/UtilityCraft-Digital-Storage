@@ -1,7 +1,5 @@
-import { ItemStack, system } from "@minecraft/server";
-
-const SECTION = "\u00A7";
-const FILLER_METADATA_PREFIX = `${SECTION}n${SECTION}u${SECTION}f${SECTION}r`;
+import { system } from "@minecraft/server";
+import * as Constants from "./constants.js";
 
 /**
  * Shared item used to restore button slots after a press is detected.
@@ -17,15 +15,15 @@ export let ButtonItemStack = null;
  *
  * This should be called once during startup or world load.
  *
- * @param {string} [itemId="utilitycraft:ui_filler"] Item identifier used as visual button.
+ * @param {string} [itemId=Constants.DEFAULT_BUTTON_ITEM_ID] Item identifier used as visual button.
  * @param {typeof import("@minecraft/server").ItemStack} ItemStackClass ItemStack constructor from the Minecraft API.
  * @returns {import("@minecraft/server").ItemStack | null}
  */
-export function loadButtonItemStack(itemId = "utilitycraft:ui_filler", ItemStackClass) {
+export function loadButtonItemStack(itemId = Constants.DEFAULT_BUTTON_ITEM_ID, ItemStackClass) {
   if (!ItemStackClass) return null;
 
   ButtonItemStack = new ItemStackClass(itemId, 1);
-  ButtonItemStack.nameTag = " ";
+  ButtonItemStack.nameTag = Constants.DEFAULT_BUTTON_NAME_TAG;
   return ButtonItemStack;
 }
 
@@ -44,6 +42,26 @@ function readSlotItem(container, slot) {
   } catch {
     return undefined;
   }
+}
+
+/**
+ * Creates an isolated button item instance for a slot restore.
+ *
+ * The shared global stack is used only as a template to avoid leaking
+ * dynamic `nameTag` changes across different buttons/entities.
+ *
+ * @param {string | undefined} [nameTag]
+ * @returns {import("@minecraft/server").ItemStack | null}
+ */
+function createButtonItemStack(nameTag) {
+  if (!ButtonItemStack) return null;
+
+  const buttonItem = ButtonItemStack.clone();
+  if (typeof nameTag === "string") {
+    buttonItem.nameTag = nameTag;
+  }
+
+  return buttonItem;
 }
 
 /**
@@ -74,70 +92,7 @@ function getEntityBlock(entity) {
  * @returns {string}
  */
 function getSlotState(item) {
-  return item?.typeId ?? "empty";
-}
-
-function encodeFillerMetadata(entityId, slot, nameTag) {
-  const payload = encodeURIComponent(JSON.stringify({
-    e: entityId,
-    s: slot,
-    n: nameTag ?? " ",
-  }));
-
-  let encoded = "";
-  for (const char of payload) {
-    const hex = char.charCodeAt(0).toString(16).padStart(2, "0");
-    encoded += `${SECTION}${hex[0]}${SECTION}${hex[1]}`;
-  }
-  return `${FILLER_METADATA_PREFIX}${encoded}`;
-}
-
-function readFillerMetadata(item) {
-  for (const line of item?.getLore?.() ?? []) {
-    const metadataIndex =
-      typeof line === "string" ? line.indexOf(FILLER_METADATA_PREFIX) : -1;
-    if (metadataIndex < 0) continue;
-
-    const encoded = line.slice(metadataIndex + FILLER_METADATA_PREFIX.length);
-    let hex = "";
-    for (let i = 0; i < encoded.length - 1; i++) {
-      if (encoded[i] === SECTION && /[0-9a-f]/i.test(encoded[i + 1])) {
-        hex += encoded[i + 1];
-        i++;
-      }
-    }
-    if (hex.length === 0 || hex.length % 2 !== 0) continue;
-
-    let payload = "";
-    for (let i = 0; i < hex.length; i += 2) {
-      payload += String.fromCharCode(Number.parseInt(hex.slice(i, i + 2), 16));
-    }
-
-    try {
-      return JSON.parse(decodeURIComponent(payload));
-    } catch {}
-  }
-
-  return undefined;
-}
-
-function createButtonItem(entity, slot, nameTag = " ") {
-  const itemId = ButtonItemStack?.typeId ?? "utilitycraft:ui_filler";
-  const item = new ItemStack(itemId, 1);
-  item.nameTag = nameTag;
-  if (entity?.id && Number.isInteger(slot) && slot >= 0) {
-    item.setLore([encodeFillerMetadata(entity.id, slot, nameTag)]);
-  }
-  return item;
-}
-
-function isButtonItemReady(item, entity, slot) {
-  const metadata = readFillerMetadata(item);
-  return (
-    item?.typeId === (ButtonItemStack?.typeId ?? "utilitycraft:ui_filler") &&
-    metadata?.e === entity?.id &&
-    metadata?.s === slot
-  );
+  return item?.typeId ?? Constants.EMPTY_SLOT_STATE;
 }
 
 /**
@@ -185,6 +140,12 @@ export class ButtonManager {
    * Registers or replaces a button definition for a machine id.
    *
    * The callback is shared by every entity using the same machine id.
+   * If the callback returns a string, that value is used as the `nameTag`
+   * of the restored button item for that slot, allowing a dynamic button
+   * label per press/entity.
+   *
+   * To display that dynamic label in the UI, use the `dynamic_button`
+   * UI element instead of `machine_button`.
    *
    * @param {string} machineId
    * @param {number | number[]} slot
@@ -193,7 +154,9 @@ export class ButtonManager {
    *   block: import("@minecraft/server").Block | undefined,
    *   container: import("@minecraft/server").Container,
    *   slot: number
-   * }) => void} [onPressEvent]
+   * }) => string | void} [onPressEvent] Callback executed when the button
+   * slot changes. Return a string to assign a dynamic `nameTag` to the
+   * restored button item; return nothing to keep the default button name.
    * @returns {boolean}
    */
   static registerMachineButton(machineId, slot, onPressEvent = () => { }) {
@@ -280,10 +243,10 @@ export class ButtonManager {
     if (watcher) {
       watcher.entity = entity;
       watcher.machineId = machineId;
-      this.ensureButtonItems(entity, container, buttons);
+      this.ensureButtonItems(container, buttons);
       this.syncWatcherCache(watcher, container, buttons);
     } else {
-      this.ensureButtonItems(entity, container, buttons);
+      this.ensureButtonItems(container, buttons);
       this.activeWatchers.set(entity.id, this.createWatcher(entity, machineId, container, buttons));
     }
 
@@ -312,6 +275,7 @@ export class ButtonManager {
    * Creates the runtime watcher state for an entity.
    *
    * @param {import("@minecraft/server").Entity} entity
+   * @param {string} machineId
    * @param {import("@minecraft/server").Container} container
    * @param {{ slot: number, onPressEvent: Function }[]} buttons
    * @returns {{
@@ -341,16 +305,15 @@ export class ButtonManager {
    * @param {{ slot: number, onPressEvent: Function }[]} buttons
    * @returns {void}
    */
-  static ensureButtonItems(entity, container, buttons) {
+  static ensureButtonItems(container, buttons) {
     if (!container || !ButtonItemStack) return;
 
     for (const { slot } of buttons) {
       const currentItem = readSlotItem(container, slot);
-      if (isButtonItemReady(currentItem, entity, slot)) continue;
-      container.setItem(
-        slot,
-        createButtonItem(entity, slot, currentItem?.nameTag ?? " "),
-      );
+      if (currentItem?.typeId === ButtonItemStack.typeId) continue;
+      const buttonItem = createButtonItemStack();
+      if (!buttonItem) continue;
+      container.setItem(slot, buttonItem);
     }
   }
 
@@ -389,7 +352,7 @@ export class ButtonManager {
 
     this.intervalId = system.runInterval(() => {
       this.tick();
-    }, 1);
+    }, Constants.BUTTON_WATCH_INTERVAL);
   }
 
   /**
@@ -442,20 +405,27 @@ export class ButtonManager {
 
         for (const { slot, onPressEvent } of buttons) {
           const currentState = getSlotState(readSlotItem(container, slot));
-          const previousState = watcher.cacheBySlot.get(slot) ?? "empty";
+          const previousState = watcher.cacheBySlot.get(slot) ?? Constants.EMPTY_SLOT_STATE;
 
           if (currentState === previousState) continue;
 
-          if (ButtonItemStack) {
-            container.setItem(slot, createButtonItem(entity, slot));
-          }
+          let buttonNameTag;
 
-          onPressEvent({
-            entity,
-            block: getEntityBlock(entity),
-            container,
-            slot,
-          });
+          try {
+            buttonNameTag = onPressEvent({
+              entity,
+              block: getEntityBlock(entity),
+              container,
+              slot,
+            });
+          } finally {
+            const buttonItem = createButtonItemStack(
+              typeof buttonNameTag === "string" ? buttonNameTag : undefined
+            );
+            if (buttonItem) {
+              container.setItem(slot, buttonItem);
+            }
+          }
 
           watcher.cacheBySlot.set(slot, getSlotState(readSlotItem(container, slot)));
         }

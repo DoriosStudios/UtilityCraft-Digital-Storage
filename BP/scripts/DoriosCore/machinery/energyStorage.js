@@ -1,6 +1,35 @@
 import { world, ItemStack, system } from "@minecraft/server";
-import { loadObjectives } from "../utils/scoreboards.js"
-import { initializeEntity } from "../utils/entity.js"
+import * as Constants from "./constants.js";
+import { loadObjectives } from "../utils/scoreboards.js";
+import { initializeEntity } from "../utils/entity.js";
+
+const ENERGY_NETWORK_NODES_PROPERTY_ID = "dorios:energy_nodes";
+
+function getLocationKey(location) {
+  return `${Math.floor(location.x)},${Math.floor(location.y)},${Math.floor(location.z)}`;
+}
+
+function parseNetworkTag(tag) {
+  const [x, y, z] = tag.slice(5, -1).split(",").map(Number);
+  if (![x, y, z].every(Number.isFinite)) return undefined;
+  return { x, y, z };
+}
+
+function removeInvalidNetworkNodes(entity, invalidKeys, targets) {
+  if (invalidKeys.size === 0) return;
+
+  for (const tag of entity.getTags()) {
+    if (!tag.startsWith("pos:[") && !tag.startsWith("net:[")) continue;
+
+    const location = parseNetworkTag(tag);
+    if (!location || invalidKeys.has(getLocationKey(location))) {
+      entity.removeTag(tag);
+    }
+  }
+
+  const filteredTargets = targets.filter((target) => !invalidKeys.has(getLocationKey(target)));
+  entity.setDynamicProperty(ENERGY_NETWORK_NODES_PROPERTY_ID, JSON.stringify(filteredTargets));
+}
 
 /**
  * Utility class to manage scoreboard-based energy values for entities.
@@ -54,12 +83,7 @@ export class EnergyStorage {
    *
    */
   static initializeObjectives() {
-    loadObjectives([
-      ["energy", "Energy"],
-      ["energyExp", "EnergyExp"],
-      ["energyCap", "Energy Max Capacity"],
-      ["energyCapExp", "Energy Max Capacity Exp"],
-    ], EnergyStorage.#objectives);
+    loadObjectives(Constants.ENERGY_OBJECTIVE_DEFINITIONS, EnergyStorage.#objectives);
   }
 
   /**
@@ -101,36 +125,39 @@ export class EnergyStorage {
   }
 
   /**
-   * Formats a numerical Dorios Energy (DE) value into a human-readable string with appropriate unit suffix.
-   *
-   * @param {number} value The energy value in DE (Dorios Energy).
-   * @returns {string} A formatted string representing the value with the appropriate unit (DE, kDE, MDE, GDE, TDE).
-   *
-   * @example
-   * formatEnergyToText(15300); // "15.3 kDE"
-   * formatEnergyToText(1048576); // "1.05 MDE"
-   */
+  * Formats a numerical Dorios Energy (DE) value into a human-readable string with appropriate unit suffix.
+  *
+  * @param {number} value The energy value in DE (Dorios Energy).
+  * @returns {string} A formatted string representing the value with the appropriate unit (DE, kDE, MDE, GDE, TDE).
+  *
+  * @example
+  * formatEnergyToText(15300); // "15.3 kDE"
+  * formatEnergyToText(1048576); // "1.05 MDE"
+  */
   static formatEnergyToText(value) {
-    let unit = "DE";
+    const safeValue = Math.max(0, Number(value) || 0);
 
-    if (value >= 1e15) {
-      unit = "PDE";
-      value /= 1e15;
-    } else if (value >= 1e12) {
-      unit = "TDE";
-      value /= 1e12;
-    } else if (value >= 1e9) {
-      unit = "GDE";
-      value /= 1e9;
-    } else if (value >= 1e6) {
-      unit = "MDE";
-      value /= 1e6;
-    } else if (value >= 1e3) {
-      unit = "kDE";
-      value /= 1e3;
+    if (safeValue >= 1e15) {
+      return `${(safeValue / 1e15).toFixed(2)} PDE`;
     }
 
-    return `${parseFloat(value.toFixed(2))} ${unit}`;
+    if (safeValue >= 1e12) {
+      return `${(safeValue / 1e12).toFixed(2)} TDE`;
+    }
+
+    if (safeValue >= 1e9) {
+      return `${(safeValue / 1e9).toFixed(2)} GDE`;
+    }
+
+    if (safeValue >= 1e6) {
+      return `${(safeValue / 1e6).toFixed(2)} MDE`;
+    }
+
+    if (safeValue >= 1e3) {
+      return `${(safeValue / 1e3).toFixed(1)} kDE`;
+    }
+
+    return `${Math.floor(safeValue)} DE`;
   }
 
   /**
@@ -138,48 +165,35 @@ export class EnergyStorage {
    *
    * @param {string} input The string with formatted energy (e.g., "§r§7  Energy: 12.5 kDE / 256 kDE").
    * @param {number} index Which value to extract: 0 = current, 1 = max.
-   * @returns {number} The numeric value in base DE.
+   * @returns {number | undefined} The numeric value in base DE, or undefined when parsing fails.
    *
    * @example
-   * parseFormattedEnergy("§r§7  Energy: 12.5 kDE / 256 kDE", 0); // 12500
-   * parseFormattedEnergy("§r§7  Energy: 12.5 kDE / 256 kDE", 1); // 256000
+   * EnergyStorage.getEnergyFromText("§r§7  Energy: 12.5 kDE / 256 kDE", 0); // 12500
+   * EnergyStorage.getEnergyFromText("§r§7  Energy: 12.5 kDE / 256 kDE", 1); // 256000
    */
   static getEnergyFromText(input, index = 0) {
     // Remove Minecraft formatting codes
     const cleanedInput = input.replace(/§[0-9a-frklmnor]/gi, "");
 
-    // Find all matches like "12.5 kDE"
-    const matches = cleanedInput.match(/([\d.]+)\s*(kDE|MDE|GDE|TDE|DE)/g);
+    const matches = [...cleanedInput.matchAll(/([\d.]+)\s*(PDE|TDE|GDE|MDE|KDE|DE)/gi)];
 
-    if (!matches || index >= matches.length) {
-      throw new Error("Invalid input or index: couldn't parse energy values.");
+    if (!matches.length || index < 0 || index >= matches.length) {
+      return
+      // throw new Error("Invalid input or index: couldn't parse energy values.");
     }
 
-    const [valueStr, unit] = matches[index].split(" ");
-    let multiplier = 1;
+    const [, valueStr, rawUnit] = matches[index];
+    const unit = String(rawUnit || "DE").toUpperCase();
+    const multipliers = {
+      DE: 1,
+      KDE: 1e3,
+      MDE: 1e6,
+      GDE: 1e9,
+      TDE: 1e12,
+      PDE: 1e15,
+    };
 
-    switch (unit) {
-      case "kDE":
-        multiplier = 1e3;
-        break;
-      case "MDE":
-        multiplier = 1e6;
-        break;
-      case "GDE":
-        multiplier = 1e9;
-        break;
-      case "TDE":
-        multiplier = 1e12;
-        break;
-      case "PDE":
-        multiplier = 1e15;
-        break;
-      case "DE":
-        multiplier = 1;
-        break;
-    }
-
-    return parseFloat(valueStr) * multiplier;
+    return parseFloat(valueStr) * (multipliers[unit] ?? 1);
   }
   //#endregion
 
@@ -392,11 +406,11 @@ export class EnergyStorage {
 
     const energy = this.get();
     const energyCap = this.getCap();
-    const energyP = Math.floor((energy / energyCap) * 48) || 0;
-    const frame = Math.max(0, Math.min(48, energyP));
+    const energyP = Math.floor((energy / energyCap) * Constants.ENERGY_BAR_FRAME_COUNT) || 0;
+    const frame = Math.max(0, Math.min(Constants.ENERGY_BAR_FRAME_COUNT, energyP));
     const frameName = frame.toString().padStart(2, "0");
 
-    const item = new ItemStack(`utilitycraft:energy_${frameName}`, 1);
+    const item = new ItemStack(`${Constants.ENERGY_BAR_ITEM_PREFIX}${frameName}`, 1);
     item.nameTag = `§rEnergy
 §r§7  Stored: ${EnergyStorage.formatEnergyToText(this.get())} / ${EnergyStorage.formatEnergyToText(this.cap)}
 §r§7  Percentage: ${this.getPercent().toFixed(2)}%%`;
@@ -417,7 +431,7 @@ export class EnergyStorage {
    * if (used > 0) console.log(`Consumed ${used} energy`);
    */
   consume(amount) {
-    if (this.entity.hasTag("creative")) return amount;
+    if (this.entity.hasTag(Constants.CREATIVE_TAG)) return amount;
     if (amount <= 0) return 0;
 
     const current = this.get();
@@ -493,7 +507,7 @@ export class EnergyStorage {
   /**
    * Transfers energy from this entity to another Energy manager.
    *
-   * @param {Energy} other The target Energy instance.
+   * @param {EnergyStorage} other The target energy storage instance.
    * @param {number} amount The maximum amount to transfer.
    * @returns {number} The actual amount transferred.
    *
@@ -537,7 +551,7 @@ export class EnergyStorage {
   /**
    * Receives energy from another Energy manager.
    *
-   * @param {Energy} other The source Energy instance.
+   * @param {EnergyStorage} other The source energy storage instance.
    * @param {number} amount The maximum amount to receive.
    * @returns {number} The actual amount received.
    *
@@ -579,6 +593,8 @@ export class EnergyStorage {
    * - If the property doesn't exist or the entity has the `updateNetwork` tag,
    *   rebuilds the node list from its `pos:[x,y,z]` or `net:[x,y,z]` tags.
    * - Caches the list sorted by distance for performance.
+   * - Removes stale `pos:`/`net:` tags when a cached position no longer has an
+   *   entity in the `dorios:energy_container` family.
    *
    * ## Transfer Modes
    * - `"nearest"` → Transfers to the closest valid target first.
@@ -603,27 +619,36 @@ export class EnergyStorage {
     // ──────────────────────────────────────────────
     // Retrieve or rebuild cached network nodes
     // ──────────────────────────────────────────────
-    let nodes = this.entity.getDynamicProperty("dorios:energy_nodes");
+    let nodes = this.entity.getDynamicProperty(ENERGY_NETWORK_NODES_PROPERTY_ID);
     const needsUpdate = this.entity.hasTag("updateNetwork");
 
     if (!nodes || needsUpdate) {
       const positions = this.entity
         .getTags()
         .filter((tag) => tag.startsWith("pos:[") || tag.startsWith("net:["))
-        .map((tag) => {
-          const [x, y, z] = tag.slice(5, -1).split(",").map(Number);
-          return { x, y, z };
-        })
+        .map(parseNetworkTag)
+        .filter(Boolean)
         .sort((a, b) => DoriosAPI.math.distanceBetween(pos, a) - DoriosAPI.math.distanceBetween(pos, b));
 
-      this.entity.setDynamicProperty("dorios:energy_nodes", JSON.stringify(positions));
+      this.entity.setDynamicProperty(ENERGY_NETWORK_NODES_PROPERTY_ID, JSON.stringify(positions));
       this.entity.removeTag("updateNetwork");
       nodes = JSON.stringify(positions);
     }
 
     /** @type {{x:number,y:number,z:number}[]} */
-    const targets = JSON.parse(nodes);
+    let targets;
+    try {
+      targets = JSON.parse(nodes);
+      if (!Array.isArray(targets)) {
+        targets = [];
+        this.entity.setDynamicProperty(ENERGY_NETWORK_NODES_PROPERTY_ID, "[]");
+      }
+    } catch {
+      targets = [];
+      this.entity.setDynamicProperty(ENERGY_NETWORK_NODES_PROPERTY_ID, "[]");
+    }
     if (targets.length === 0) return 0;
+    const invalidKeys = new Set();
 
     // ──────────────────────────────────────────────
     // Select order based on transfer mode
@@ -636,10 +661,16 @@ export class EnergyStorage {
       const validEntities = [];
       for (const loc of orderedTargets) {
         const [target] = dim.getEntitiesAtBlockLocation(loc);
-        if (!target) continue;
+        if (!target) {
+          invalidKeys.add(getLocationKey(loc));
+          continue;
+        }
 
         const tf = target.getComponent("minecraft:type_family");
-        if (!tf?.hasTypeFamily("dorios:energy_container")) continue;
+        if (!tf?.hasTypeFamily("dorios:energy_container")) {
+          invalidKeys.add(getLocationKey(loc));
+          continue;
+        }
         if (isBattery && tf.hasTypeFamily("dorios:battery")) continue;
 
         const energy = new EnergyStorage(target);
@@ -647,6 +678,7 @@ export class EnergyStorage {
       }
 
       if (validEntities.length === 0) {
+        removeInvalidNetworkNodes(this.entity, invalidKeys, targets);
         // avanzar igual aunque no haya válidos
         // this.entity.setDynamicProperty("dorios:energy_round_idx", (idx + 10) % orderedTargets.length);
         return 0;
@@ -679,10 +711,16 @@ export class EnergyStorage {
         if (available <= 0 || speed <= 0) break;
 
         const [target] = dim.getEntitiesAtBlockLocation(loc);
-        if (!target) continue;
+        if (!target) {
+          invalidKeys.add(getLocationKey(loc));
+          continue;
+        }
 
         const tf = target.getComponent("minecraft:type_family");
-        if (!tf?.hasTypeFamily("dorios:energy_container")) continue;
+        if (!tf?.hasTypeFamily("dorios:energy_container")) {
+          invalidKeys.add(getLocationKey(loc));
+          continue;
+        }
         if (isBattery && tf.hasTypeFamily("dorios:battery")) continue;
 
         const energy = new EnergyStorage(target);
@@ -702,6 +740,7 @@ export class EnergyStorage {
     // ──────────────────────────────────────────────
     // Apply total energy consumption
     // ──────────────────────────────────────────────
+    removeInvalidNetworkNodes(this.entity, invalidKeys, targets);
     if (transferred > 0) this.consume(transferred);
 
     return transferred;
