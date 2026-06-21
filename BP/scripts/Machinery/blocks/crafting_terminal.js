@@ -567,7 +567,7 @@ function getBlueprintResult(blueprint) {
   return { id, amount };
 }
 function getCraftSource(blueprint, inv, nodes) {
-  const networkCrafts = nodes.networkId ? amountToCraftFromNetwork(blueprint, nodes, Number.MAX_SAFE_INTEGER) : 0;
+  const networkCrafts = nodes.length > 0 ? amountToCraftFromNetwork(blueprint, nodes, Number.MAX_SAFE_INTEGER) : 0;
   const gridCrafts = amountToCraftFromGrid(blueprint, inv);
   if (networkCrafts <= 0 && gridCrafts <= 0) return undefined;
   return networkCrafts >= gridCrafts
@@ -601,7 +601,7 @@ function splitRawItemAmount(typeId, amount) {
   return stacks;
 }
 function deliverStack(block, nodes, itemStack, toNetwork) {
-  if (toNetwork && nodes.networkId) {
+  if (toNetwork && nodes.length > 0) {
     const remaining = addItemsToNetwork(nodes, itemStack);
     if (remaining > 0) {
       itemStack.amount = remaining;
@@ -633,7 +633,7 @@ function consumeCraftMaterials(block, inv, nodes, blueprint, source, crafts) {
   }
 
   const leftover = blueprint.getDynamicProperty("leftover") || false;
-  if (leftover !== false) deliverRawItemAmount(block, nodes, leftover, crafts, Boolean(nodes.networkId));
+  if (leftover !== false) deliverRawItemAmount(block, nodes, leftover, crafts, nodes.length > 0);
   return true;
 }
 function performCraftButtonAction(entity, inv) {
@@ -646,7 +646,7 @@ function performCraftButtonAction(entity, inv) {
 
   const nodes = getConnectedInventories(block);
   const outputMode = getOutputMode(entity);
-  if (outputMode === "network" && !nodes.networkId) return false;
+  if (outputMode === "network" && nodes.length === 0) return false;
 
   const sourceData = getCraftSource(blueprint, inv, nodes);
   if (!sourceData) return false;
@@ -934,18 +934,19 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   let networkVersion = networkSnapshot.version;
   const lastNetworkVersion = entity.getDynamicProperty("last_network_version") ?? -1;
   const hasNetworkSnapshot = Boolean(networkSnapshot.networkId);
+  const hasNetworkOnline = hasNetworkSnapshot && networkSnapshot.record?.online === true;
   const wasNetworkAvailable = entity.getDynamicProperty("last_network_available") === true;
-  if (hasNetworkSnapshot !== wasNetworkAvailable) {
+  if (hasNetworkOnline !== wasNetworkAvailable) {
     forceRefresh = true;
     entity.setDynamicProperty("force_refresh", true);
     entity.setDynamicProperty("last_rendered_page", -1);
   }
-  entity.setDynamicProperty("last_network_available", hasNetworkSnapshot);
-  const hasRenderedNetworkItems = !hasNetworkSnapshot && (
+  entity.setDynamicProperty("last_network_available", hasNetworkOnline);
+  const hasRenderedNetworkItems = !hasNetworkOnline && (
     Object.keys(getRenderedSlotMap(entity)).length > 0 ||
     hasVisibleVirtualStorageItems(inv)
   );
-  if (!hasNetworkSnapshot && (lastNetworkVersion !== 0 || hasRenderedNetworkItems)) {
+  if (!hasNetworkOnline && hasRenderedNetworkItems) {
     forceRefresh = true;
     entity.setDynamicProperty("force_refresh", true);
     entity.setDynamicProperty("last_rendered_page", -1);
@@ -970,7 +971,7 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   const shouldScanInput = forceRefresh || controlsChanged || hasPendingBurnSlot || currentTick % 10 === 0;
   const hasPendingInput = hasPendingBurnSlot || (shouldScanInput ? hasActionableStorageItems(inv) : false);
   const canUseNetworkDeltas =
-    hasNetworkSnapshot &&
+    hasNetworkOnline &&
     !hasCraftBlueprint &&
     !forceRefresh &&
     !controlsChanged &&
@@ -994,7 +995,7 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
         inv,
         machine,
         fullSnapshot.networkId,
-        Boolean(fullSnapshot.networkId),
+        Boolean(fullSnapshot.networkId && fullSnapshot.record?.online === true),
         fullSnapshot.totals,
         nextPage,
         nextPageCount,
@@ -1061,7 +1062,7 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
     inv.setItem(BURN_SLOT, undefined);
     currentBurnItem = undefined;
   }
-  if (currentBurnItem && getStoredCount(currentBurnItem) !== -1) {
+  if (hasNetwork && currentBurnItem && getStoredCount(currentBurnItem) !== -1) {
     let itemKey = getItemKey(currentBurnItem);
     let maxStack = currentBurnItem.maxAmount;
     inv.setItem(BURN_SLOT, undefined);
@@ -1135,7 +1136,7 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   }
   for (let slot of CRAFTING_GRID) {
     let gItem = inv.getItem(slot);
-    if (gItem && getStoredCount(gItem) !== -1) {
+    if (hasNetwork && gItem && getStoredCount(gItem) !== -1) {
       let itemKey = getItemKey(gItem);
       inv.setItem(slot, undefined);
       let available = countItemsInNetwork(nodes, itemKey);

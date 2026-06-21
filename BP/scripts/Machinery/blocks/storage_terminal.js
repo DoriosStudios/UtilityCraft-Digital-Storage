@@ -568,6 +568,8 @@ function processBurnSlotEvery2Ticks(block, entity) {
 
   const nodes = getConnectedInventories(block);
   if (!nodes?.networkId) return;
+  const network = readNetworkRecord(nodes.networkId);
+  if (!network || network.online === false) return;
 
   const machine = createLabelWriter(inv);
   const currentQty = entity.getDynamicProperty("extract_quantity") ?? 1;
@@ -684,18 +686,19 @@ function runStorageTerminalTick(block, machineEntity, settings) {
   let networkVersion = networkSnapshot.version;
   const lastNetworkVersion = entity.getDynamicProperty("last_network_version") ?? -1;
   const hasNetworkSnapshot = Boolean(networkSnapshot.networkId);
+  const hasNetworkOnline = hasNetworkSnapshot && networkSnapshot.record?.online === true;
   const wasNetworkAvailable = entity.getDynamicProperty("last_network_available") === true;
-  if (hasNetworkSnapshot !== wasNetworkAvailable) {
+  if (hasNetworkOnline !== wasNetworkAvailable) {
     forceRefresh = true;
     entity.setDynamicProperty("force_refresh", true);
     entity.setDynamicProperty("last_rendered_page", -1);
   }
-  entity.setDynamicProperty("last_network_available", hasNetworkSnapshot);
-  const hasRenderedNetworkItems = !hasNetworkSnapshot && (
+  entity.setDynamicProperty("last_network_available", hasNetworkOnline);
+  const hasRenderedNetworkItems = !hasNetworkOnline && (
     Object.keys(getRenderedSlotMap(entity)).length > 0 ||
     hasVisibleVirtualStorageItems(inv)
   );
-  if (!hasNetworkSnapshot && (lastNetworkVersion !== 0 || hasRenderedNetworkItems)) {
+  if (!hasNetworkOnline && hasRenderedNetworkItems) {
     forceRefresh = true;
     entity.setDynamicProperty("force_refresh", true);
     entity.setDynamicProperty("last_rendered_page", -1);
@@ -705,7 +708,7 @@ function runStorageTerminalTick(block, machineEntity, settings) {
   const hasPendingInput =
     shouldScanInput ? hasActionableStorageItems(inv) : false;
   const canUseNetworkDeltas =
-    hasNetworkSnapshot &&
+    hasNetworkOnline &&
     !forceRefresh &&
     !controlsChanged &&
     !hasPendingInput &&
@@ -732,7 +735,7 @@ function runStorageTerminalTick(block, machineEntity, settings) {
         inv,
         machine,
         fullSnapshot.networkId,
-        Boolean(fullSnapshot.networkId),
+        Boolean(fullSnapshot.networkId && fullSnapshot.record?.online === true),
         fullSnapshot.totals,
         nextPage,
         nextPageCount,
