@@ -11,28 +11,25 @@ import { crafterRecipes } from "Config/recipes/crafter.js";
 
 // Constant
 
-const BURN_SLOT = 236;
+const BURN_SLOT = 227;
 const STORAGE_START = 0;
 const STORAGE_END = 224;
-const COUNT_LABEL_BASE_SLOT = 225;
-const NEXT_SLOT = 237;
-const PREVIOUS_SLOT = 238;
-const QUANTITY_SLOT = 239;
-const SORT_SLOT = 240;
-const CRAFT_QTY_SLOT = 241;
-const REMOVE_RECIPE_SLOT = 242;
-const CRAFTING_BLUEPRINT_SLOT = 243;
-const CRAFTING_GRID = [244, 245, 246, 247, 248, 249, 250, 251, 252];
-const OUTPUT_SLOT = 253;
-const CRAFT_BUTTON_SLOT = 254;
-const OUTPUT_MODE_SLOT = 255;
+const NEXT_SLOT = 228;
+const PREVIOUS_SLOT = 229;
+const QUANTITY_SLOT = 230;
+const SORT_SLOT = 231;
+const CRAFT_QTY_SLOT = 232;
+const REMOVE_RECIPE_SLOT = 233;
+const CRAFTING_BLUEPRINT_SLOT = 234;
+const CRAFTING_GRID = [235, 236, 237, 238, 239, 240, 241, 242, 243];
+const OUTPUT_SLOT = 244;
+const CRAFT_BUTTON_SLOT = 245;
+const OUTPUT_MODE_SLOT = 246;
 const LORE_DISPLAY = "§r§7- Count: §f";
 const MAX_PAGES = 27;
 const STORAGE_SLOTS = 225;
-const COUNT_LABEL_COLUMNS = 9;
-const COUNT_LABEL_ROWS = 25;
 const OUTPUT_BLUEPRINT_ITEM = "utilitycraft:blueprint";
-const RESERVED_FILLER_SLOTS = [234, 235];
+const RESERVED_FILLER_SLOTS = [225, 226];
 const ITEM_EXPORTER = "utilitycraft:item_exporter";
 const ITEM_IMPORTER = "utilitycraft:item_importer";
 const MC_MAPS = {
@@ -59,7 +56,6 @@ const RENDER_SETTINGS = {
   ignoreTick: false,
 };
 const BUTTON_RELEASE_TICKS = 6;
-const GRID_REPAIR_TICKS = 200;
 
 // Main Work (Functions)
 
@@ -126,11 +122,6 @@ function renderCraftingTerminalControls(entity, inv, currentPage, pageCount, cur
   entity.setDynamicProperty("last_rendered_sort", currentSort);
   entity.setDynamicProperty("last_rendered_output_mode", outputMode);
 }
-function createCountLabelFiller(entity, slot) {
-  const item = Terminal.createUiFiller(entity, slot);
-  item.setLore(Array(COUNT_LABEL_ROWS).fill(" "));
-  return item;
-}
 function initializeCraftingTerminalInventory(entity) {
   const inv = entity.getComponent("minecraft:inventory")?.container;
   if (!inv) return false;
@@ -142,38 +133,9 @@ function initializeCraftingTerminalInventory(entity) {
     }
   }
 
-  for (let column = 0; column < COUNT_LABEL_COLUMNS; column++) {
-    const slot = COUNT_LABEL_BASE_SLOT + column;
-    inv.setItem(slot, createCountLabelFiller(entity, slot));
-  }
-
   Terminal.repairFillerSlots(inv, RESERVED_FILLER_SLOTS, { entity });
   renderCraftingTerminalControls(entity, inv, 0, 1, 1, 1, "count");
   return true;
-}
-function repairCountLabelSlots(block, entity, inv) {
-  for (let column = 0; column < COUNT_LABEL_COLUMNS; column++) {
-    const slot = COUNT_LABEL_BASE_SLOT + column;
-    const item = inv.getItem(slot);
-    const lore = item?.getLore?.() ?? [];
-    if (
-      item &&
-      item.typeId === "utilitycraft:ui_filler" &&
-      item.nameTag === " " &&
-      lore.length >= COUNT_LABEL_ROWS
-    ) {
-      continue;
-    }
-
-    if (
-      item &&
-      item.typeId !== "utilitycraft:ui_filler" &&
-      item.typeId !== "utilitycraft:storage_filler"
-    ) {
-      returnToPlayer(block, item);
-    }
-    inv.setItem(slot, createCountLabelFiller(entity, slot));
-  }
 }
 function refreshCraftingTerminalControls(entity) {
   try {
@@ -411,7 +373,7 @@ ButtonManager.registerMachineButton("crafting_terminal", CONTROL_SLOTS, ({ entit
     return;
   }
   entity.setDynamicProperty("is_processing_click", true);
-  entity.setDynamicProperty("force_refresh", true);
+  let changed = false;
   const inv = entity.getComponent("minecraft:inventory").container;
   let currentPage = entity.getDynamicProperty("page") ?? 0;
   const pageCount = getPageCountForEntity(entity);
@@ -425,6 +387,7 @@ ButtonManager.registerMachineButton("crafting_terminal", CONTROL_SLOTS, ({ entit
       }
       entity.setDynamicProperty("page", currentPage - 1);
       markPageChanged(entity);
+      changed = true;
     }
   } else if (slot === NEXT_SLOT) {
     if (currentPage < pageCount - 1) {
@@ -435,21 +398,27 @@ ButtonManager.registerMachineButton("crafting_terminal", CONTROL_SLOTS, ({ entit
       }
       entity.setDynamicProperty("page", currentPage + 1);
       markPageChanged(entity);
+      changed = true;
     }
   } else if (slot === QUANTITY_SLOT) {
     let currentQty = entity.getDynamicProperty("extract_quantity") ?? 1;
     let nextQty = currentQty === 1 ? 16 : currentQty === 16 ? 32 : currentQty === 32 ? 64 : 1;
     entity.setDynamicProperty("extract_quantity", nextQty);
+    changed = true;
   } else if (slot === CRAFT_QTY_SLOT) {
     entity.setDynamicProperty("craft_qty", getNextCraftQty(getCraftQty(entity)));
+    changed = true;
   } else if (slot === SORT_SLOT) {
     let currentSort = entity.getDynamicProperty("sort_mode") ?? "count";
     entity.setDynamicProperty("sort_mode", currentSort === "count" ? "name" : "count");
     entity.setDynamicProperty("sort_requested", true);
+    changed = true;
   } else if (slot === OUTPUT_MODE_SLOT) {
     entity.setDynamicProperty("output_mode", getOutputMode(entity) === "network" ? "inventory" : "network");
+    changed = true;
   } else if (slot === CRAFT_BUTTON_SLOT) {
     performCraftButtonAction(entity, inv);
+    changed = true;
   } else if (slot === REMOVE_RECIPE_SLOT) {
     const block = getEntityBlock(entity);
     if (!block) {
@@ -473,10 +442,10 @@ ButtonManager.registerMachineButton("crafting_terminal", CONTROL_SLOTS, ({ entit
       }
     }
     inv.setItem(CRAFTING_BLUEPRINT_SLOT, undefined);
+    changed = true;
   }
-  entity.setDynamicProperty("last_rendered_page", -1);
-  entity.setDynamicProperty("force_refresh", true);
-  scheduleCraftingTerminalRender(entity);
+  if (changed) scheduleCraftingTerminalRender(entity);
+  else refreshCraftingTerminalControls(entity);
   system.runTimeout(() => {
     if (entity.isValid) entity.setDynamicProperty("is_processing_click", false);
   }, BUTTON_RELEASE_TICKS);
@@ -667,7 +636,7 @@ function hasActionableStorageItems(inv) {
   for (let i = STORAGE_START; i <= STORAGE_END; i++) {
     const item = inv.getItem(i);
     if (!item || item.typeId === "utilitycraft:storage_filler") continue;
-    if (getStoredCount(item) === -1 && !isStorageCell(item)) return true;
+    if (!Terminal.isRenderedVirtualItem(item) && !isStorageCell(item)) return true;
   }
 
   return false;
@@ -676,17 +645,10 @@ function hasVisibleVirtualStorageItems(inv) {
   for (let i = STORAGE_START; i <= STORAGE_END; i++) {
     const item = inv.getItem(i);
     if (!item || item.typeId === "utilitycraft:storage_filler") continue;
-    if (getStoredCount(item) !== -1) return true;
+    if (Terminal.isRenderedVirtualItem(item)) return true;
   }
 
   return false;
-}
-function shouldCheckStorageGrid(entity, currentTick) {
-  const lastTick = Math.floor(Number(entity.getDynamicProperty("last_grid_repair_tick") ?? -GRID_REPAIR_TICKS));
-  if (currentTick - lastTick < GRID_REPAIR_TICKS) return false;
-
-  entity.setDynamicProperty("last_grid_repair_tick", currentTick);
-  return true;
 }
 function getSlotStateHash(inv, slot) {
   const item = inv.getItem(slot);
@@ -708,11 +670,6 @@ function getRenderedSlotMap(entity) {
 }
 function setRenderedSlotMap(entity, pageSlice) {
   Terminal.setRenderedSlotMap(entity, pageSlice, STORAGE_START);
-}
-function setCountLabel(machine, inv, slot) {
-  Terminal.setCountLabel(machine, inv, slot, {
-    countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
-  });
 }
 function getRenderedOrder(entity) {
   const raw = entity.getDynamicProperty("rendered_order");
@@ -777,7 +734,6 @@ function updateVisibleVirtualItem(entity, inv, machine, networkId, itemKey, coun
   return Terminal.updateVisibleVirtualItem(entity, inv, machine, networkId, itemKey, count, currentQty, {
     storageStart: STORAGE_START,
     storageEnd: STORAGE_END,
-    countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
     loreDisplay: LORE_DISPLAY,
   });
 }
@@ -788,12 +744,24 @@ function isRenderedItemVisible(entity, inv, itemKey) {
   });
 }
 function findFreeStorageSlot(inv) {
+  let firstFreeSlot = -1;
+  let lastUsedSlot = STORAGE_START - 1;
   for (let slot = STORAGE_START; slot <= STORAGE_END; slot++) {
     const item = inv.getItem(slot);
-    if (!item || item.typeId === "utilitycraft:storage_filler") return slot;
+    if (!item || item.typeId === "utilitycraft:storage_filler") {
+      if (firstFreeSlot < 0) firstFreeSlot = slot;
+      continue;
+    }
+    lastUsedSlot = slot;
   }
 
-  return -1;
+  const appendSlot = lastUsedSlot + 1;
+  if (appendSlot >= STORAGE_START && appendSlot <= STORAGE_END) {
+    const item = inv.getItem(appendSlot);
+    if (!item || item.typeId === "utilitycraft:storage_filler") return appendSlot;
+  }
+
+  return firstFreeSlot;
 }
 function renderVirtualItemAtSlot(entity, inv, machine, networkId, itemKey, count, currentQty, slot) {
   const virtualItemTest = createItemFromKey(itemKey, 1);
@@ -806,11 +774,10 @@ function renderVirtualItemAtSlot(entity, inv, machine, networkId, itemKey, count
     [...currentLore, `${LORE_DISPLAY}${count}`],
     networkId,
     itemKey,
-    { entityId: entity.id, slot },
+    { entityId: entity.id, slot, count },
   );
   inv.setItem(slot, virtualItem);
   Terminal.syncBlueprintDataAtSlot(entity, slot, virtualItem);
-  setCountLabel(machine, inv, slot);
 
   const renderedSlots = getRenderedSlotMap(entity);
   renderedSlots[itemKey] = slot;
@@ -826,7 +793,7 @@ function updateOrAppendVisibleVirtualItem(entity, inv, machine, networkId, itemK
   if (count <= 0) return true;
 
   const freeSlot = findFreeStorageSlot(inv);
-  if (freeSlot < 0) return false;
+  if (freeSlot < 0) return true;
 
   try {
     renderVirtualItemAtSlot(entity, inv, machine, networkId, itemKey, count, currentQty, freeSlot);
@@ -840,8 +807,9 @@ function applyNetworkDeltas(entity, inv, machine, networkRecord, networkId, curr
   return Terminal.applyNetworkDeltas(entity, inv, machine, networkRecord, networkId, currentQty, {
     storageStart: STORAGE_START,
     storageEnd: STORAGE_END,
-    countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
     loreDisplay: LORE_DISPLAY,
+    appendVisibleItem: (itemKey, count) =>
+      updateOrAppendVisibleVirtualItem(entity, inv, machine, networkId, itemKey, count, currentQty),
   });
 }
 function syncTerminalNetworkState(entity, networkRecord, networkTotals, networkVersion) {
@@ -883,9 +851,8 @@ async function renderCraftingTerminalPage(
     currentQty,
     storageStart: STORAGE_START,
     storageSlots: STORAGE_SLOTS,
-    countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
     loreDisplay: LORE_DISPLAY,
-    spreadTicks: Terminal.getPageChangeDelayTicks(),
+    spreadTicks: Terminal.getGridReloadSpreadTicks(),
   });
 }
 function runCraftingStorageTerminalTick(block, machineEntity, settings) {
@@ -896,8 +863,8 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   if (Terminal.isChunkedRenderActive(entity)) return;
   const machine = new Terminal(block, settings);
   if (!machine || !machine.valid) return;
+  if (!machine.shouldUpdateUI) return;
   const inv = entity.getComponent("minecraft:inventory").container;
-  repairCountLabelSlots(block, entity, inv);
   Terminal.repairFillerSlots(inv, RESERVED_FILLER_SLOTS, {
     entity,
     onBlockedItem: (item) => returnToPlayer(block, item),
@@ -920,16 +887,7 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   let forceRefresh = entity.getDynamicProperty("force_refresh") ?? false;
   let controlsChanged = controlsNeedRender(inv);
   const currentTick = system.currentTick ?? 0;
-  const shouldRepairGrid =
-    !Terminal.isChunkedRenderActive(entity) &&
-    shouldCheckStorageGrid(entity, currentTick);
-  let gridNeedsRepair =
-    shouldRepairGrid &&
-    Terminal.storageGridNeedsRender(inv, {
-      storageStart: STORAGE_START,
-      storageEnd: STORAGE_END,
-      countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
-    });
+  const gridNeedsRepair = false;
   let pageChanged = false;
   let networkVersion = networkSnapshot.version;
   const lastNetworkVersion = entity.getDynamicProperty("last_network_version") ?? -1;
@@ -968,7 +926,7 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   if (activityChanged) {
     syncActivityState(entity, gridState, blueprintState, outputState);
   }
-  const shouldScanInput = forceRefresh || controlsChanged || hasPendingBurnSlot || currentTick % 10 === 0;
+  const shouldScanInput = forceRefresh || hasPendingBurnSlot || currentTick % 10 === 0;
   const hasPendingInput = hasPendingBurnSlot || (shouldScanInput ? hasActionableStorageItems(inv) : false);
   const canUseNetworkDeltas =
     hasNetworkOnline &&
@@ -1031,6 +989,22 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   ) {
     return;
   }
+  if (
+    controlsChanged &&
+    !forceRefresh &&
+    !gridNeedsRepair &&
+    !hasPendingInput &&
+    !activityChanged &&
+    currentPage === lastRendered &&
+    currentQty === lastQty &&
+    currentCraftQty === lastCraftQty &&
+    currentSort === lastSort &&
+    currentOutputMode === lastOutputMode &&
+    networkVersion === lastNetworkVersion
+  ) {
+    renderCraftingTerminalControls(entity, inv, currentPage, pageCount, currentQty, currentCraftQty, currentSort);
+    return;
+  }
 
   const fullSnapshot = readFullNetworkSnapshot(block, networkSnapshot.networkId);
   networkSnapshot.record = fullSnapshot.record;
@@ -1039,17 +1013,17 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
   pageCount = getPageCountFromTotals(networkSnapshot.totals);
   currentPage = clampTerminalPage(entity, pageCount);
 
-  if (
+  const terminalStateChanged =
     currentPage !== lastRendered ||
     pageCount !== lastPageCount ||
     currentQty !== lastQty ||
     currentCraftQty !== lastCraftQty ||
     currentSort !== lastSort ||
     currentOutputMode !== lastOutputMode ||
-    controlsChanged ||
-    gridNeedsRepair
-  ) {
-    pageChanged = true;
+    gridNeedsRepair;
+  const controlsNeedUpdate = controlsChanged || terminalStateChanged;
+  if (controlsNeedUpdate) {
+    if (terminalStateChanged) pageChanged = true;
     renderCraftingTerminalControls(entity, inv, currentPage, pageCount, currentQty, currentCraftQty, currentSort);
   }
   let nodes = getConnectedInventories(block);
@@ -1084,29 +1058,31 @@ function runCraftingStorageTerminalTick(block, machineEntity, settings) {
       }
     }
   }
-  for (let i = STORAGE_START; i <= STORAGE_END; i++) {
-    let item = inv.getItem(i);
-    if (!item) continue;
-    if (item.typeId === "utilitycraft:storage_filler") continue;
-    if (getStoredCount(item) === -1 && !isStorageCell(item)) {
-      let burnItem = inv.getItem(BURN_SLOT);
-      if (!burnItem) {
-        inv.setItem(BURN_SLOT, item);
-        inv.setItem(i, undefined);
-        entity.setDynamicProperty("force_refresh", true);
-      } else if (getItemKey(burnItem) === getItemKey(item) && burnItem.amount < burnItem.maxAmount) {
-        let space = burnItem.maxAmount - burnItem.amount;
-        let transfer = Math.min(space, item.amount);
-        let combinedItem = createItemFromKey(getItemKey(burnItem), burnItem.amount + transfer);
-        inv.setItem(BURN_SLOT, combinedItem);
-        let leftover = item.amount - transfer;
-        if (leftover > 0) returnToPlayer(block, createItemFromKey(getItemKey(item), leftover));
-        inv.setItem(i, undefined);
-        entity.setDynamicProperty("force_refresh", true);
-      } else {
-        returnToPlayer(block, item);
-        inv.setItem(i, undefined);
-        entity.setDynamicProperty("force_refresh", true);
+  if (hasPendingInput) {
+    for (let i = STORAGE_START; i <= STORAGE_END; i++) {
+      let item = inv.getItem(i);
+      if (!item) continue;
+      if (item.typeId === "utilitycraft:storage_filler") continue;
+      if (!Terminal.isRenderedVirtualItem(item) && !isStorageCell(item)) {
+        let burnItem = inv.getItem(BURN_SLOT);
+        if (!burnItem) {
+          inv.setItem(BURN_SLOT, item);
+          inv.setItem(i, undefined);
+          entity.setDynamicProperty("force_refresh", true);
+        } else if (getItemKey(burnItem) === getItemKey(item) && burnItem.amount < burnItem.maxAmount) {
+          let space = burnItem.maxAmount - burnItem.amount;
+          let transfer = Math.min(space, item.amount);
+          let combinedItem = createItemFromKey(getItemKey(burnItem), burnItem.amount + transfer);
+          inv.setItem(BURN_SLOT, combinedItem);
+          let leftover = item.amount - transfer;
+          if (leftover > 0) returnToPlayer(block, createItemFromKey(getItemKey(item), leftover));
+          inv.setItem(i, undefined);
+          entity.setDynamicProperty("force_refresh", true);
+        } else {
+          returnToPlayer(block, item);
+          inv.setItem(i, undefined);
+          entity.setDynamicProperty("force_refresh", true);
+        }
       }
     }
   }
