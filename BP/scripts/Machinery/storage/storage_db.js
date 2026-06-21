@@ -513,11 +513,20 @@ export function purgeItemFromNetwork(networkId, itemKey, reason = "purge") {
   return removed;
 }
 
-export function addToNetwork(networkId, itemKey, amount) {
+export function addToNetworkDetailed(networkId, itemKey, amount) {
   itemKey = normalizeItemKey(itemKey);
   const network = readNetworkRecord(networkId);
   let remaining = Math.floor(Number(amount) || 0);
-  if (!network || network.online === false || remaining <= 0) return remaining;
+  if (!network || network.online === false || remaining <= 0) {
+    return {
+      remaining,
+      inserted: 0,
+      before: 0,
+      after: 0,
+      version: Math.floor(Number(network?.version ?? 0)),
+      changeSeq: Math.floor(Number(network?.changeSeq ?? 0)),
+    };
+  }
   const requested = remaining;
   const before = Number(network.totals?.[itemKey] ?? 0);
 
@@ -534,19 +543,42 @@ export function addToNetwork(networkId, itemKey, amount) {
     writeCellRecord(cellId, record);
   }
 
-  if (remaining === requested) return remaining;
+  if (remaining === requested) {
+    return {
+      remaining,
+      inserted: 0,
+      before,
+      after: before,
+      version: Math.floor(Number(network?.version ?? 0)),
+      changeSeq: Math.floor(Number(network?.changeSeq ?? 0)),
+    };
+  }
 
   const inserted = requested - remaining;
+  const after = before + inserted;
+  const changeSeq = Math.floor(Number(network?.changeSeq ?? 0)) + 1;
+  const version = Math.floor(Number(network?.version ?? 0)) + 1;
   writeNetworkItemDelta(
     networkId,
     network,
     itemKey,
     before,
-    before + inserted,
+    after,
     inserted,
     "insert",
   );
-  return remaining;
+  return {
+    remaining,
+    inserted,
+    before,
+    after,
+    version,
+    changeSeq,
+  };
+}
+
+export function addToNetwork(networkId, itemKey, amount) {
+  return addToNetworkDetailed(networkId, itemKey, amount).remaining;
 }
 
 export function addManyToNetwork(networkId, itemAmounts, reason = "insert") {

@@ -46,7 +46,7 @@
             {
                 "next_button@sh.button": {
                     "layer": 10,
-                    "$index": 237,
+                    "$index": 228,
                     "$default_texture": "textures/ui/buttons/next/button",
                     "$hover_texture": "textures/ui/buttons/next/selected",
                     "$pressed_texture": "textures/ui/buttons/next/pressed",
@@ -59,7 +59,7 @@
             {
                 "previous_button@sh.button": {
                     "layer": 10,
-                    "$index": 238,
+                    "$index": 229,
                     "$default_texture": "textures/ui/buttons/previous/button",
                     "$hover_texture": "textures/ui/buttons/previous/selected",
                     "$pressed_texture": "textures/ui/buttons/previous/pressed",
@@ -72,7 +72,7 @@
             {
                 "quantity_button@uc.dynamic_button": {
                     "layer": 10,
-                    "$index": 239,
+                    "$index": 230,
                     "$default_texture": "textures/ui/buttons/button",
                     "$hover_texture": "textures/ui/buttons/button_selected",
                     "$pressed_texture": "textures/ui/buttons/button_pressed",
@@ -86,7 +86,7 @@
             {
                 "sort_button@sh.button": {
                     "layer": 10,
-                    "$index": 240,
+                    "$index": 231,
                     "$default_texture": "textures/ui/buttons/sort/button",
                     "$hover_texture": "textures/ui/buttons/sort/selected",
                     "$pressed_texture": "textures/ui/buttons/sort/pressed",
