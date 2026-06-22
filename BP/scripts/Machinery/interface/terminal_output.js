@@ -23,6 +23,12 @@ const pendingUiSlotRestores = new Map();
 let nextClaimId = 0;
 let lastPruneTick = 0;
 
+/**
+ * Encodes text as invisible formatting pairs.
+ *
+ * @param {string} text Plain text payload.
+ * @returns {string} Formatting-code encoded payload.
+ */
 function encodeInvisible(text) {
   let encoded = "";
   for (let i = 0; i < text.length; i++) {
@@ -32,6 +38,12 @@ function encodeInvisible(text) {
   return encoded;
 }
 
+/**
+ * Decodes text written by encodeInvisible.
+ *
+ * @param {string} encoded Formatting-code encoded payload.
+ * @returns {string} Decoded text, or an empty string when invalid.
+ */
 function decodeInvisible(encoded) {
   if (!encoded || encoded.length % 4 !== 0) return "";
 
@@ -46,18 +58,39 @@ function decodeInvisible(encoded) {
   return text;
 }
 
+/**
+ * Creates a claim id that carries the source slot for cheap fallback parsing.
+ *
+ * @param {number} slot Source terminal grid slot.
+ * @returns {string} Runtime claim id.
+ */
 function createClaimId(slot) {
   const slotPart = Math.max(0, Math.floor(Number(slot) || 0)).toString(36);
   const idPart = (nextClaimId++ % Number.MAX_SAFE_INTEGER).toString(36);
   return `${slotPart}.${idPart}`;
 }
 
+/**
+ * Extracts the source slot embedded in a claim id.
+ *
+ * @param {string} claimId Runtime claim id.
+ * @returns {number} Source slot, or -1 when invalid.
+ */
 function parseSlotFromClaimId(claimId) {
   const [slotPart] = String(claimId ?? "").split(".", 1);
   const slot = Number.parseInt(slotPart, 36);
   return Number.isFinite(slot) ? slot : -1;
 }
 
+/**
+ * Creates the hidden lore marker for a terminal output item.
+ *
+ * @param {object} context Output token context.
+ * @param {string} context.terminalId Terminal runtime id.
+ * @param {string} context.claimId Runtime claim id.
+ * @param {string|number} context.countText Displayed total count.
+ * @returns {string} Hidden lore marker line.
+ */
 function createTokenLoreLine({ terminalId, claimId, countText }) {
   return [
     TOKEN_NAMESPACE,
@@ -70,6 +103,14 @@ function createTokenLoreLine({ terminalId, claimId, countText }) {
   ].join("");
 }
 
+/**
+ * Creates the hidden lore marker used by UI filler slots.
+ *
+ * @param {object} context UI slot token context.
+ * @param {string} context.terminalId Terminal runtime id.
+ * @param {number} context.slot Source terminal slot.
+ * @returns {string} Hidden lore marker line.
+ */
 function createUiSlotLoreLine({ terminalId, slot }) {
   return [
     UI_TOKEN_NAMESPACE,
@@ -80,6 +121,12 @@ function createUiSlotLoreLine({ terminalId, slot }) {
   ].join("");
 }
 
+/**
+ * Checks if an item is tagged as UI-only.
+ *
+ * @param {import("@minecraft/server").ItemStack|undefined} item Item to test.
+ * @returns {boolean} True for UI-only items.
+ */
 function isUiElementItem(item) {
   if (!item) return false;
   try {
@@ -92,6 +139,11 @@ function isUiElementItem(item) {
   }
 }
 
+/**
+ * Queues a UI filler slot to be restored by its owning terminal tick.
+ *
+ * @param {{terminalId:string, slot:number}|undefined} token UI slot token.
+ */
 function queueUiSlotRestore(token) {
   if (!token?.terminalId || token.slot < 0) return;
 
@@ -103,6 +155,9 @@ function queueUiSlotRestore(token) {
   slots.add(token.slot);
 }
 
+/**
+ * Drops stale output claims to keep runtime memory bounded.
+ */
 function pruneClaims() {
   const tick = system.currentTick;
   if (tick - lastPruneTick < 20 * 30) return;
@@ -113,10 +168,26 @@ function pruneClaims() {
   }
 }
 
+/**
+ * Reads a safe positive requested amount from an ItemStack.
+ *
+ * @param {import("@minecraft/server").ItemStack|undefined} item ItemStack.
+ * @returns {number} Requested amount.
+ */
 function getRequestedAmount(item) {
   return Math.max(0, Math.floor(Number(item?.amount) || 0));
 }
 
+/**
+ * Reserves storage items for an output claim.
+ *
+ * Reservation happens while an item is on the cursor so later inventory/drop
+ * resolution does not remove the same amount twice.
+ *
+ * @param {object} claim Runtime output claim.
+ * @param {number} requestedAmount Amount requested by the visible stack.
+ * @returns {number} Total amount reserved for the request.
+ */
 function reserveClaimAmount(claim, requestedAmount) {
   const requested = Math.max(0, Math.floor(Number(requestedAmount) || 0));
   if (requested <= 0) return 0;
@@ -133,6 +204,13 @@ function reserveClaimAmount(claim, requestedAmount) {
   return Math.min(requested, outstanding + removed);
 }
 
+/**
+ * Marks a reserved output amount as delivered to a real item destination.
+ *
+ * @param {object} claim Runtime output claim.
+ * @param {number} requestedAmount Amount requested by the visible stack.
+ * @returns {number} Amount delivered.
+ */
 function deliverClaimAmount(claim, requestedAmount) {
   const deliverable = reserveClaimAmount(claim, requestedAmount);
   if (deliverable <= 0) return 0;
@@ -142,6 +220,13 @@ function deliverClaimAmount(claim, requestedAmount) {
   return deliverable;
 }
 
+/**
+ * Resolves an output token into a real item by removing from the network.
+ *
+ * @param {{terminalId:string, claimId:string, slot:number}} token Output token.
+ * @param {number} requestedAmount Amount requested by the visible stack.
+ * @returns {{handled:boolean, item?:import("@minecraft/server").ItemStack, claim?:object}|undefined} Resolution result.
+ */
 function resolveClaim(token, requestedAmount) {
   const claim = outputClaims.get(token.claimId);
   if (!claim) return undefined;
@@ -218,6 +303,12 @@ export function readOutputToken(item) {
   };
 }
 
+/**
+ * Removes an output-token lore marker from a lore array.
+ *
+ * @param {string[]} [lore] Item lore.
+ * @returns {string[]} Lore without the output marker.
+ */
 export function stripOutputTokenLore(lore = []) {
   if (lore.length === 0) return [];
   const lastLine = lore[lore.length - 1];
@@ -227,6 +318,13 @@ export function stripOutputTokenLore(lore = []) {
   return [...lore];
 }
 
+/**
+ * Adds hidden terminal/slot metadata to a UI filler item.
+ *
+ * @param {import("@minecraft/server").ItemStack} item UI filler item.
+ * @param {{terminalId:string, slot:number}} context UI slot token context.
+ * @returns {import("@minecraft/server").ItemStack} Tagged UI filler item.
+ */
 export function attachUiSlotToken(item, { terminalId, slot }) {
   if (!item || !terminalId) return item;
 
@@ -236,6 +334,12 @@ export function attachUiSlotToken(item, { terminalId, slot }) {
   return item;
 }
 
+/**
+ * Reads hidden UI filler terminal/slot metadata.
+ *
+ * @param {import("@minecraft/server").ItemStack|undefined} item Item to inspect.
+ * @returns {{terminalId:string, slot:number}|undefined} UI slot token.
+ */
 export function readUiSlotToken(item) {
   const lore = item?.getLore?.() ?? [];
   if (lore.length === 0) return undefined;
@@ -253,6 +357,12 @@ export function readUiSlotToken(item) {
   return { terminalId, slot };
 }
 
+/**
+ * Removes a UI-slot marker from a lore array.
+ *
+ * @param {string[]} [lore] Item lore.
+ * @returns {string[]} Lore without the UI slot marker.
+ */
 export function stripUiSlotTokenLore(lore = []) {
   if (lore.length === 0) return [];
   const lastLine = lore[lore.length - 1];
@@ -262,6 +372,12 @@ export function stripUiSlotTokenLore(lore = []) {
   return [...lore];
 }
 
+/**
+ * Consumes pending UI filler slot restores for one terminal.
+ *
+ * @param {string} terminalId Terminal runtime id.
+ * @returns {number[]} Slots that should be restored.
+ */
 export function consumeUiSlotRestores(terminalId) {
   const id = String(terminalId ?? "");
   const slots = pendingUiSlotRestores.get(id);
@@ -287,6 +403,16 @@ export function materializeOutputItem(item) {
   return { handled: true, item: resolved.item };
 }
 
+/**
+ * Resolves terminal-owned items when they enter a player inventory slot.
+ *
+ * Output items become real item stacks after removing from the network. UI-only
+ * items are deleted and their source slot is queued for restoration.
+ *
+ * @param {import("@minecraft/server").Player} player Player whose inventory changed.
+ * @param {number} slot Changed player inventory slot.
+ * @param {import("@minecraft/server").ItemStack|undefined} item New slot item.
+ */
 function resolveInventoryItem(player, slot, item) {
   if (isUiElementItem(item)) {
     const outputToken = readOutputToken(item);
@@ -309,6 +435,11 @@ function resolveInventoryItem(player, slot, item) {
   inventory.setItem(slot, resolved.item);
 }
 
+/**
+ * Resolves or removes terminal-owned items that become dropped item entities.
+ *
+ * @param {import("@minecraft/server").Entity} entity Spawned item entity.
+ */
 function resolveDroppedItemEntity(entity) {
   if (!entity?.isValid || entity.typeId !== "minecraft:item") return;
 
@@ -347,6 +478,11 @@ function resolveDroppedItemEntity(entity) {
   }
 }
 
+/**
+ * Periodically removes leaked UI-only items from a player's inventory.
+ *
+ * @param {import("@minecraft/server").Player} player Player to scan.
+ */
 function cleanupPlayerInventoryUiElements(player) {
   const inventory = player.getComponent("minecraft:inventory")?.container;
   if (!inventory) return;
@@ -362,6 +498,9 @@ function cleanupPlayerInventoryUiElements(player) {
   }
 }
 
+/**
+ * Watches cursor stacks for output reservations and UI-only item cleanup.
+ */
 function watchPlayerCursors() {
   pruneClaims();
 

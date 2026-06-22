@@ -29,6 +29,11 @@ const UI_ELEMENT_TAG = "utilitycraft:ui_element";
  * block/entity lifecycle wiring and feature-specific extensions.
  */
 export class StorageTerminalInterface {
+  /**
+   * Creates one reusable terminal UI controller.
+   *
+   * @param {object} [config] Slot layout and item id overrides.
+   */
   constructor(config = {}) {
     this.machineId = config.machineId ?? "storage_terminal";
     this.entityType = config.entityType ?? "utilitycraft:storage_terminal";
@@ -56,12 +61,20 @@ export class StorageTerminalInterface {
     this.uiOpenState = config.uiOpenState ?? "utilitycraft:ui_open";
   }
 
+  /**
+   * Registers button callbacks for the control slots owned by this interface.
+   */
   registerButtons() {
     ButtonManager.registerMachineButton(this.machineId, this.controlSlots, ({ entity, slot }) => {
       return this.handleControlPress(entity, slot);
     });
   }
 
+  /**
+   * Initializes a freshly spawned terminal entity inventory and render state.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   */
   setupEntity(entity) {
     if (!entity?.isValid) return;
 
@@ -80,6 +93,13 @@ export class StorageTerminalInterface {
     this.renderControls(entity, 0, 1);
   }
 
+  /**
+   * Links a terminal entity to an already-loaded storage network.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @param {number|string} networkId Network id to link.
+   * @returns {boolean} True when the link was accepted.
+   */
   linkNetwork(entity, networkId) {
     if (!entity?.isValid) return false;
 
@@ -98,6 +118,11 @@ export class StorageTerminalInterface {
     return true;
   }
 
+  /**
+   * Unregisters runtime display state before the backing entity is removed.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   */
   destroyEntity(entity) {
     if (!entity?.isValid) return;
 
@@ -106,6 +131,15 @@ export class StorageTerminalInterface {
     if (networkId) unregisterTerminalDisplay(networkId, this.getTerminalId(entity));
   }
 
+  /**
+   * Main terminal tick.
+   *
+   * Closed terminals only process non-UI work. Open terminals render pages,
+   * apply network display updates, and keep the visible grid synchronized.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @param {import("@minecraft/server").Block} [block] Terminal block.
+   */
   tick(entity, block) {
     if (!entity?.isValid) return;
 
@@ -163,6 +197,13 @@ export class StorageTerminalInterface {
     this.applyPendingItemUpdates(entity, inv, networkId, snapshot);
   }
 
+  /**
+   * Mirrors open/closed UI state into a block permutation so JSON tick speed
+   * can switch between open and closed intervals.
+   *
+   * @param {import("@minecraft/server").Block} block Terminal block.
+   * @param {boolean} hasOpenUI Whether a player currently has this UI open.
+   */
   syncOpenTickState(block, hasOpenUI) {
     if (!this.uiOpenState || !block?.permutation) return;
 
@@ -174,6 +215,13 @@ export class StorageTerminalInterface {
     } catch {}
   }
 
+  /**
+   * Handles reload and page navigation control slots.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @param {number} slot Pressed container slot.
+   * @returns {string|undefined} Button display name for feedback.
+   */
   handleControlPress(entity, slot) {
     if (!entity?.isValid) return undefined;
 
@@ -196,6 +244,17 @@ export class StorageTerminalInterface {
     return this.getControlName(slot, this.clampPage(entity, pageCount), pageCount);
   }
 
+  /**
+   * Fully renders one terminal page from a network snapshot.
+   *
+   * This also resets the runtime visible-slot map for this terminal.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   * @param {object} snapshot Network snapshot.
+   * @param {number} page Page index.
+   * @param {number} pageCount Total page count.
+   */
   renderPage(entity, inv, snapshot, page, pageCount) {
     const networkId = snapshot.networkId;
     const entries = getSortedItems(networkId, "count");
@@ -243,6 +302,12 @@ export class StorageTerminalInterface {
     });
   }
 
+  /**
+   * Renders an empty terminal state and clears UI tracking properties.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   */
   renderEmpty(entity, inv) {
     this.clearGrid(inv, entity);
     this.clearCountLabels(inv);
@@ -254,6 +319,18 @@ export class StorageTerminalInterface {
     entity.setDynamicProperty("ucds:terminal_force_render", false);
   }
 
+  /**
+   * Rebuilds runtime display state from persisted entity properties after a
+   * reload, then refreshes output claim tokens for visible items.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   * @param {number} networkId Linked network id.
+   * @param {number} page Current page.
+   * @param {object|undefined} displayState Runtime display state.
+   * @param {object} snapshot Network snapshot.
+   * @returns {boolean} True when runtime display mapping is usable.
+   */
   ensureTerminalDisplayMapped(entity, inv, networkId, page, displayState, snapshot) {
     if (!displayState) return false;
     if (displayState.renderedSlots?.size > 0 && displayState.gridSize > 0) return true;
@@ -291,6 +368,16 @@ export class StorageTerminalInterface {
     return mapped;
   }
 
+  /**
+   * Rewrites currently visible items so their output claim ids exist in this
+   * session runtime after reload or remapping.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   * @param {number} networkId Linked network id.
+   * @param {Map<string, number>} renderedSlots Visible item-key to slot map.
+   * @param {Record<string, number>} totals Current network totals.
+   */
   refreshRenderedOutputTokens(entity, inv, networkId, renderedSlots, totals) {
     for (const [itemKey, slot] of renderedSlots.entries()) {
       if (slot < this.gridStart || slot > this.gridEnd) continue;
@@ -312,6 +399,12 @@ export class StorageTerminalInterface {
     }
   }
 
+  /**
+   * Reads the persisted visible item-key to slot map from the entity.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @returns {Map<string, number>} Visible item-key to slot map.
+   */
   readRenderedSlots(entity) {
     const raw = entity.getDynamicProperty("ucds:terminal_rendered_slots");
     if (!raw || typeof raw !== "string") return new Map();
@@ -331,6 +424,13 @@ export class StorageTerminalInterface {
     }
   }
 
+  /**
+   * Renders navigation and reload buttons.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @param {number} page Current page.
+   * @param {number} pageCount Total page count.
+   */
   renderControls(entity, page, pageCount) {
     const inv = this.getInventory(entity);
     if (!inv) return;
@@ -340,6 +440,16 @@ export class StorageTerminalInterface {
     this.setButton(inv, this.nextSlot, `§r§7- Next Page §f${page + 1}/${pageCount}`);
   }
 
+  /**
+   * Inserts items found in burn slots into the linked network.
+   *
+   * Output-token items are materialized first so moving terminal output into a
+   * burn slot still removes the item from storage before reinserting it.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   * @param {number} networkId Linked network id.
+   */
   processBurnSlots(entity, inv, networkId) {
     for (const slot of this.burnSlots) {
       const item = inv.getItem(slot);
@@ -373,6 +483,17 @@ export class StorageTerminalInterface {
     }
   }
 
+  /**
+   * Applies direct item amount updates queued for this terminal display.
+   *
+   * If the runtime asks for a forced reload, a fresh snapshot is rendered after
+   * direct updates are consumed.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   * @param {number} networkId Linked network id.
+   * @param {object} snapshot Snapshot from the start of this tick.
+   */
   applyPendingItemUpdates(entity, inv, networkId, snapshot) {
     const { updates, forceReload } = consumeTerminalItemUpdates(networkId, this.getTerminalId(entity));
     if (updates.length === 0 && !forceReload) return;
@@ -403,6 +524,13 @@ export class StorageTerminalInterface {
     }
   }
 
+  /**
+   * Restores storage filler slots that were picked up by a player and reported
+   * through terminal output cleanup watchers.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   */
   restorePendingUiSlots(entity, inv) {
     const slots = consumeUiSlotRestores(this.getTerminalId(entity));
     if (slots.length === 0) return;
@@ -417,10 +545,22 @@ export class StorageTerminalInterface {
     }
   }
 
+  /**
+   * Reads the linked network id from a terminal entity.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @returns {number} Linked network id, or 0 when unlinked.
+   */
   getLinkedNetworkId(entity) {
     return Math.floor(Number(entity?.getDynamicProperty("ucds:network_id") || 0));
   }
 
+  /**
+   * Returns the stable runtime id used for terminal display/update maps.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @returns {string} Entity id, or a location fallback.
+   */
   getTerminalId(entity) {
     if (!entity) return "";
     if (entity.id) return String(entity.id);
@@ -430,11 +570,24 @@ export class StorageTerminalInterface {
     return `${dimensionId}:${Math.floor(location.x ?? 0)},${Math.floor(location.y ?? 0)},${Math.floor(location.z ?? 0)}`;
   }
 
+  /**
+   * Calculates the page count for a network snapshot.
+   *
+   * @param {object} snapshot Network snapshot.
+   * @returns {number} At least 1 page.
+   */
   getPageCount(snapshot) {
     const itemCount = Object.keys(snapshot?.totals ?? {}).length;
     return Math.max(1, Math.ceil(itemCount / this.gridSize));
   }
 
+  /**
+   * Clamps and persists the current page index to the valid page range.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @param {number} pageCount Total page count.
+   * @returns {number} Clamped page index.
+   */
   clampPage(entity, pageCount) {
     const current = Math.floor(Number(entity.getDynamicProperty("ucds:terminal_page") || 0));
     const page = Math.max(0, Math.min(current, Math.max(1, pageCount) - 1));
@@ -442,6 +595,14 @@ export class StorageTerminalInterface {
     return page;
   }
 
+  /**
+   * Creates a visible grid item with an output token when context is provided.
+   *
+   * @param {string} itemKey Stable storage item key.
+   * @param {number} count Total amount stored in the network.
+   * @param {object} [outputContext] Output token context.
+   * @returns {import("@minecraft/server").ItemStack} Display item.
+   */
   createDisplayItem(itemKey, count, outputContext) {
     const probe = createItemFromKey(itemKey, 1);
     const maxAmount = Math.max(1, Math.floor(Number(probe.maxAmount) || 64));
@@ -460,6 +621,13 @@ export class StorageTerminalInterface {
     });
   }
 
+  /**
+   * Updates one count label row corresponding to a grid slot.
+   *
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   * @param {number} slot Grid slot.
+   * @param {number} count Amount to display.
+   */
   setCountLabel(inv, slot, count) {
     const relativeSlot = slot - this.gridStart;
     if (relativeSlot < 0 || relativeSlot >= this.gridSize) return;
@@ -482,6 +650,11 @@ export class StorageTerminalInterface {
     inv.setItem(labelSlot, labelItem);
   }
 
+  /**
+   * Creates blank count-label columns for a full page render.
+   *
+   * @returns {string[][]} Column-major count text rows.
+   */
   createEmptyCountColumns() {
     return Array.from(
       { length: this.countLabelColumns },
@@ -489,6 +662,13 @@ export class StorageTerminalInterface {
     );
   }
 
+  /**
+   * Writes one count value into the column buffer used by full page rendering.
+   *
+   * @param {string[][]} columns Count column text buffers.
+   * @param {number} relativeSlot Slot index relative to gridStart.
+   * @param {number} count Amount to display.
+   */
   setCountColumnValue(columns, relativeSlot, count) {
     if (relativeSlot < 0 || relativeSlot >= this.gridSize) return;
 
@@ -499,6 +679,12 @@ export class StorageTerminalInterface {
     columns[column][row] = count > 1 ? `§r§f${this.formatCount(count)}` : " ";
   }
 
+  /**
+   * Writes all count-label columns into their hidden label item slots.
+   *
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   * @param {string[][]} columns Count column text buffers.
+   */
   writeCountColumns(inv, columns) {
     for (let column = 0; column < this.countLabelColumns; column++) {
       const label = new ItemStack(this.buttonId, 1);
@@ -508,6 +694,12 @@ export class StorageTerminalInterface {
     }
   }
 
+  /**
+   * Formats large counts for compact terminal labels.
+   *
+   * @param {number} value Raw count.
+   * @returns {string} Compact display text.
+   */
   formatCount(value) {
     const count = Math.floor(Number(value) || 0);
     if (count < 1000) return String(count);
@@ -525,16 +717,32 @@ export class StorageTerminalInterface {
     return `${text.replace(/\.0+$/, "").replace(/(\.\d)0$/, "$1")}${unit}`;
   }
 
+  /**
+   * Clears every burn/input slot.
+   *
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   */
   clearBurnSlots(inv) {
     for (const slot of this.burnSlots) inv.setItem(slot, undefined);
   }
 
+  /**
+   * Fills the visible grid with protected storage filler items.
+   *
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   */
   clearGrid(inv, entity) {
     for (let slot = this.gridStart; slot <= this.gridEnd; slot++) {
       this.setFiller(inv, slot, entity);
     }
   }
 
+  /**
+   * Clears the nine count-label item columns.
+   *
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   */
   clearCountLabels(inv) {
     for (let column = 0; column < this.countLabelColumns; column++) {
       const label = new ItemStack(this.buttonId, 1);
@@ -544,6 +752,13 @@ export class StorageTerminalInterface {
     }
   }
 
+  /**
+   * Places one protected storage filler item in a grid slot.
+   *
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   * @param {number} slot Grid slot.
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   */
   setFiller(inv, slot, entity) {
     const filler = new ItemStack(this.fillerId, 1);
     filler.nameTag = "§rStorage Slot";
@@ -554,12 +769,25 @@ export class StorageTerminalInterface {
     inv.setItem(slot, filler);
   }
 
+  /**
+   * Places one UI button item.
+   *
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   * @param {number} slot Button slot.
+   * @param {string} nameTag Button display name.
+   */
   setButton(inv, slot, nameTag) {
     const item = new ItemStack(this.buttonId, 1);
     item.nameTag = nameTag;
     inv.setItem(slot, item);
   }
 
+  /**
+   * Checks whether an item is marked as a UI-only element.
+   *
+   * @param {import("@minecraft/server").ItemStack|undefined} item Item to test.
+   * @returns {boolean} True for UI-only items.
+   */
   isUiElementItem(item) {
     if (!item) return false;
     try {
@@ -572,6 +800,14 @@ export class StorageTerminalInterface {
     }
   }
 
+  /**
+   * Gets the current display name for one control slot.
+   *
+   * @param {number} slot Control slot.
+   * @param {number} page Current page.
+   * @param {number} pageCount Total page count.
+   * @returns {string|undefined} Control display name.
+   */
   getControlName(slot, page, pageCount) {
     if (slot === this.reloadSlot) return "§r§7- Reload";
     if (slot === this.previousSlot) return `§r§7- Previous Page §f${page + 1}/${pageCount}`;
@@ -579,6 +815,12 @@ export class StorageTerminalInterface {
     return undefined;
   }
 
+  /**
+   * Gets the inventory container from a terminal entity.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @returns {import("@minecraft/server").Container|undefined} Inventory container.
+   */
   getInventory(entity) {
     return entity?.getComponent("minecraft:inventory")?.container;
   }

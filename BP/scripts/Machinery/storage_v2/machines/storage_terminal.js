@@ -20,12 +20,24 @@ const terminal = new StorageTerminalInterface({
 
 terminal.registerButtons();
 
+/**
+ * Finds the terminal backing entity sitting on a terminal block.
+ *
+ * @param {import("@minecraft/server").Block} block Terminal block.
+ * @returns {import("@minecraft/server").Entity|undefined} Terminal entity.
+ */
 function getTerminalEntity(block) {
   return block?.dimension
     ?.getEntitiesAtBlockLocation(block.location)
     ?.find((entity) => entity.typeId === terminal.entityType);
 }
 
+/**
+ * Gets a dimension by id, falling back to overworld for debug commands.
+ *
+ * @param {string} [id="overworld"] Dimension id.
+ * @returns {import("@minecraft/server").Dimension} Dimension instance.
+ */
 function getDimension(id = "overworld") {
   try {
     return world.getDimension(id);
@@ -34,6 +46,12 @@ function getDimension(id = "overworld") {
   }
 }
 
+/**
+ * Sends script-event feedback to the caller and console.
+ *
+ * @param {import("@minecraft/server").ScriptEventCommandMessageAfterEvent} event Script event.
+ * @param {string} message Message body.
+ */
 function reply(event, message) {
   const text = `[DSv2] ${message}`;
   try {
@@ -42,6 +60,12 @@ function reply(event, message) {
   console.warn(text);
 }
 
+/**
+ * Parses a JSON script-event payload.
+ *
+ * @param {string} message Raw event message.
+ * @returns {object} Parsed payload, or an empty object on failure.
+ */
 function parseMessage(message) {
   if (!message || String(message).trim().length === 0) return {};
   try {
@@ -51,6 +75,12 @@ function parseMessage(message) {
   }
 }
 
+/**
+ * Debug helper that links a terminal entity at coordinates to a network id.
+ *
+ * @param {import("@minecraft/server").ScriptEventCommandMessageAfterEvent} event Script event.
+ * @param {object} params Parsed payload.
+ */
 function linkTerminal(event, params) {
   const networkId = Math.floor(Number(params.networkId ?? params.id) || 0);
   const dimension = getDimension(params.dim);
