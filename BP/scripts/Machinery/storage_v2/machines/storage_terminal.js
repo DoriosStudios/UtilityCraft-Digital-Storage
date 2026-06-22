@@ -113,6 +113,7 @@ DoriosAPI.register.blockComponent("storage_terminal", {
         entity: {
           identifier: terminal.entityType,
           inventory_size: 178,
+          input_range: [0, 3],
           name: "storage_terminal",
         },
       });
