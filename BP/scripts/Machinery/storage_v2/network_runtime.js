@@ -66,6 +66,88 @@ function pushChange(runtime, itemKey, before, after, reason = "runtime") {
   if (runtime.changes.length > CHANGE_LIMIT) {
     runtime.changes.splice(0, runtime.changes.length - CHANGE_LIMIT);
   }
+  queueTerminalItemUpdate(runtime, itemKey, after);
+}
+
+function createTerminalDisplayState() {
+  return {
+    renderedSlots: new Map(),
+    pendingUpdates: new Map(),
+    page: 0,
+    visibleCount: 0,
+    gridStart: 0,
+    gridSize: 0,
+    nextFreeSlot: -1,
+    lastSeenTick: 0,
+  };
+}
+
+function getTerminalDisplays(runtime) {
+  if (!runtime.terminalDisplays) runtime.terminalDisplays = new Map();
+  return runtime.terminalDisplays;
+}
+
+function queueTerminalItemUpdate(runtime, itemKey, amount) {
+  const normalizedAmount = Math.max(0, Math.floor(Number(amount) || 0));
+  const terminalDisplays = getTerminalDisplays(runtime);
+  for (const state of terminalDisplays.values()) {
+    if (state.renderedSlots.has(itemKey)) {
+      state.pendingUpdates.set(itemKey, normalizedAmount);
+      continue;
+    }
+
+    if (normalizedAmount <= 0) continue;
+
+    const slot = reserveTerminalDisplaySlot(state);
+    if (slot < 0) continue;
+
+    state.renderedSlots.set(itemKey, slot);
+    state.visibleCount = state.renderedSlots.size;
+    state.pendingUpdates.set(itemKey, normalizedAmount);
+  }
+}
+
+function reserveTerminalDisplaySlot(state) {
+  const gridStart = Math.max(0, Math.floor(Number(state.gridStart) || 0));
+  const gridSize = Math.max(0, Math.floor(Number(state.gridSize) || 0));
+  if (gridSize <= 0) return -1;
+  if (Math.floor(Number(state.nextFreeSlot) || -1) < 0) return -1;
+
+  const gridEnd = gridStart + gridSize - 1;
+  let slot = Math.floor(Number(state.nextFreeSlot) || gridStart);
+  if (slot < gridStart) slot = gridStart;
+
+  while (slot <= gridEnd && isSlotRendered(state, slot)) slot += 1;
+  state.nextFreeSlot = slot <= gridEnd ? slot + 1 : -1;
+  return slot <= gridEnd ? slot : -1;
+}
+
+function isSlotRendered(state, slot) {
+  for (const renderedSlot of state.renderedSlots.values()) {
+    if (renderedSlot === slot) return true;
+  }
+  return false;
+}
+
+function updateTerminalDisplayBounds(state, { gridStart = 0, gridSize = 0 } = {}) {
+  state.gridStart = Math.max(0, Math.floor(Number(gridStart) || 0));
+  state.gridSize = Math.max(0, Math.floor(Number(gridSize) || 0));
+  state.nextFreeSlot = getNextFreeSlotAfterRenderedItems(state);
+}
+
+function getNextFreeSlotAfterRenderedItems(state) {
+  if (state.gridSize <= 0) return -1;
+
+  const gridEnd = state.gridStart + state.gridSize - 1;
+  let lastUsedSlot = state.gridStart - 1;
+  for (const slot of state.renderedSlots.values()) {
+    if (slot >= state.gridStart && slot <= gridEnd && slot > lastUsedSlot) {
+      lastUsedSlot = slot;
+    }
+  }
+
+  const nextSlot = lastUsedSlot + 1;
+  return nextSlot <= gridEnd ? nextSlot : -1;
 }
 
 /**
@@ -111,6 +193,7 @@ function buildRuntime(networkRecord, cellRecords) {
     centers: new Set(networkRecord.centers ?? []),
     drives: new Set(networkRecord.drives ?? []),
     terminals: new Set(networkRecord.terminals ?? []),
+    terminalDisplays: new Map(),
   };
 }
 
@@ -199,6 +282,7 @@ export function* loadAllNetworksJob({ recordsPerTick = 8, onComplete } = {}) {
       centers: new Set(record.centers ?? []),
       drives: new Set(record.drives ?? []),
       terminals: new Set(record.terminals ?? []),
+      terminalDisplays: new Map(),
     };
 
     for (const cellId of record.cells) {
@@ -245,6 +329,108 @@ export function getNetwork(networkId) {
   const id = Math.floor(Number(networkId) || 0);
   if (runtimeNetworks.has(id)) return runtimeNetworks.get(id);
   return loadNetwork(id);
+}
+
+/**
+ * Registers one open/active terminal display against a runtime network.
+ *
+ * This state is intentionally runtime-only. A terminal that is not ticking does
+ * not consume work, and powering off a network drops every display registration.
+ *
+ * @param {number} networkId Network id.
+ * @param {string} terminalId Entity id for the terminal.
+ * @returns {object | undefined} Runtime display state.
+ */
+export function registerTerminalDisplay(networkId, terminalId) {
+  const runtime = getNetwork(networkId);
+  if (!runtime || !terminalId) return undefined;
+
+  const terminalDisplays = getTerminalDisplays(runtime);
+  let state = terminalDisplays.get(terminalId);
+  if (!state) {
+    state = createTerminalDisplayState();
+    terminalDisplays.set(terminalId, state);
+  }
+  state.lastSeenTick = runtime.changeSeq;
+  return state;
+}
+
+/**
+ * Removes one terminal display from a runtime network.
+ *
+ * @param {number} networkId Network id.
+ * @param {string} terminalId Entity id for the terminal.
+ * @returns {boolean} True when a display state was removed.
+ */
+export function unregisterTerminalDisplay(networkId, terminalId) {
+  const runtime = getNetwork(networkId);
+  if (!runtime || !terminalId) return false;
+  return getTerminalDisplays(runtime).delete(terminalId);
+}
+
+/**
+ * Replaces a terminal's visible item-key-to-slot map after a full page render.
+ *
+ * Pending item updates are cleared because the render was made from current
+ * runtime totals.
+ *
+ * @param {number} networkId Network id.
+ * @param {string} terminalId Entity id for the terminal.
+ * @param {Map<string, number> | Record<string, number>} renderedSlots Visible item slots.
+ * @param {{page?: number, visibleCount?: number, gridStart?: number, gridSize?: number}} [options]
+ * @returns {boolean} True when stored.
+ */
+export function setTerminalRenderedSlots(networkId, terminalId, renderedSlots, options = {}) {
+  const state = registerTerminalDisplay(networkId, terminalId);
+  if (!state) return false;
+
+  const slots = new Map();
+  const entries = renderedSlots instanceof Map
+    ? renderedSlots.entries()
+    : Object.entries(renderedSlots ?? {});
+  for (const [itemKey, slot] of entries) {
+    const normalizedSlot = Math.floor(Number(slot) || 0);
+    if (itemKey && normalizedSlot >= 0) slots.set(itemKey, normalizedSlot);
+  }
+
+  state.renderedSlots = slots;
+  state.pendingUpdates.clear();
+  state.page = Math.max(0, Math.floor(Number(options.page) || 0));
+  state.visibleCount = Math.max(0, Math.floor(Number(options.visibleCount ?? slots.size) || 0));
+  updateTerminalDisplayBounds(state, options);
+  return true;
+}
+
+/**
+ * Consumes and clears pending visible item updates for one terminal.
+ *
+ * If an item reached zero, its rendered slot is removed from the display map.
+ * It will not reappear automatically until the terminal reloads its page.
+ *
+ * @param {number} networkId Network id.
+ * @param {string} terminalId Entity id for the terminal.
+ * @returns {Array<{itemKey:string, amount:number, slot:number}>} Direct UI updates.
+ */
+export function consumeTerminalItemUpdates(networkId, terminalId) {
+  const runtime = getNetwork(networkId);
+  if (!runtime || !terminalId) return [];
+
+  const state = getTerminalDisplays(runtime).get(terminalId);
+  if (!state || state.pendingUpdates.size === 0) return [];
+
+  const updates = [];
+  for (const [itemKey, amount] of state.pendingUpdates.entries()) {
+    const slot = state.renderedSlots.get(itemKey);
+    if (slot !== undefined) {
+      updates.push({ itemKey, amount, slot });
+      if (amount <= 0) state.renderedSlots.delete(itemKey);
+    }
+  }
+  state.pendingUpdates.clear();
+  state.visibleCount = state.renderedSlots.size;
+  state.nextFreeSlot = getNextFreeSlotAfterRenderedItems(state);
+  state.lastSeenTick = runtime.changeSeq;
+  return updates;
 }
 
 /**

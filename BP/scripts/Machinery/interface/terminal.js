@@ -3,8 +3,12 @@ import { ButtonManager, TickScheduler } from "DoriosCore/index.js";
 import { createItemFromKey, getItemKey } from "../storage_v2/item_registry.js";
 import {
   addItem,
+  consumeTerminalItemUpdates,
   getNetworkSnapshot,
   getSortedItems,
+  registerTerminalDisplay,
+  setTerminalRenderedSlots,
+  unregisterTerminalDisplay,
 } from "../storage_v2/network_runtime.js";
 
 const DEFAULT_FILLER_ID = "utilitycraft:storage_filler";
@@ -74,10 +78,24 @@ export class StorageTerminalInterface {
     const id = Math.floor(Number(networkId) || 0);
     if (!id) return false;
 
+    const previousNetworkId = this.getLinkedNetworkId(entity);
+    if (previousNetworkId && previousNetworkId !== id) {
+      unregisterTerminalDisplay(previousNetworkId, this.getTerminalId(entity));
+    }
+
     entity.setDynamicProperty("ucds:network_id", id);
     entity.setDynamicProperty("ucds:terminal_page", 0);
     entity.setDynamicProperty("ucds:terminal_force_render", true);
+    registerTerminalDisplay(id, this.getTerminalId(entity));
     return true;
+  }
+
+  destroyEntity(entity) {
+    if (!entity?.isValid) return;
+
+    const networkId = this.getLinkedNetworkId(entity)
+      || Math.floor(Number(entity.getDynamicProperty("ucds:terminal_last_network") || 0));
+    if (networkId) unregisterTerminalDisplay(networkId, this.getTerminalId(entity));
   }
 
   tick(entity) {
@@ -94,13 +112,19 @@ export class StorageTerminalInterface {
     const networkId = this.getLinkedNetworkId(entity);
     if (!networkId) {
       if (entity.getDynamicProperty("ucds:terminal_last_network") !== 0) {
+        const lastNetwork = Math.floor(Number(entity.getDynamicProperty("ucds:terminal_last_network") || 0));
+        if (lastNetwork) unregisterTerminalDisplay(lastNetwork, this.getTerminalId(entity));
         this.renderEmpty(entity, inv);
       }
       return;
     }
 
+    const terminalId = this.getTerminalId(entity);
+    const displayState = registerTerminalDisplay(networkId, terminalId);
+
     const snapshot = getNetworkSnapshot(networkId);
     if (!snapshot) {
+      unregisterTerminalDisplay(networkId, terminalId);
       this.renderEmpty(entity, inv);
       return;
     }
@@ -110,18 +134,21 @@ export class StorageTerminalInterface {
     const forceRender = entity.getDynamicProperty("ucds:terminal_force_render") === true;
     const lastNetwork = Math.floor(Number(entity.getDynamicProperty("ucds:terminal_last_network") || 0));
     const lastPage = Math.floor(Number(entity.getDynamicProperty("ucds:terminal_last_page") ?? -1));
-    const lastChangeSeq = Math.floor(Number(entity.getDynamicProperty("ucds:terminal_last_change_seq") ?? -1));
+    const hasStoredItems = Object.keys(snapshot.totals ?? {}).length > 0;
+    const displayMapped = this.ensureTerminalDisplayMapped(entity, networkId, page, displayState, hasStoredItems);
+    const needsDisplayRender = !displayMapped && hasStoredItems;
 
     if (
       forceRender ||
       lastNetwork !== networkId ||
       lastPage !== page ||
-      lastChangeSeq !== snapshot.changeSeq
+      needsDisplayRender
     ) {
       this.renderPage(entity, inv, snapshot, page, pageCount);
     }
 
     this.processBurnSlots(entity, inv, networkId);
+    this.applyPendingItemUpdates(entity, inv, networkId);
   }
 
   handleControlPress(entity, slot) {
@@ -152,7 +179,7 @@ export class StorageTerminalInterface {
     const start = page * this.gridSize;
     const pageEntries = entries.slice(start, start + this.gridSize);
 
-    const renderedSlots = {};
+    const renderedSlots = new Map();
     const countColumns = this.createEmptyCountColumns();
 
     for (let i = 0; i < this.gridSize; i++) {
@@ -168,16 +195,23 @@ export class StorageTerminalInterface {
       const item = this.createDisplayItem(itemKey, count);
       inv.setItem(slot, item);
       this.setCountColumnValue(countColumns, i, count);
-      renderedSlots[itemKey] = slot;
+      renderedSlots.set(itemKey, slot);
     }
 
     this.writeCountColumns(inv, countColumns);
     this.renderControls(entity, page, pageCount);
-    entity.setDynamicProperty("ucds:terminal_rendered_slots", JSON.stringify(renderedSlots));
+    const renderedSlotsObject = Object.fromEntries(renderedSlots.entries());
+    entity.setDynamicProperty("ucds:terminal_rendered_slots", JSON.stringify(renderedSlotsObject));
     entity.setDynamicProperty("ucds:terminal_last_network", networkId);
     entity.setDynamicProperty("ucds:terminal_last_page", page);
     entity.setDynamicProperty("ucds:terminal_last_change_seq", snapshot.changeSeq);
     entity.setDynamicProperty("ucds:terminal_force_render", false);
+    setTerminalRenderedSlots(networkId, this.getTerminalId(entity), renderedSlots, {
+      page,
+      visibleCount: pageEntries.length,
+      gridStart: this.gridStart,
+      gridSize: this.gridSize,
+    });
   }
 
   renderEmpty(entity, inv) {
@@ -191,6 +225,44 @@ export class StorageTerminalInterface {
     entity.setDynamicProperty("ucds:terminal_force_render", false);
   }
 
+  ensureTerminalDisplayMapped(entity, networkId, page, displayState, hasStoredItems) {
+    if (!displayState) return false;
+    if (displayState.renderedSlots?.size > 0 && displayState.gridSize > 0) return true;
+
+    const lastNetwork = Math.floor(Number(entity.getDynamicProperty("ucds:terminal_last_network") || 0));
+    const lastPage = Math.floor(Number(entity.getDynamicProperty("ucds:terminal_last_page") ?? -1));
+    if (lastNetwork !== networkId || lastPage !== page) return false;
+
+    const renderedSlots = this.readRenderedSlots(entity);
+    if (renderedSlots.size === 0 && hasStoredItems) return false;
+
+    return setTerminalRenderedSlots(networkId, this.getTerminalId(entity), renderedSlots, {
+      page,
+      visibleCount: renderedSlots.size,
+      gridStart: this.gridStart,
+      gridSize: this.gridSize,
+    });
+  }
+
+  readRenderedSlots(entity) {
+    const raw = entity.getDynamicProperty("ucds:terminal_rendered_slots");
+    if (!raw || typeof raw !== "string") return new Map();
+
+    try {
+      const object = JSON.parse(raw);
+      const slots = new Map();
+      for (const [itemKey, slot] of Object.entries(object ?? {})) {
+        const normalizedSlot = Math.floor(Number(slot) || 0);
+        if (itemKey && normalizedSlot >= this.gridStart && normalizedSlot <= this.gridEnd) {
+          slots.set(itemKey, normalizedSlot);
+        }
+      }
+      return slots;
+    } catch {
+      return new Map();
+    }
+  }
+
   renderControls(entity, page, pageCount) {
     const inv = this.getInventory(entity);
     if (!inv) return;
@@ -201,8 +273,6 @@ export class StorageTerminalInterface {
   }
 
   processBurnSlots(entity, inv, networkId) {
-    let insertedAny = false;
-
     for (const slot of this.burnSlots) {
       const item = inv.getItem(slot);
       if (!item) continue;
@@ -213,7 +283,6 @@ export class StorageTerminalInterface {
       const result = addItem(networkId, itemKey, item.amount, "terminal_burn_slot");
       if (result.inserted <= 0) continue;
 
-      insertedAny = true;
       if (result.remaining <= 0) {
         inv.setItem(slot, undefined);
         continue;
@@ -222,17 +291,37 @@ export class StorageTerminalInterface {
       item.amount = result.remaining;
       inv.setItem(slot, item);
     }
+  }
 
-    if (!insertedAny) return;
+  applyPendingItemUpdates(entity, inv, networkId) {
+    const updates = consumeTerminalItemUpdates(networkId, this.getTerminalId(entity));
+    if (updates.length === 0) return;
 
-    const snapshot = getNetworkSnapshot(networkId);
-    if (snapshot) {
-      entity.setDynamicProperty("ucds:terminal_last_change_seq", snapshot.changeSeq);
+    for (const update of updates) {
+      if (update.slot < this.gridStart || update.slot > this.gridEnd) continue;
+
+      if (update.amount <= 0) {
+        this.setFiller(inv, update.slot);
+        this.setCountLabel(inv, update.slot, 0);
+        continue;
+      }
+
+      inv.setItem(update.slot, this.createDisplayItem(update.itemKey, update.amount));
+      this.setCountLabel(inv, update.slot, update.amount);
     }
   }
 
   getLinkedNetworkId(entity) {
     return Math.floor(Number(entity?.getDynamicProperty("ucds:network_id") || 0));
+  }
+
+  getTerminalId(entity) {
+    if (!entity) return "";
+    if (entity.id) return String(entity.id);
+
+    const location = entity.location ?? {};
+    const dimensionId = entity.dimension?.id ?? "unknown";
+    return `${dimensionId}:${Math.floor(location.x ?? 0)},${Math.floor(location.y ?? 0)},${Math.floor(location.z ?? 0)}`;
   }
 
   getPageCount(snapshot) {

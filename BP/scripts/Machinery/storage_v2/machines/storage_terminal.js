@@ -100,6 +100,7 @@ DoriosAPI.register.blockComponent("storage_terminal", {
     const entity = getTerminalEntity(block);
     if (!entity?.isValid) return;
 
+    terminal.destroyEntity(entity);
     const inv = entity.getComponent("minecraft:inventory")?.container;
     inv?.clearAll();
     entity.triggerEvent("despawn");
