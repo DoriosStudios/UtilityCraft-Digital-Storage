@@ -16,23 +16,23 @@
 			}
 		},
 		"components": {
-			"utilitycraft:storage_center": {
-				"entity": {
-					"inventory_size": 2,
-					"input_range": [
-						-1,
-						-1
-					],
-					"output_range": [
-						-1,
-						-1
-					]
-				},
-				"machine": {
-					"rate_speed_base": 10,
-					"energy_cap": 512000
-				}
-			},
+			// "utilitycraft:storage_center": {
+			// 	"entity": {
+			// 		"inventory_size": 2,
+			// 		"input_range": [
+			// 			-1,
+			// 			-1
+			// 		],
+			// 		"output_range": [
+			// 			-1,
+			// 			-1
+			// 		]
+			// 	},
+			// 	"machine": {
+			// 		"rate_speed_base": 10,
+			// 		"energy_cap": 512000
+			// 	}
+			// },
 			"minecraft:geometry": "geometry.utilitycraft_block_2",
 			"minecraft:material_instances": {
 				"*": {

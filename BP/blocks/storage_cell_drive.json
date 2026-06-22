@@ -16,18 +16,18 @@
 			}
 		},
 		"components": {
-			"utilitycraft:storage_cell_drive": {
-				"entity": {
-					"input_type": "simple",
-					"output_type": "simple",
-					"inventory_size": 10
-				},
-				"machine": {
-					"rate_speed_base": 0,
-					"energy_cap": 0,
-					"fluid_cap": 0
-				}
-			},
+			// "utilitycraft:storage_cell_drive": {
+			// 	"entity": {
+			// 		"input_type": "simple",
+			// 		"output_type": "simple",
+			// 		"inventory_size": 10
+			// 	},
+			// 	"machine": {
+			// 		"rate_speed_base": 0,
+			// 		"energy_cap": 0,
+			// 		"fluid_cap": 0
+			// 	}
+			// },
 			"minecraft:geometry": "geometry.utilitycraft_block_2",
 			"minecraft:material_instances": {
 				"*": {

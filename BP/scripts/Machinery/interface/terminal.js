@@ -1,5 +1,6 @@
 import { ItemStack } from "@minecraft/server";
 import { ButtonManager, TickScheduler } from "DoriosCore/index.js";
+import { attachOutputToken, materializeOutputItem } from "./terminal_output.js";
 import { createItemFromKey, getItemKey } from "../storage_v2/item_registry.js";
 import {
   addItem,
@@ -46,6 +47,7 @@ export class StorageTerminalInterface {
 
     this.fillerId = config.fillerId ?? DEFAULT_FILLER_ID;
     this.buttonId = config.buttonId ?? DEFAULT_BUTTON_ID;
+    this.uiOpenState = config.uiOpenState ?? "utilitycraft:ui_open";
   }
 
   registerButtons() {
@@ -98,10 +100,11 @@ export class StorageTerminalInterface {
     if (networkId) unregisterTerminalDisplay(networkId, this.getTerminalId(entity));
   }
 
-  tick(entity) {
+  tick(entity, block) {
     if (!entity?.isValid) return;
 
     const hasOpenUI = TickScheduler.hasOpenUI(entity);
+    this.syncOpenTickState(block, hasOpenUI);
     if (!hasOpenUI && !TickScheduler.shouldProcessMachine(entity)) return;
 
     const inv = this.getInventory(entity);
@@ -135,7 +138,7 @@ export class StorageTerminalInterface {
     const lastNetwork = Math.floor(Number(entity.getDynamicProperty("ucds:terminal_last_network") || 0));
     const lastPage = Math.floor(Number(entity.getDynamicProperty("ucds:terminal_last_page") ?? -1));
     const hasStoredItems = Object.keys(snapshot.totals ?? {}).length > 0;
-    const displayMapped = this.ensureTerminalDisplayMapped(entity, networkId, page, displayState, hasStoredItems);
+    const displayMapped = this.ensureTerminalDisplayMapped(entity, inv, networkId, page, displayState, snapshot);
     const needsDisplayRender = !displayMapped && hasStoredItems;
 
     if (
@@ -149,6 +152,17 @@ export class StorageTerminalInterface {
 
     this.processBurnSlots(entity, inv, networkId);
     this.applyPendingItemUpdates(entity, inv, networkId);
+  }
+
+  syncOpenTickState(block, hasOpenUI) {
+    if (!this.uiOpenState || !block?.permutation) return;
+
+    const isOpen = block.permutation.getState(this.uiOpenState) === true;
+    if (isOpen === hasOpenUI) return;
+
+    try {
+      block.setPermutation(block.permutation.withState(this.uiOpenState, hasOpenUI));
+    } catch {}
   }
 
   handleControlPress(entity, slot) {
@@ -192,7 +206,12 @@ export class StorageTerminalInterface {
       }
 
       const [itemKey, count] = entry;
-      const item = this.createDisplayItem(itemKey, count);
+      const item = this.createDisplayItem(itemKey, count, {
+        entity,
+        networkId,
+        slot,
+        itemKey,
+      });
       inv.setItem(slot, item);
       this.setCountColumnValue(countColumns, i, count);
       renderedSlots.set(itemKey, slot);
@@ -225,7 +244,7 @@ export class StorageTerminalInterface {
     entity.setDynamicProperty("ucds:terminal_force_render", false);
   }
 
-  ensureTerminalDisplayMapped(entity, networkId, page, displayState, hasStoredItems) {
+  ensureTerminalDisplayMapped(entity, inv, networkId, page, displayState, snapshot) {
     if (!displayState) return false;
     if (displayState.renderedSlots?.size > 0 && displayState.gridSize > 0) return true;
 
@@ -233,15 +252,53 @@ export class StorageTerminalInterface {
     const lastPage = Math.floor(Number(entity.getDynamicProperty("ucds:terminal_last_page") ?? -1));
     if (lastNetwork !== networkId || lastPage !== page) return false;
 
+    const totals = snapshot?.totals ?? {};
+    const hasStoredItems = Object.keys(totals).length > 0;
     const renderedSlots = this.readRenderedSlots(entity);
+    const staleSlots = [];
+    for (const [itemKey, slot] of [...renderedSlots.entries()]) {
+      if (Math.floor(Number(totals[itemKey] ?? 0)) <= 0) {
+        staleSlots.push(slot);
+        renderedSlots.delete(itemKey);
+      }
+    }
+    for (const slot of staleSlots) {
+      this.setFiller(inv, slot);
+      this.setCountLabel(inv, slot, 0);
+    }
     if (renderedSlots.size === 0 && hasStoredItems) return false;
 
-    return setTerminalRenderedSlots(networkId, this.getTerminalId(entity), renderedSlots, {
+    const mapped = setTerminalRenderedSlots(networkId, this.getTerminalId(entity), renderedSlots, {
       page,
       visibleCount: renderedSlots.size,
       gridStart: this.gridStart,
       gridSize: this.gridSize,
     });
+    if (mapped && renderedSlots.size > 0) {
+      this.refreshRenderedOutputTokens(entity, inv, networkId, renderedSlots, totals);
+    }
+    return mapped;
+  }
+
+  refreshRenderedOutputTokens(entity, inv, networkId, renderedSlots, totals) {
+    for (const [itemKey, slot] of renderedSlots.entries()) {
+      if (slot < this.gridStart || slot > this.gridEnd) continue;
+
+      const count = Math.floor(Number(totals[itemKey] ?? 0));
+      if (count <= 0) {
+        this.setFiller(inv, slot);
+        this.setCountLabel(inv, slot, 0);
+        continue;
+      }
+
+      inv.setItem(slot, this.createDisplayItem(itemKey, count, {
+        entity,
+        networkId,
+        slot,
+        itemKey,
+      }));
+      this.setCountLabel(inv, slot, count);
+    }
   }
 
   readRenderedSlots(entity) {
@@ -277,10 +334,17 @@ export class StorageTerminalInterface {
       const item = inv.getItem(slot);
       if (!item) continue;
 
-      const itemKey = getItemKey(item);
+      const materialized = materializeOutputItem(item);
+      if (materialized.handled && !materialized.item) {
+        inv.setItem(slot, undefined);
+        continue;
+      }
+
+      const inputItem = materialized.item ?? item;
+      const itemKey = getItemKey(inputItem);
       if (!itemKey) continue;
 
-      const result = addItem(networkId, itemKey, item.amount, "terminal_burn_slot");
+      const result = addItem(networkId, itemKey, inputItem.amount, "terminal_burn_slot");
       if (result.inserted <= 0) continue;
 
       if (result.remaining <= 0) {
@@ -288,8 +352,8 @@ export class StorageTerminalInterface {
         continue;
       }
 
-      item.amount = result.remaining;
-      inv.setItem(slot, item);
+      inputItem.amount = result.remaining;
+      inv.setItem(slot, inputItem);
     }
   }
 
@@ -306,7 +370,12 @@ export class StorageTerminalInterface {
         continue;
       }
 
-      inv.setItem(update.slot, this.createDisplayItem(update.itemKey, update.amount));
+      inv.setItem(update.slot, this.createDisplayItem(update.itemKey, update.amount, {
+        entity,
+        networkId,
+        slot: update.slot,
+        itemKey: update.itemKey,
+      }));
       this.setCountLabel(inv, update.slot, update.amount);
     }
   }
@@ -336,10 +405,22 @@ export class StorageTerminalInterface {
     return page;
   }
 
-  createDisplayItem(itemKey, count) {
+  createDisplayItem(itemKey, count, outputContext) {
     const probe = createItemFromKey(itemKey, 1);
     const maxAmount = Math.max(1, Math.floor(Number(probe.maxAmount) || 64));
-    return createItemFromKey(itemKey, Math.max(1, Math.min(maxAmount, Math.floor(Number(count) || 1))));
+    const amount = Math.max(1, Math.min(maxAmount, Math.floor(Number(count) || 1)));
+    const item = createItemFromKey(itemKey, amount);
+
+    if (!outputContext?.entity) return item;
+
+    return attachOutputToken(item, {
+      terminalId: this.getTerminalId(outputContext.entity),
+      networkId: outputContext.networkId,
+      slot: outputContext.slot,
+      itemKey,
+      amount,
+      totalCount: Math.max(0, Math.floor(Number(count) || 0)),
+    });
   }
 
   setCountLabel(inv, slot, count) {

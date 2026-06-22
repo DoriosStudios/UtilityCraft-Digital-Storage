@@ -16,19 +16,19 @@
 			}
 		},
 		"components": {
-			"utilitycraft:blueprint_terminal": {
-				"entity": {
-					"id": "utilitycraft:blueprint_terminal",
-					"type": "machine",
-					"skip_machine_event": false,
-					"skip_inventory_event": false,
-					"input_type": "simple",
-					"output_type": "simple"
-				},
-				"machine": {
-					"rate_speed_base": 0
-				}
-			},
+			// "utilitycraft:blueprint_terminal": {
+			// 	"entity": {
+			// 		"id": "utilitycraft:blueprint_terminal",
+			// 		"type": "machine",
+			// 		"skip_machine_event": false,
+			// 		"skip_inventory_event": false,
+			// 		"input_type": "simple",
+			// 		"output_type": "simple"
+			// 	},
+			// 	"machine": {
+			// 		"rate_speed_base": 0
+			// 	}
+			// },
 			"minecraft:geometry": "geometry.utilitycraft_block_2",
 			"minecraft:material_instances": {
 				"*": {

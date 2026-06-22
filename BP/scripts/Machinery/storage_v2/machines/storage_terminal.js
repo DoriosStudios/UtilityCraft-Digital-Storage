@@ -93,7 +93,7 @@ DoriosAPI.register.blockComponent("storage_terminal", {
   onTick({ block }) {
     const entity = getTerminalEntity(block);
     if (!entity?.isValid) return;
-    terminal.tick(entity);
+    terminal.tick(entity, block);
   },
 
   onPlayerBreak({ block }) {

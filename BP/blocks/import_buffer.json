@@ -8,18 +8,18 @@
 			}
 		},
 		"components": {
-			"utilitycraft:import_buffer": {
-				"entity": {
-					"inventory_size": 27,
-					"input_range": [
-						0,
-						26
-					]
-				},
-				"machine": {
-					"rate_speed_base": 0
-				}
-			},
+			// "utilitycraft:import_buffer": {
+			// 	"entity": {
+			// 		"inventory_size": 27,
+			// 		"input_range": [
+			// 			0,
+			// 			26
+			// 		]
+			// 	},
+			// 	"machine": {
+			// 		"rate_speed_base": 0
+			// 	}
+			// },
 			"minecraft:geometry": "geometry.utilitycraft_block_2",
 			"minecraft:material_instances": {
 				"*": {

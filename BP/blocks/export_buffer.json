@@ -8,18 +8,18 @@
 			}
 		},
 		"components": {
-			"utilitycraft:export_buffer": {
-				"entity": {
-					"inventory_size": 37,
-					"output_range": [
-						9,
-						35
-					]
-				},
-				"machine": {
-					"rate_speed_base": 0
-				}
-			},
+			// "utilitycraft:export_buffer": {
+			// 	"entity": {
+			// 		"inventory_size": 37,
+			// 		"output_range": [
+			// 			9,
+			// 			35
+			// 		]
+			// 	},
+			// 	"machine": {
+			// 		"rate_speed_base": 0
+			// 	}
+			// },
 			"minecraft:geometry": "geometry.utilitycraft_block_2",
 			"minecraft:material_instances": {
 				"*": {
