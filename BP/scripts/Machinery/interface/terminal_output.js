@@ -180,11 +180,13 @@ export function attachOutputToken(item, context) {
 
   const lore = item.getLore?.() ?? [];
   const cleanLore = stripOutputTokenLore(lore);
-  cleanLore.push(createTokenLoreLine({
-    terminalId: context.terminalId,
-    claimId,
-    countText: String(context.totalCount),
-  }));
+  cleanLore.push(
+    createTokenLoreLine({
+      terminalId: context.terminalId,
+      claimId,
+      countText: String(context.totalCount),
+    }),
+  );
   item.setLore(cleanLore);
   return item;
 }
@@ -305,11 +307,6 @@ function resolveInventoryItem(player, slot, item) {
   if (!inventory || slot < 0 || slot >= inventory.size) return;
 
   inventory.setItem(slot, resolved.item);
-  if (resolved.item) {
-    try {
-      player.playSound("random.pop");
-    } catch {}
-  }
 }
 
 function resolveDroppedItemEntity(entity) {

@@ -93,6 +93,7 @@ function pushChange(runtime, itemKey, before, after, reason = "runtime") {
 function createTerminalDisplayState() {
   return {
     renderedSlots: new Map(),
+    knownItemKeys: new Set(),
     pendingUpdates: new Map(),
     page: 0,
     visibleCount: 0,
@@ -119,12 +120,29 @@ function queueTerminalItemUpdate(runtime, itemKey, amount) {
       continue;
     }
 
-    if (normalizedAmount <= 0) continue;
+    if (normalizedAmount <= 0) {
+      state.knownItemKeys.delete(itemKey);
+      continue;
+    }
+
+    if (state.knownItemKeys.has(itemKey)) continue;
+
+    const currentLastPage = state.gridSize > 0
+      ? Math.floor(state.knownItemKeys.size / state.gridSize)
+      : -1;
+    if (state.page !== currentLastPage) {
+      state.knownItemKeys.add(itemKey);
+      continue;
+    }
 
     const slot = reserveTerminalDisplaySlot(state);
-    if (slot < 0) continue;
+    if (slot < 0) {
+      state.knownItemKeys.add(itemKey);
+      continue;
+    }
 
     state.renderedSlots.set(itemKey, slot);
+    state.knownItemKeys.add(itemKey);
     state.visibleCount = state.renderedSlots.size;
     state.pendingUpdates.set(itemKey, normalizedAmount);
   }
@@ -417,6 +435,7 @@ export function setTerminalRenderedSlots(networkId, terminalId, renderedSlots, o
   }
 
   state.renderedSlots = slots;
+  state.knownItemKeys = new Set(options.knownItemKeys ?? slots.keys());
   state.pendingUpdates.clear();
   state.forceReload = false;
   state.page = Math.max(0, Math.floor(Number(options.page) || 0));

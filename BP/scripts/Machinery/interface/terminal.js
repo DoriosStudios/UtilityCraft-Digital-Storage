@@ -239,6 +239,7 @@ export class StorageTerminalInterface {
       visibleCount: pageEntries.length,
       gridStart: this.gridStart,
       gridSize: this.gridSize,
+      knownItemKeys: Object.keys(snapshot.totals ?? {}),
     });
   }
 
@@ -282,6 +283,7 @@ export class StorageTerminalInterface {
       visibleCount: renderedSlots.size,
       gridStart: this.gridStart,
       gridSize: this.gridSize,
+      knownItemKeys: Object.keys(totals),
     });
     if (mapped && renderedSlots.size > 0) {
       this.refreshRenderedOutputTokens(entity, inv, networkId, renderedSlots, totals);
