@@ -1,5 +1,5 @@
-import { ItemStack, system } from "@minecraft/server";
-import { BasicMachine, Machine } from "DoriosCore/index.js";
+import { system } from "@minecraft/server";
+import { BasicMachine, Machine, TickScheduler } from "DoriosCore/index.js";
 import { spawnEntity } from "DoriosCore/utils/entity.js";
 import { getNetworkNodes, updateNetworkAround } from "Machinery/storage/network_manager.js";
 import {
@@ -15,6 +15,8 @@ import {
 import {
   applyVirtualLore,
   needsVirtualLoreRewrite,
+  readVirtualItemData,
+  VIRTUAL_COUNT_NAME_PREFIX,
 } from "Machinery/storage/virtual_item_codec.js";
 import { createTaggedFiller } from "Machinery/storage/filler_restore.js";
 import { syncBlueprintDataAtSlot as syncBlueprintSlotData } from "Machinery/core/blueprint.js";
@@ -23,10 +25,6 @@ const DEFAULT_STORAGE_START = 0;
 const DEFAULT_STORAGE_END = 224;
 const DEFAULT_STORAGE_SLOTS = 225;
 const DEFAULT_MAX_PAGES = 27;
-const DEFAULT_COUNT_LABEL_BASE_SLOT = 225;
-const DEFAULT_COUNT_LABEL_COLUMNS = 9;
-const DEFAULT_COUNT_LABEL_ROWS = 25;
-const DEFAULT_COUNT_LABEL_ITEM = "utilitycraft:ui_filler";
 const DEFAULT_STORAGE_FILLER = "utilitycraft:storage_filler";
 const DEFAULT_STORAGE_FILLER_NAME = "§rStorage Slot";
 const DEFAULT_LORE_DISPLAY = "§r§7- Count: §f";
@@ -134,9 +132,12 @@ export class Terminal extends BasicMachine {
   }
 
   static getPageChangeDelayTicks() {
-    const tickSpeed = Math.floor(Number(globalThis.tickSpeed));
-    const baseTickSpeed = Number.isFinite(tickSpeed) && tickSpeed > 0 ? tickSpeed : 20;
-    return Math.max(1, baseTickSpeed);
+    const profileInterval = Math.floor(Number(TickScheduler.getSchedulerProfileConfig()?.closedInterval));
+    return Math.max(1, Number.isFinite(profileInterval) ? profileInterval : 20);
+  }
+
+  static getGridReloadSpreadTicks() {
+    return Terminal.getPageChangeDelayTicks() * 2;
   }
 
   static createUiFiller(entity, slot, nameTag = " ") {
@@ -157,10 +158,7 @@ export class Terminal extends BasicMachine {
    * @param {import("@minecraft/server").Container} inv Terminal inventory.
    * @param {object} [options] Grid options.
    * @param {number} [options.storageStart=0] First storage slot.
-   * @param {number} [options.storageEnd=107] Last storage slot.
-   * @param {number} [options.countLabelBaseSlot=108] First count label column slot.
-   * @param {number} [options.countLabelColumns=9] Label column count.
-   * @param {number} [options.countLabelRows=12] Label rows per column.
+   * @param {number} [options.storageEnd=224] Last storage slot.
    * @param {string} [options.fillerId="utilitycraft:storage_filler"] Filler item id.
    * @param {string} [options.fillerName] Filler display name.
    * @returns {boolean} True when the grid should be rendered again.
@@ -170,9 +168,6 @@ export class Terminal extends BasicMachine {
     {
       storageStart = DEFAULT_STORAGE_START,
       storageEnd = DEFAULT_STORAGE_END,
-      countLabelBaseSlot = DEFAULT_COUNT_LABEL_BASE_SLOT,
-      countLabelColumns = DEFAULT_COUNT_LABEL_COLUMNS,
-      countLabelRows = DEFAULT_COUNT_LABEL_ROWS,
       fillerId = DEFAULT_STORAGE_FILLER,
       fillerName = DEFAULT_STORAGE_FILLER_NAME,
     } = {},
@@ -180,14 +175,10 @@ export class Terminal extends BasicMachine {
     for (let slot = storageStart; slot <= storageEnd; slot++) {
       const item = inv.getItem(slot);
       if (!item) return true;
+      if (item.typeId === "utilitycraft:ui_filler") return true;
       if (item.typeId === fillerId && item.nameTag !== fillerName) return true;
     }
 
-    for (let column = 0; column < countLabelColumns; column++) {
-      const labelItem = inv.getItem(countLabelBaseSlot + column);
-      if (!labelItem || labelItem.typeId !== DEFAULT_COUNT_LABEL_ITEM) return true;
-      if ((labelItem.getLore() ?? []).length < countLabelRows) return true;
-    }
     return false;
   }
 
@@ -377,6 +368,8 @@ export class Terminal extends BasicMachine {
    * @returns {string} Stable item key.
    */
   static getItemKey(item) {
+    const virtual = readVirtualItemData(item);
+    if (virtual?.itemKey) return virtual.itemKey;
     return getStoredItemKey(item);
   }
 
@@ -400,11 +393,19 @@ export class Terminal extends BasicMachine {
   static getStoredCount(item) {
     if (!item) return 0;
     const lore = item.getLore();
-    if (!lore || lore.length === 0) return -1;
-    const loreLine = lore.find((line) => line.includes("Count"));
-    if (!loreLine) return -1;
-    const match = loreLine.replace(/§./g, "").match(/\d+/g);
-    return match ? parseInt(match[match.length - 1]) : 1;
+    const loreLine = lore?.find((line) => line.includes("Count"));
+    if (loreLine) {
+      const match = loreLine.replace(/§./g, "").match(/\d+/g);
+      return match ? parseInt(match[match.length - 1]) : 1;
+    }
+
+    const virtual = readVirtualItemData(item);
+    if (Number.isInteger(virtual?.count)) return virtual.count;
+    return -1;
+  }
+
+  static isRenderedVirtualItem(item) {
+    return String(item?.nameTag || "").startsWith(VIRTUAL_COUNT_NAME_PREFIX);
   }
 
   /**
@@ -602,60 +603,7 @@ export class Terminal extends BasicMachine {
     entity.setDynamicProperty("rendered_slot_keys", JSON.stringify(map));
   }
 
-  /**
-   * Updates the count label paired with a storage slot.
-   *
-   * @param {Terminal|BasicMachine} machine Terminal machine wrapper.
-   * @param {import("@minecraft/server").Container} inv Terminal inventory.
-   * @param {number} slot Storage slot.
-   * @param {object} [options] Rendering options.
-   * @param {number} [options.countLabelBaseSlot=108] First label column slot.
-   * @param {number} [options.countLabelColumns=9] Label column count.
-   * @param {number} [options.countLabelRows=12] Label rows per column.
-   * @param {string} [options.fillerId="utilitycraft:storage_filler"] Filler item id.
-   */
-  static setCountLabel(
-    machine,
-    inv,
-    slot,
-    {
-      countLabelBaseSlot = DEFAULT_COUNT_LABEL_BASE_SLOT,
-      countLabelColumns = DEFAULT_COUNT_LABEL_COLUMNS,
-      countLabelRows = DEFAULT_COUNT_LABEL_ROWS,
-      fillerId = DEFAULT_STORAGE_FILLER,
-    } = {},
-  ) {
-    const item = inv.getItem(slot);
-    let labelText = " ";
-    if (item && item.typeId !== fillerId) {
-      const count = Terminal.getStoredCount(item);
-      const valStr = Terminal.formatCountLabel(count !== -1 ? count : item.amount);
-      if (valStr !== "1") {
-        labelText = `§r§f${valStr}`;
-      }
-    }
-    const relativeSlot = slot - DEFAULT_STORAGE_START;
-    if (relativeSlot < 0) return;
-
-    const column = relativeSlot % countLabelColumns;
-    const row = Math.floor(relativeSlot / countLabelColumns);
-    if (column < 0 || column >= countLabelColumns || row < 0 || row >= countLabelRows) return;
-
-    const labelSlot = countLabelBaseSlot + column;
-    let labelItem = inv.getItem(labelSlot);
-    if (!labelItem || labelItem.typeId !== DEFAULT_COUNT_LABEL_ITEM) {
-      labelItem = new ItemStack(DEFAULT_COUNT_LABEL_ITEM, 1);
-    }
-    if (labelItem.nameTag !== " ") labelItem.nameTag = " ";
-
-    const lore = labelItem.getLore() ?? [];
-    while (lore.length < countLabelRows) lore.push(" ");
-    if (lore[row] === labelText) return;
-
-    lore[row] = labelText;
-    labelItem.setLore(lore.slice(0, countLabelRows));
-    inv.setItem(labelSlot, labelItem);
-  }
+  static setCountLabel() {}
 
   /**
    * Finds a rendered virtual item currently visible in a page.
@@ -708,7 +656,6 @@ export class Terminal extends BasicMachine {
     {
       storageStart = DEFAULT_STORAGE_START,
       storageEnd = DEFAULT_STORAGE_END,
-      countLabelBaseSlot = DEFAULT_COUNT_LABEL_BASE_SLOT,
       loreDisplay = DEFAULT_LORE_DISPLAY,
       fillerId = DEFAULT_STORAGE_FILLER,
       fillerName = DEFAULT_STORAGE_FILLER_NAME,
@@ -729,10 +676,6 @@ export class Terminal extends BasicMachine {
     if (slot < 0) return true;
     if (count <= 0) {
       inv.setItem(slot, createTaggedFiller(fillerId, fillerName, entity, slot));
-      Terminal.setCountLabel(machine, inv, slot, {
-        countLabelBaseSlot,
-        fillerId,
-      });
       delete renderedSlots[itemKey];
       entity.setDynamicProperty(
         "rendered_slot_keys",
@@ -752,7 +695,7 @@ export class Terminal extends BasicMachine {
         [...currentLore, `${loreDisplay}${count}`],
         networkId,
         itemKey,
-        { entityId: entity.id, slot },
+        { entityId: entity.id, slot, count },
       );
       inv.setItem(slot, virtualItem);
       Terminal.syncBlueprintDataAtSlot(entity, slot, virtualItem);
@@ -767,10 +710,6 @@ export class Terminal extends BasicMachine {
       console.warn(`Digital Storage removed an item that could not render: ${itemKey}`);
       return true;
     }
-    Terminal.setCountLabel(machine, inv, slot, {
-      countLabelBaseSlot,
-      fillerId,
-    });
     return true;
   }
 
@@ -794,7 +733,6 @@ export class Terminal extends BasicMachine {
     currentQty,
     storageStart = DEFAULT_STORAGE_START,
     storageSlots = DEFAULT_STORAGE_SLOTS,
-    countLabelBaseSlot = DEFAULT_COUNT_LABEL_BASE_SLOT,
     loreDisplay = DEFAULT_LORE_DISPLAY,
     fillerId = DEFAULT_STORAGE_FILLER,
     fillerName = DEFAULT_STORAGE_FILLER_NAME,
@@ -816,15 +754,21 @@ export class Terminal extends BasicMachine {
 
         const currentSlot = storageStart + i;
         const existingItem = inv.getItem(currentSlot);
+        const pageExhausted = !hasNetwork || pageIndex >= safePageSlice.length;
+        if (
+          pageExhausted &&
+          existingItem &&
+          existingItem.typeId === fillerId &&
+          existingItem.nameTag === fillerName
+        ) {
+          break;
+        }
         if (
           existingItem &&
           existingItem.typeId !== fillerId &&
+          existingItem.typeId !== "utilitycraft:ui_filler" &&
           Terminal.getStoredCount(existingItem) === -1
         ) {
-          Terminal.setCountLabel(machine, inv, currentSlot, {
-            countLabelBaseSlot,
-            fillerId,
-          });
           await Terminal.waitRenderChunk(i, storageSlots, spreadTicks);
           continue;
         }
@@ -843,7 +787,7 @@ export class Terminal extends BasicMachine {
               [...currentLore, `${loreDisplay}${safeTotals[key]}`],
               networkId,
               key,
-              { entityId: entity.id, slot: currentSlot },
+              { entityId: entity.id, slot: currentSlot, count: safeTotals[key] },
             );
             const existingKey = existingItem ? Terminal.getItemKey(existingItem) : null;
             if (
@@ -875,10 +819,6 @@ export class Terminal extends BasicMachine {
           );
         }
 
-        Terminal.setCountLabel(machine, inv, currentSlot, {
-          countLabelBaseSlot,
-          fillerId,
-        });
         await Terminal.waitRenderChunk(i, storageSlots, spreadTicks);
       }
 
@@ -959,11 +899,22 @@ export class Terminal extends BasicMachine {
 
     for (const change of pending) {
       if (change?.reloadAll) return "reload";
+      const nextCount = Math.floor(Number(change?.after ?? 0));
       if (
-        Math.floor(Number(change?.after ?? 0)) <= 0 &&
+        nextCount <= 0 &&
         Terminal.isRenderedItemVisible(entity, inv, change.itemKey, options)
       ) {
         return "reload";
+      }
+      if (
+        nextCount > 0 &&
+        !Terminal.isRenderedItemVisible(entity, inv, change.itemKey, options)
+      ) {
+        if (typeof options.appendVisibleItem === "function") {
+          const appended = options.appendVisibleItem(change.itemKey, nextCount);
+          if (!appended) return false;
+        }
+        continue;
       }
       const handled = Terminal.updateVisibleVirtualItem(
         entity,
@@ -971,7 +922,7 @@ export class Terminal extends BasicMachine {
         machine,
         networkId,
         change.itemKey,
-        change.after,
+        nextCount,
         currentQty,
         options,
       );
@@ -1000,5 +951,10 @@ export class Terminal extends BasicMachine {
       "last_network_change_seq",
       Math.floor(Number(networkRecord?.changeSeq ?? 0)),
     );
+  }
+
+  static syncNetworkCursor(entity, version, changeSeq) {
+    entity.setDynamicProperty("last_network_version", Math.floor(Number(version ?? 0)));
+    entity.setDynamicProperty("last_network_change_seq", Math.floor(Number(changeSeq ?? 0)));
   }
 }

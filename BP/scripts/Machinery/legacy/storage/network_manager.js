@@ -109,10 +109,7 @@ function networkContainsBlock(block, network) {
 }
 
 function canAccessNetworkRecord(block, network) {
-  return !!network && networkContainsBlock(block, network) && (
-    network.online !== false ||
-    block?.typeId === "utilitycraft:storage_center"
-  );
+  return !!network && networkContainsBlock(block, network);
 }
 
 function setNetworkTags(entity, networkId) {

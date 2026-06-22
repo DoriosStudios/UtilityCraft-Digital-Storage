@@ -18,7 +18,6 @@ const TERMINAL_ENTITY_TYPES = new Set([
 ]);
 const STORAGE_START = 0;
 const STORAGE_END = 224;
-const COUNT_LABEL_BASE_SLOT = 225;
 const STORAGE_FILLER = "utilitycraft:storage_filler";
 const LORE_DISPLAY = "§r§7- Count: §f";
 
@@ -111,13 +110,10 @@ function restoreRenderedTerminalSlot(virtual, currentQtyHint = 1) {
       [...currentLore, `${LORE_DISPLAY}${count}`],
       virtual.networkId,
       virtual.itemKey,
-      { entityId: entity.id, slot: virtual.slot },
+      { entityId: entity.id, slot: virtual.slot, count },
     );
     inventory.setItem(virtual.slot, virtualItem);
     Terminal.syncBlueprintDataAtSlot(entity, virtual.slot, virtualItem);
-    Terminal.setCountLabel(null, inventory, virtual.slot, {
-      countLabelBaseSlot: COUNT_LABEL_BASE_SLOT,
-    });
     return true;
   } catch {
     return false;

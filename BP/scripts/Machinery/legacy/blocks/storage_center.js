@@ -1,5 +1,5 @@
 import { ItemStack, system } from "@minecraft/server";
-import { BasicMachine, EnergyStorage, Machine } from "DoriosCore/index.js";
+import { BasicMachine, EnergyStorage, Machine, TickScheduler } from "DoriosCore/index.js";
 import {
   getEnergyAndFluidFromItem,
   spawnEntity,
@@ -124,7 +124,7 @@ function getNetworkRates(entity, settings) {
   const baseRate = Math.max(0, Math.floor(Number(
     entity.getDynamicProperty(NETWORK_BASE_RATE_PROPERTY) ?? settings?.machine?.rate_speed_base ?? DEFAULT_BASE_RATE,
   )));
-  const rate = baseRate * Math.max(1, Math.floor(Number(globalThis.tickSpeed ?? 1)));
+  const rate = baseRate * Math.max(1, Math.floor(Number(TickScheduler.getProcessingInterval(entity)) || 1));
   entity.setDynamicProperty(NETWORK_BASE_RATE_PROPERTY, baseRate);
   entity.setDynamicProperty(NETWORK_RATE_PROPERTY, rate);
   return { blockCount, baseRate, rate };
@@ -189,7 +189,6 @@ function publishNetworkPowerState(block, entity, energyState, currentNetwork = u
     };
   }
 
-  const wasOnline = network.online === true;
   const nextNetwork = setNetworkPowerStateFromRecord(networkId, network, energyState.online, {
     core,
     baseRate: energyState.baseRate,
@@ -199,9 +198,6 @@ function publishNetworkPowerState(block, entity, energyState, currentNetwork = u
   }) ?? network;
 
   entity.setDynamicProperty(POWER_ONLINE_PROPERTY, nextNetwork.online === true);
-  if (wasOnline !== nextNetwork.online) {
-    updateNetworkAround(block);
-  }
 
   return {
     ...nextNetwork,
@@ -253,7 +249,7 @@ DoriosAPI.register.blockComponent("storage_center", {
       entity.setDynamicProperty(POWER_ONLINE_PROPERTY, false);
       entity.setDynamicProperty(NETWORK_BLOCK_COUNT_PROPERTY, 1);
       entity.setDynamicProperty(NETWORK_BASE_RATE_PROPERTY, settings?.machine?.rate_speed_base ?? DEFAULT_BASE_RATE);
-      entity.setDynamicProperty(NETWORK_RATE_PROPERTY, (settings?.machine?.rate_speed_base ?? DEFAULT_BASE_RATE) * Math.max(1, Math.floor(Number(globalThis.tickSpeed ?? 1))));
+      entity.setDynamicProperty(NETWORK_RATE_PROPERTY, (settings?.machine?.rate_speed_base ?? DEFAULT_BASE_RATE) * Math.max(1, Math.floor(Number(TickScheduler.getProcessingInterval(entity)) || 1)));
 
       const mainHand = player?.getComponent("equippable")?.getEquipment("Mainhand");
       const { energy: storedEnergy } = getEnergyAndFluidFromItem(mainHand);
@@ -273,7 +269,7 @@ DoriosAPI.register.blockComponent("storage_center", {
         const energyState = {
           blockCount: getNetworkBlockCount(entity),
           baseRate: Math.max(0, Math.floor(Number(entity.getDynamicProperty(NETWORK_BASE_RATE_PROPERTY) ?? settings?.machine?.rate_speed_base ?? DEFAULT_BASE_RATE))),
-          rate: Math.max(0, Math.floor(Number(entity.getDynamicProperty(NETWORK_RATE_PROPERTY) ?? (settings?.machine?.rate_speed_base ?? DEFAULT_BASE_RATE) * Math.max(1, Math.floor(Number(globalThis.tickSpeed ?? 1)))))),
+          rate: Math.max(0, Math.floor(Number(entity.getDynamicProperty(NETWORK_RATE_PROPERTY) ?? (settings?.machine?.rate_speed_base ?? DEFAULT_BASE_RATE) * Math.max(1, Math.floor(Number(TickScheduler.getProcessingInterval(entity)) || 1))))),
           energy: energy.get(),
           energyCap: energy.getCap(),
           online: energy.get() > 0,
