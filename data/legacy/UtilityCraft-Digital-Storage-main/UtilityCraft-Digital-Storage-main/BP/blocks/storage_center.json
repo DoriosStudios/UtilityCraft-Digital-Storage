@@ -1,0 +1,110 @@
+{
+	"format_version": "1.20.80",
+	"minecraft:block": {
+		"description": {
+			"identifier": "utilitycraft:storage_center",
+			"menu_category": {
+				"category": "construction"
+			},
+			"traits": {
+				"minecraft:placement_direction": {
+					"enabled_states": [
+						"minecraft:cardinal_direction"
+					],
+					"y_rotation_offset": 180
+				}
+			}
+		},
+		"components": {
+			"utilitycraft:storage_center": {
+				"entity": {
+					"inventory_size": 2,
+					"input_range": [
+						-1,
+						-1
+					],
+					"output_range": [
+						-1,
+						-1
+					]
+				},
+				"machine": {
+					"rate_speed_base": 10,
+					"energy_cap": 512000
+				}
+			},
+			"minecraft:geometry": "geometry.utilitycraft_block_2",
+			"minecraft:material_instances": {
+				"*": {
+					"texture": "utilitycraft_storage_center",
+					"render_method": "alpha_test"
+				}
+			},
+			"minecraft:tick": {
+				"interval_range": [
+					4,
+					4
+				]
+			},
+			"minecraft:destructible_by_mining": {
+				"seconds_to_destroy": 4
+			},
+			"minecraft:destructible_by_explosion": false,
+			"tag:dorios:machine": {},
+			"tag:dorios:energy": {},
+			"tag:dorios:item": {},
+			"tag:ucds:item_network": {},
+			"tag:minecraft:is_pickaxe_item_destructible": {}
+		},
+		"permutations": [
+			{
+				"condition": "q.block_state('minecraft:cardinal_direction') == 'north' ",
+				"components": {
+					"minecraft:transformation": {
+						"rotation": [
+							0,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"condition": "q.block_state('minecraft:cardinal_direction') == 'south' ",
+				"components": {
+					"minecraft:transformation": {
+						"rotation": [
+							0,
+							180,
+							0
+						]
+					}
+				}
+			},
+			{
+				"condition": "q.block_state('minecraft:cardinal_direction') == 'east' ",
+				"components": {
+					"minecraft:transformation": {
+						"rotation": [
+							0,
+							-90,
+							0
+						]
+					}
+				}
+			},
+			{
+				"condition": "q.block_state('minecraft:cardinal_direction') == 'west' ",
+				"components": {
+					"minecraft:transformation": {
+						"rotation": [
+							0,
+							90,
+							0
+						]
+					}
+				}
+			}
+		]
+	}
+}

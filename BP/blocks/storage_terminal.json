@@ -39,8 +39,8 @@
 			"minecraft:light_emission": 2,
 			"minecraft:tick": {
 				"interval_range": [
-					4,
-					4
+					2,
+					2
 				]
 			},
 			"minecraft:destructible_by_mining": {

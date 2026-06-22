@@ -4,6 +4,7 @@ import {
   loadAllNetworksJob,
 } from "./network_runtime.js";
 import "./network_debug.js";
+import "./machines/storage_terminal.js";
 
 /**
  * Storage V2 lifecycle bootstrap.

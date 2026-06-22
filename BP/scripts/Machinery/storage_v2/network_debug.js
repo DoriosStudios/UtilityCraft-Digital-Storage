@@ -123,10 +123,7 @@ function createNetworkFromChest(event, params) {
       return;
     }
     setNetworkOnline(existingNetworkId, true);
-    reply(
-      event,
-      `reused network ${existingNetworkId} with ${cellIds.length} cells, capacity ${runtime.capacity}, used ${runtime.used}`,
-    );
+    reply(event, `reused network ${existingNetworkId} with ${cellIds.length} cells, capacity ${runtime.capacity}, used ${runtime.used}`);
     return;
   }
 
@@ -283,7 +280,7 @@ function printNetwork(event, params) {
     return;
   }
 
-  const top = getSortedItems(networkId).slice(0, Math.max(1, Math.floor(Number(params.limit) || 50)));
+  const top = getSortedItems(networkId).slice(0, Math.max(1, Math.floor(Number(params.limit) || 100)));
   reply(
     event,
     `network ${networkId}: online=${snapshot.online}, dirty=${snapshot.dirty}, used=${snapshot.used}/${snapshot.capacity}, cells=${snapshot.cells.join(",") || "none"}`,
@@ -329,23 +326,21 @@ const handlers = {
   },
   "ucds:power_off_network": (event, params) => {
     const networkId = Math.floor(Number(params.networkId) || 0);
-    reply(event, powerOffNetwork(networkId)
-      ? `powered off network ${networkId}; flushed cells, released ownership and deleted network record`
-      : `network ${networkId} not found`);
+    reply(
+      event,
+      powerOffNetwork(networkId)
+        ? `powered off network ${networkId}; flushed cells, released ownership and deleted network record`
+        : `network ${networkId} not found`,
+    );
   },
   "ucds:power_off_all_networks": (event) => {
     const result = powerOffAllNetworks();
-    reply(
-      event,
-      `powered off ${result.poweredOff} networks: ${result.networkIds.join(", ") || "none"}; cleaned stale ids ${result.stale}`,
-    );
+    reply(event, `powered off ${result.poweredOff} networks: ${result.networkIds.join(", ") || "none"}; cleaned stale ids ${result.stale}`);
   },
   "ucds:set_online": (event, params) => {
     const networkId = Math.floor(Number(params.networkId) || 0);
     const online = params.online !== false;
-    reply(event, setNetworkOnline(networkId, online)
-      ? `network ${networkId} online=${online}`
-      : `network ${networkId} not found`);
+    reply(event, setNetworkOnline(networkId, online) ? `network ${networkId} online=${online}` : `network ${networkId} not found`);
   },
   "ucds:reload_network": (event, params) => {
     const networkId = Math.floor(Number(params.networkId) || 0);

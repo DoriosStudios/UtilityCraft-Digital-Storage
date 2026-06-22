@@ -7,6 +7,7 @@
     "ui/blocks/storage_center.json",
     "ui/blocks/export_buffer.json",
     "ui/core/terminal_core.json",
+    "ui/core/count_label_grid.json",
     "ui/core/ui_assists.json",
     "ui/core/scroll_panel.json",
     "ui/core/slot_button_prototype.json",

@@ -1,0 +1,275 @@
+{
+    "namespace": "blueprint_terminal",
+    "blueprint_terminal_top": {
+        "type": "collection_panel",
+        "anchor_from": "center",
+        "anchor_to": "center",
+        "size": [ 162, 72 ],
+        "offset": [ -10, -40 ],
+        "collection_name": "container_items",
+        "$item_collection_name": "container_items",
+        "controls": [
+            // Close Button
+            {
+                "close_button":{
+                    "type": "panel",
+                    "anchor_from": "top_right",
+                    "anchor_to": "top_right",
+                    "offset": [126, -54],
+                    "controls": [
+                        {
+                            "close_button@common.close_button":{
+                                "size": [ 12, 12 ],
+                                "anchor_from": "center",
+                                "anchor_to": "center",
+                                "offset": [-22, -2]
+                            }
+                        }
+                    ]
+                }
+            },
+            // Machine Name
+            {
+                "text_label@chest.chest_label": {
+                    "offset": [ 14, -44 ]
+                }
+            },
+            // Terminal Core
+            {
+                "terminal_core@sh.terminal_core": {
+                    "anchor_from": "center",
+                    "anchor_to": "center",
+                    "offset": [ 0, 57 ]
+                }
+            },
+            // Next Button
+            {
+                "next_button@sh.button": {
+                    "layer": 10,
+                    "$index": 237,
+                    "$button_size": [22, 22],
+                    "$default_texture": "textures/ui/buttons/next/button",
+                    "$hover_texture": "textures/ui/buttons/next/selected",
+                    "$pressed_texture": "textures/ui/buttons/next/pressed",
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ 106, 134 ]
+                }
+            },
+            // Previous Button
+            {
+                "previous_button@sh.button": {
+                    "layer": 10,
+                    "$index": 238,
+                    "$button_size": [22, 22],
+                    "$default_texture": "textures/ui/buttons/previous/button",
+                    "$hover_texture": "textures/ui/buttons/previous/selected",
+                    "$pressed_texture": "textures/ui/buttons/previous/pressed",
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ 106, 112 ]
+                }
+            },
+            // Quantity Button
+            {
+                "quantity_button@uc.dynamic_button": {
+                    "layer": 10,
+                    "$index": 239,
+                    "$default_texture": "textures/ui/buttons/button",
+                    "$hover_texture": "textures/ui/buttons/button_selected",
+                    "$pressed_texture": "textures/ui/buttons/button_pressed",
+                    "$text_scale": 1,
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ 106, 90 ],
+                    "$button_size": [ 22, 22 ]
+                }
+            },
+            // Sort Button
+            {
+                "sort_button@sh.button": {
+                    "layer": 10,
+                    "$index": 240,
+                    "$default_texture": "textures/ui/buttons/sort/button",
+                    "$hover_texture": "textures/ui/buttons/sort/selected",
+                    "$pressed_texture": "textures/ui/buttons/sort/pressed",
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ 106, 68 ],
+                    "$button_size": [ 22, 22 ]
+                }
+            },
+            {
+                "blueprint_toggle@sh.toggle_button": {
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ -90, -33 ],
+                    "$toggle_size": [ 17, 17 ],
+                    "$toggle_layer": 7,
+                    "$toggle_index": 0,
+                    "$toggle_group": false,
+                    "$toggle_lost_reset": true,
+                    "$toggle_default_state": false,
+                    "$toggle_control_name": "blueprint_toggle_button",
+                    "$toggle_unchecked": "textures/ui/buttons/crafting/unchecked",
+                    "$toggle_checked": "textures/ui/buttons/crafting/checked",
+                    "$toggle_unchecked_hover": "textures/ui/buttons/crafting/unchecked_hover",
+                    "$toggle_checked_hover": "textures/ui/buttons/crafting/checked_hover"
+                }
+            },
+            {
+                "blueprint_state_panel@sh.toggle_button_panel": {
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [ 0, 0 ],
+                    "size": [ 162, 72 ],
+                    "$panel_control_name": "blueprint_toggle_button",
+                    "$controls": [
+                        {
+                            "crafting_tab_background": {
+                                "type": "image",
+                                "texture": "textures/ui/background/blueprint_terminal_bg",
+                                "size": [ 103, 169 ],
+                                "offset": [ -129, -10 ],
+                                "anchor_from": "top_middle",
+                                "anchor_to": "top_middle",
+                                "layer": -6
+                            }
+                        },
+                        {
+                            "blueprint_panel@sh.blueprint_panel": {
+                                "offset": [ -114, -32 ],
+                                "$blueprint_index": 241,
+                                "$output_index": 242,
+                                "$info_index": 243,
+                                "$quantity_index": 244,
+                                "$mode_index": 245,
+                                "$craft_index": 246,
+                                "$remove_index": 247
+                            }
+                        },
+                        {
+                            "blueprint_title": {
+                                "type": "label",
+                                "text": "ui.utilitycraft:blueprint_label",
+                                "size": [ 80, 10 ],
+                                "text_alignment": "left",
+                                "anchor_from": "top_left",
+                                "anchor_to": "top_middle",
+                                "offset": [ -54, -6 ],
+                                "color": [ 0.3, 0.3, 0.3 ],
+                                "layer": 1
+                            }
+                        },
+                        {
+                            "output_mode_title": {
+                                "type": "label",
+                                "text": "Output Mode",
+                                "size": [ 80, 10 ],
+                                "text_alignment": "left",
+                                "anchor_from": "top_left",
+                                "anchor_to": "top_middle",
+                                "offset": [ -52, 93 ],
+                                "color": [ 0.3, 0.3, 0.3 ],
+                                "layer": 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "button_background": {
+                    "type": "image",
+                    "texture": "textures/ui/buttons/button_background",
+                    "size": [ 26, 27 ],
+                    "offset": [ -90, -10.5 ],
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "layer": -6,
+                    "bindings": [
+                        {
+                            "binding_type": "view",
+                            "source_control_name": "blueprint_toggle_button",
+                            "source_property_name": "(not (#toggle_state))",
+                            "target_property_name": "#visible",
+                            "resolve_sibling_scope": false
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "utility_panel": {
+        "type": "panel",
+        "controls": [
+            {
+                "container_gamepad_helpers@common.container_gamepad_helpers": { }
+            },
+            {
+                "flying_item_renderer@common.flying_item_renderer": { "layer": 14 }
+            },
+            {
+                "selected_item_details_factory@common.selected_item_details_factory": {}
+            },
+            {
+                "item_lock_notification_factory@common.item_lock_notification_factory": {}
+            },
+            {
+                "root_panel@common.root_panel": {
+                    "layer": 1,
+                    "controls": [
+                        {
+                            "chest_panel": {
+                                "type": "panel",
+                                "layer": 5,
+                                "controls": [
+                                    {
+                                        "storage_terminal_background": {
+                                            "type": "panel",
+                                            "size": [ 196, 194 ],
+                                            "anchor_from": "center",
+                                            "anchor_to": "center",
+                                            "offset": [ 10, -13 ],
+                                            "layer": 0,
+                                            "controls": [
+                                                {
+                                                    "image": {
+                                                        "type": "image",
+                                                        "texture": "textures/ui/background/storage_terminal_bg",
+                                                        "size": [ 195, 193 ],
+                                                        "anchor_from": "top_left",
+                                                        "anchor_to": "top_left",
+                                                        "offset": [ 0, 0 ],
+                                                        "alpha": 1
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "blueprint_terminal_top@blueprint_terminal.blueprint_terminal_top": { }
+                                    },
+                                    {
+                                        "inventory_panel_bottom_half_with_label@common.inventory_panel_bottom_half_with_label": {}
+                                    },
+                                    {
+                                        "hotbar_grid@common.hotbar_grid_template": { }
+                                    },
+                                    {
+                                        "inventory_take_progress_icon_button@common.inventory_take_progress_icon_button": { }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "inventory_selected_icon_button@common.inventory_selected_icon_button": { }
+                        },
+                        {
+                            "gamepad_cursor@common.gamepad_cursor_button": { }
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}
