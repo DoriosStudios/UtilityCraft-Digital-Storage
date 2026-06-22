@@ -1,6 +1,11 @@
 import { ItemStack } from "@minecraft/server";
 import { ButtonManager, TickScheduler } from "DoriosCore/index.js";
-import { attachOutputToken, materializeOutputItem } from "./terminal_output.js";
+import {
+  attachOutputToken,
+  attachUiSlotToken,
+  consumeUiSlotRestores,
+  materializeOutputItem,
+} from "./terminal_output.js";
 import { createItemFromKey, getItemKey } from "../storage_v2/item_registry.js";
 import {
   addItem,
@@ -14,6 +19,7 @@ import {
 
 const DEFAULT_FILLER_ID = "utilitycraft:storage_filler";
 const DEFAULT_BUTTON_ID = "utilitycraft:ui_filler";
+const UI_ELEMENT_TAG = "utilitycraft:ui_element";
 
 /**
  * Shared terminal UI renderer for Digital Storage interfaces.
@@ -69,7 +75,7 @@ export class StorageTerminalInterface {
     if (!inv) return;
 
     this.clearBurnSlots(inv);
-    this.clearGrid(inv);
+    this.clearGrid(inv, entity);
     this.clearCountLabels(inv);
     this.renderControls(entity, 0, 1);
   }
@@ -111,6 +117,7 @@ export class StorageTerminalInterface {
     if (!inv) return;
 
     ButtonManager.ensureWatching(entity, this.machineId);
+    this.restorePendingUiSlots(entity, inv);
 
     const networkId = this.getLinkedNetworkId(entity);
     if (!networkId) {
@@ -151,7 +158,7 @@ export class StorageTerminalInterface {
     }
 
     this.processBurnSlots(entity, inv, networkId);
-    this.applyPendingItemUpdates(entity, inv, networkId);
+    this.applyPendingItemUpdates(entity, inv, networkId, snapshot);
   }
 
   syncOpenTickState(block, hasOpenUI) {
@@ -201,7 +208,7 @@ export class StorageTerminalInterface {
       const entry = pageEntries[i];
 
       if (!entry) {
-        this.setFiller(inv, slot);
+        this.setFiller(inv, slot, entity);
         continue;
       }
 
@@ -234,7 +241,7 @@ export class StorageTerminalInterface {
   }
 
   renderEmpty(entity, inv) {
-    this.clearGrid(inv);
+    this.clearGrid(inv, entity);
     this.clearCountLabels(inv);
     this.renderControls(entity, 0, 1);
     entity.setDynamicProperty("ucds:terminal_rendered_slots", "{}");
@@ -263,7 +270,7 @@ export class StorageTerminalInterface {
       }
     }
     for (const slot of staleSlots) {
-      this.setFiller(inv, slot);
+      this.setFiller(inv, slot, entity);
       this.setCountLabel(inv, slot, 0);
     }
     if (renderedSlots.size === 0 && hasStoredItems) return false;
@@ -286,7 +293,7 @@ export class StorageTerminalInterface {
 
       const count = Math.floor(Number(totals[itemKey] ?? 0));
       if (count <= 0) {
-        this.setFiller(inv, slot);
+        this.setFiller(inv, slot, entity);
         this.setCountLabel(inv, slot, 0);
         continue;
       }
@@ -335,6 +342,11 @@ export class StorageTerminalInterface {
       if (!item) continue;
 
       const materialized = materializeOutputItem(item);
+      if (this.isUiElementItem(item)) {
+        inv.setItem(slot, undefined);
+        continue;
+      }
+
       if (materialized.handled && !materialized.item) {
         inv.setItem(slot, undefined);
         continue;
@@ -357,15 +369,15 @@ export class StorageTerminalInterface {
     }
   }
 
-  applyPendingItemUpdates(entity, inv, networkId) {
-    const updates = consumeTerminalItemUpdates(networkId, this.getTerminalId(entity));
-    if (updates.length === 0) return;
+  applyPendingItemUpdates(entity, inv, networkId, snapshot) {
+    const { updates, forceReload } = consumeTerminalItemUpdates(networkId, this.getTerminalId(entity));
+    if (updates.length === 0 && !forceReload) return;
 
     for (const update of updates) {
       if (update.slot < this.gridStart || update.slot > this.gridEnd) continue;
 
       if (update.amount <= 0) {
-        this.setFiller(inv, update.slot);
+        this.setFiller(inv, update.slot, entity);
         this.setCountLabel(inv, update.slot, 0);
         continue;
       }
@@ -377,6 +389,27 @@ export class StorageTerminalInterface {
         itemKey: update.itemKey,
       }));
       this.setCountLabel(inv, update.slot, update.amount);
+    }
+
+    if (forceReload) {
+      const latestSnapshot = getNetworkSnapshot(networkId) ?? snapshot;
+      const pageCount = this.getPageCount(latestSnapshot);
+      const page = this.clampPage(entity, pageCount);
+      this.renderPage(entity, inv, latestSnapshot, page, pageCount);
+    }
+  }
+
+  restorePendingUiSlots(entity, inv) {
+    const slots = consumeUiSlotRestores(this.getTerminalId(entity));
+    if (slots.length === 0) return;
+
+    for (const slot of slots) {
+      if (slot < this.gridStart || slot > this.gridEnd) continue;
+
+      const current = inv.getItem(slot);
+      if (current && current.typeId !== this.fillerId) continue;
+
+      this.setFiller(inv, slot, entity);
     }
   }
 
@@ -492,9 +525,9 @@ export class StorageTerminalInterface {
     for (const slot of this.burnSlots) inv.setItem(slot, undefined);
   }
 
-  clearGrid(inv) {
+  clearGrid(inv, entity) {
     for (let slot = this.gridStart; slot <= this.gridEnd; slot++) {
-      this.setFiller(inv, slot);
+      this.setFiller(inv, slot, entity);
     }
   }
 
@@ -507,9 +540,13 @@ export class StorageTerminalInterface {
     }
   }
 
-  setFiller(inv, slot) {
+  setFiller(inv, slot, entity) {
     const filler = new ItemStack(this.fillerId, 1);
     filler.nameTag = "§rStorage Slot";
+    attachUiSlotToken(filler, {
+      terminalId: this.getTerminalId(entity),
+      slot,
+    });
     inv.setItem(slot, filler);
   }
 
@@ -517,6 +554,18 @@ export class StorageTerminalInterface {
     const item = new ItemStack(this.buttonId, 1);
     item.nameTag = nameTag;
     inv.setItem(slot, item);
+  }
+
+  isUiElementItem(item) {
+    if (!item) return false;
+    try {
+      if (item.hasTag?.(UI_ELEMENT_TAG)) return true;
+    } catch {}
+    try {
+      return item.getTags?.().includes(UI_ELEMENT_TAG) === true;
+    } catch {
+      return false;
+    }
   }
 
   getControlName(slot, page, pageCount) {

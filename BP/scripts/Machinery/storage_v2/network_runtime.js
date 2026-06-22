@@ -8,6 +8,7 @@ import {
   writeCellRecord,
   writeNetworkRecord,
 } from "./cell_store.js";
+import { createItemFromKey } from "./item_registry.js";
 
 /**
  * Runtime network manager for Digital Storage V2.
@@ -18,6 +19,26 @@ import {
  */
 
 const CHANGE_LIMIT = 64;
+const UI_ELEMENT_TAG = "utilitycraft:ui_element";
+const uiElementKeyCache = new Map();
+
+function isUiElementKey(itemKey) {
+  const key = String(itemKey ?? "");
+  if (!key) return false;
+  if (uiElementKeyCache.has(key)) return uiElementKeyCache.get(key);
+
+  let isUiElement = false;
+  try {
+    const item = createItemFromKey(key, 1);
+    isUiElement = item.hasTag?.(UI_ELEMENT_TAG) === true
+      || item.getTags?.().includes(UI_ELEMENT_TAG) === true;
+  } catch {
+    isUiElement = false;
+  }
+
+  uiElementKeyCache.set(key, isUiElement);
+  return isUiElement;
+}
 
 /**
  * Active runtime networks keyed by network id.
@@ -78,6 +99,7 @@ function createTerminalDisplayState() {
     gridStart: 0,
     gridSize: 0,
     nextFreeSlot: -1,
+    forceReload: false,
     lastSeenTick: 0,
   };
 }
@@ -93,6 +115,7 @@ function queueTerminalItemUpdate(runtime, itemKey, amount) {
   for (const state of terminalDisplays.values()) {
     if (state.renderedSlots.has(itemKey)) {
       state.pendingUpdates.set(itemKey, normalizedAmount);
+      if (normalizedAmount <= 0) state.forceReload = true;
       continue;
     }
 
@@ -395,6 +418,7 @@ export function setTerminalRenderedSlots(networkId, terminalId, renderedSlots, o
 
   state.renderedSlots = slots;
   state.pendingUpdates.clear();
+  state.forceReload = false;
   state.page = Math.max(0, Math.floor(Number(options.page) || 0));
   state.visibleCount = Math.max(0, Math.floor(Number(options.visibleCount ?? slots.size) || 0));
   updateTerminalDisplayBounds(state, options);
@@ -409,14 +433,14 @@ export function setTerminalRenderedSlots(networkId, terminalId, renderedSlots, o
  *
  * @param {number} networkId Network id.
  * @param {string} terminalId Entity id for the terminal.
- * @returns {Array<{itemKey:string, amount:number, slot:number}>} Direct UI updates.
+ * @returns {{updates:Array<{itemKey:string, amount:number, slot:number}>, forceReload:boolean}} Direct UI updates and reload flag.
  */
 export function consumeTerminalItemUpdates(networkId, terminalId) {
   const runtime = getNetwork(networkId);
-  if (!runtime || !terminalId) return [];
+  if (!runtime || !terminalId) return { updates: [], forceReload: false };
 
   const state = getTerminalDisplays(runtime).get(terminalId);
-  if (!state || state.pendingUpdates.size === 0) return [];
+  if (!state) return { updates: [], forceReload: false };
 
   const updates = [];
   for (const [itemKey, amount] of state.pendingUpdates.entries()) {
@@ -426,11 +450,13 @@ export function consumeTerminalItemUpdates(networkId, terminalId) {
       if (amount <= 0) state.renderedSlots.delete(itemKey);
     }
   }
+  const forceReload = state.forceReload === true;
   state.pendingUpdates.clear();
+  state.forceReload = false;
   state.visibleCount = state.renderedSlots.size;
   state.nextFreeSlot = getNextFreeSlotAfterRenderedItems(state);
   state.lastSeenTick = runtime.changeSeq;
-  return updates;
+  return { updates, forceReload };
 }
 
 /**
@@ -545,12 +571,14 @@ export function setNetworkOnline(networkId, online) {
  * @returns {{inserted:number, remaining:number, before?:number, after?:number}}
  */
 export function addItem(networkId, itemKey, amount, reason = "debug") {
+  const requested = Math.max(0, Math.floor(Number(amount) || 0));
+  if (isUiElementKey(itemKey)) return { inserted: 0, remaining: requested };
+
   const runtime = getNetwork(networkId);
   if (!runtime || !runtime.online) {
-    return { inserted: 0, remaining: Math.max(0, Math.floor(Number(amount) || 0)) };
+    return { inserted: 0, remaining: requested };
   }
 
-  const requested = Math.max(0, Math.floor(Number(amount) || 0));
   const free = Math.max(0, runtime.capacity - runtime.used);
   const inserted = Math.min(requested, free);
   if (inserted <= 0) return { inserted: 0, remaining: requested };
