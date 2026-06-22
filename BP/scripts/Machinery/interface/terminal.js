@@ -1,7 +1,8 @@
 import { ItemStack } from "@minecraft/server";
 import { ButtonManager, TickScheduler } from "DoriosCore/index.js";
-import { createItemFromKey } from "../storage_v2/item_registry.js";
+import { createItemFromKey, getItemKey } from "../storage_v2/item_registry.js";
 import {
+  addItem,
   getNetworkSnapshot,
   getSortedItems,
 } from "../storage_v2/network_runtime.js";
@@ -119,6 +120,8 @@ export class StorageTerminalInterface {
     ) {
       this.renderPage(entity, inv, snapshot, page, pageCount);
     }
+
+    this.processBurnSlots(entity, inv, networkId);
   }
 
   handleControlPress(entity, slot) {
@@ -195,6 +198,37 @@ export class StorageTerminalInterface {
     this.setButton(inv, this.reloadSlot, "§r§7- Reload");
     this.setButton(inv, this.previousSlot, `§r§7- Previous Page §f${page + 1}/${pageCount}`);
     this.setButton(inv, this.nextSlot, `§r§7- Next Page §f${page + 1}/${pageCount}`);
+  }
+
+  processBurnSlots(entity, inv, networkId) {
+    let insertedAny = false;
+
+    for (const slot of this.burnSlots) {
+      const item = inv.getItem(slot);
+      if (!item) continue;
+
+      const itemKey = getItemKey(item);
+      if (!itemKey) continue;
+
+      const result = addItem(networkId, itemKey, item.amount, "terminal_burn_slot");
+      if (result.inserted <= 0) continue;
+
+      insertedAny = true;
+      if (result.remaining <= 0) {
+        inv.setItem(slot, undefined);
+        continue;
+      }
+
+      item.amount = result.remaining;
+      inv.setItem(slot, item);
+    }
+
+    if (!insertedAny) return;
+
+    const snapshot = getNetworkSnapshot(networkId);
+    if (snapshot) {
+      entity.setDynamicProperty("ucds:terminal_last_change_seq", snapshot.changeSeq);
+    }
   }
 
   getLinkedNetworkId(entity) {
