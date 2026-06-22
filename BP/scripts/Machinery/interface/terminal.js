@@ -121,13 +121,16 @@ export class StorageTerminalInterface {
 
     const networkId = this.getLinkedNetworkId(entity);
     if (!networkId) {
-      if (entity.getDynamicProperty("ucds:terminal_last_network") !== 0) {
+      if (hasOpenUI && entity.getDynamicProperty("ucds:terminal_last_network") !== 0) {
         const lastNetwork = Math.floor(Number(entity.getDynamicProperty("ucds:terminal_last_network") || 0));
         if (lastNetwork) unregisterTerminalDisplay(lastNetwork, this.getTerminalId(entity));
         this.renderEmpty(entity, inv);
       }
       return;
     }
+
+    this.processBurnSlots(entity, inv, networkId);
+    if (!hasOpenUI) return;
 
     const terminalId = this.getTerminalId(entity);
     const displayState = registerTerminalDisplay(networkId, terminalId);
@@ -157,7 +160,6 @@ export class StorageTerminalInterface {
       this.renderPage(entity, inv, snapshot, page, pageCount);
     }
 
-    this.processBurnSlots(entity, inv, networkId);
     this.applyPendingItemUpdates(entity, inv, networkId, snapshot);
   }
 
