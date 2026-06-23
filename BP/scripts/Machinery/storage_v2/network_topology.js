@@ -7,6 +7,15 @@ export const NETWORK_TOPOLOGY_PROPERTY = "ucds:network_topology";
 
 const STORAGE_CENTER_TYPE = "utilitycraft:storage_center";
 const TOPOLOGY_VERSION = 1;
+const ENERGY_COST_BY_TYPE = {
+  "utilitycraft:storage_center": 10,
+  "utilitycraft:storage_terminal": 10,
+  "utilitycraft:crafting_terminal": 10,
+  "utilitycraft:blueprint_terminal": 10,
+  "utilitycraft:storage_cell_drive": 10,
+  "utilitycraft:import_buffer": 20,
+  "utilitycraft:export_buffer": 20,
+};
 
 const DIRECTIONS = [
   { name: "east", x: 1, y: 0, z: 0 },
@@ -58,6 +67,7 @@ function getMachineEntityAt(block) {
 function addMachineToTopology(topology, block) {
   const typeId = block.typeId;
   topology.machinesCount[typeId] = (topology.machinesCount[typeId] ?? 0) + 1;
+  topology.energyTickCost += ENERGY_COST_BY_TYPE[typeId] ?? 0;
 
   let positions = topology.machinesPos[typeId];
   if (!positions) {
@@ -139,6 +149,7 @@ export function scanNetworkTopology(startBlock) {
     version: TOPOLOGY_VERSION,
     dimensionId: startBlock.dimension.id,
     updatedTick: system.currentTick,
+    energyTickCost: 0,
     machinesCount: {},
     machinesPos: {},
   };

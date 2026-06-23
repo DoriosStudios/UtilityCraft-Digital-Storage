@@ -2,7 +2,7 @@ import { system, world } from "@minecraft/server";
 import { spawnEntity } from "DoriosCore/utils/entity.js";
 import { StorageTerminalInterface } from "../../interface/terminal.js";
 
-const terminal = new StorageTerminalInterface({
+export const storageTerminalInterface = new StorageTerminalInterface({
   machineId: "storage_terminal",
   entityType: "utilitycraft:storage_terminal",
   burnSlots: [0, 1, 2, 3],
@@ -18,7 +18,7 @@ const terminal = new StorageTerminalInterface({
   countLabelRows: 18,
 });
 
-terminal.registerButtons();
+storageTerminalInterface.registerButtons();
 
 /**
  * Finds the terminal backing entity sitting on a terminal block.
@@ -29,7 +29,7 @@ terminal.registerButtons();
 function getTerminalEntity(block) {
   return block?.dimension
     ?.getEntitiesAtBlockLocation(block.location)
-    ?.find((entity) => entity.typeId === terminal.entityType);
+    ?.find((entity) => entity.typeId === storageTerminalInterface.entityType);
 }
 
 /**
@@ -101,8 +101,8 @@ function linkTerminal(event, params) {
     return;
   }
 
-  terminal.linkNetwork(entity, networkId);
-  terminal.tick(entity);
+  storageTerminalInterface.linkNetwork(entity, networkId);
+  storageTerminalInterface.tick(entity);
   reply(event, `linked storage terminal at ${location.x},${location.y},${location.z} to network ${networkId}`);
 }
 
@@ -111,27 +111,27 @@ DoriosAPI.register.blockComponent("storage_terminal", {
     system.run(() => {
       const entity = spawnEntity(block, {
         entity: {
-          identifier: terminal.entityType,
+          identifier: storageTerminalInterface.entityType,
           inventory_size: 178,
           input_range: [0, 3],
           name: "storage_terminal",
         },
       });
-      terminal.setupEntity(entity);
+      storageTerminalInterface.setupEntity(entity);
     });
   },
 
   onTick({ block }) {
     const entity = getTerminalEntity(block);
     if (!entity?.isValid) return;
-    terminal.tick(entity, block);
+    storageTerminalInterface.tick(entity, block);
   },
 
   onPlayerBreak({ block }) {
     const entity = getTerminalEntity(block);
     if (!entity?.isValid) return;
 
-    terminal.destroyEntity(entity);
+    storageTerminalInterface.destroyEntity(entity);
     const inv = entity.getComponent("minecraft:inventory")?.container;
     inv?.clearAll();
     entity.triggerEvent("despawn");

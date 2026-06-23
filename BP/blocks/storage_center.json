@@ -26,6 +26,7 @@
 					"output_type": "none"
 				},
 				"machine": {
+					"energy_cap": 512000,
 					"rate_speed_base": 0
 				}
 			},
@@ -38,8 +39,8 @@
 			},
 			"minecraft:tick": {
 				"interval_range": [
-					20,
-					20
+					4,
+					4
 				]
 			},
 			"minecraft:destructible_by_mining": {
@@ -47,6 +48,7 @@
 			},
 			"minecraft:destructible_by_explosion": false,
 			"tag:dorios:machine": {},
+			"tag:dorios:energy": {},
 			"tag:ucds:network": {},
 			"tag:ucds:network_machine": {},
 			"tag:minecraft:is_pickaxe_item_destructible": {}
