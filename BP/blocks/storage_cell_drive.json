@@ -47,7 +47,8 @@
 			},
 			"minecraft:destructible_by_explosion": false,
 			"tag:dorios:machine": {},
-			"tag:ucds:item_network": {},
+			"tag:ucds:network": {},
+			"tag:ucds:network_machine": {},
 			"tag:minecraft:is_pickaxe_item_destructible": {}
 		},
 		"permutations": [

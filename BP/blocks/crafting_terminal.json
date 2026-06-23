@@ -16,19 +16,6 @@
 			}
 		},
 		"components": {
-			// "utilitycraft:crafting_terminal": {
-			// 	"entity": {
-			// 		"id": "utilitycraft:crafting_terminal",
-			// 		"type": "machine",
-			// 		"skip_machine_event": false,
-			// 		"skip_inventory_event": false,
-			// 		"input_type": "simple",
-			// 		"output_type": "simple"
-			// 	},
-			// 	"machine": {
-			// 		"rate_speed_base": 0
-			// 	}
-			// },
 			"minecraft:geometry": "geometry.utilitycraft_block_2",
 			"minecraft:material_instances": {
 				"*": {
@@ -48,8 +35,8 @@
 			},
 			"minecraft:destructible_by_explosion": false,
 			"tag:dorios:machine": {},
-			"tag:dorios:item": {},
-			"tag:ucds:item_network": {},
+			"tag:ucds:network": {},
+			"tag:ucds:network_machine": {},
 			"tag:minecraft:is_pickaxe_item_destructible": {}
 		},
 		"permutations": [

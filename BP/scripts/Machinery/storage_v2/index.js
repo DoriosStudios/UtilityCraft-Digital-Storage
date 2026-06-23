@@ -4,7 +4,9 @@ import {
   loadAllNetworksJob,
 } from "./network_runtime.js";
 import "./network_debug.js";
+import "./network_topology.js";
 import "./machines/storage_cell_drive.js";
+import "./machines/storage_center.js";
 import "./machines/storage_terminal.js";
 
 /**
