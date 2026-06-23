@@ -5,6 +5,7 @@
     "ui/blocks/blueprint_terminal.json",
     "ui/blocks/storage_cell_drive.json",
     "ui/blocks/storage_center.json",
+    "ui/blocks/import_buffer.json",
     "ui/blocks/export_buffer.json",
     "ui/core/terminal_core.json",
     "ui/core/count_label_grid.json",
