@@ -143,7 +143,7 @@ because losing a definition would make the item unrecoverable.
 Commands are temporary and use `scriptevent`.
 
 ```mcfunction
-/scriptevent ucds:create_network_from_chest {"dim":"overworld","x":10,"y":64,"z":10}
+/scriptevent ucds:create_network_from_drives {"dim":"overworld","drives":[{"x":10,"y":64,"z":10},{"x":12,"y":64,"z":10}]}
 /scriptevent ucds:print_network {"networkId":1}
 /scriptevent ucds:add_item {"networkId":1,"id":"minecraft:diamond","amount":64}
 /scriptevent ucds:remove_item {"networkId":1,"id":"minecraft:diamond","amount":16}
@@ -158,7 +158,7 @@ Commands are temporary and use `scriptevent`.
 Recommended DB test flow:
 
 ```txt
-create_network_from_chest
+create_network_from_drives
 add_from_chest / add_item
 print_network
 flush_network

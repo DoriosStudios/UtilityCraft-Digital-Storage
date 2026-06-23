@@ -16,18 +16,19 @@
 			}
 		},
 		"components": {
-			// "utilitycraft:storage_cell_drive": {
-			// 	"entity": {
-			// 		"input_type": "simple",
-			// 		"output_type": "simple",
-			// 		"inventory_size": 10
-			// 	},
-			// 	"machine": {
-			// 		"rate_speed_base": 0,
-			// 		"energy_cap": 0,
-			// 		"fluid_cap": 0
-			// 	}
-			// },
+			"utilitycraft:storage_cell_drive": {
+				"entity": {
+					"id": "utilitycraft:storage_cell_drive",
+					"type": "machine",
+					"skip_machine_event": false,
+					"skip_inventory_event": false,
+					"input_type": "none",
+					"output_type": "none"
+				},
+				"machine": {
+					"rate_speed_base": 0
+				}
+			},
 			"minecraft:geometry": "geometry.utilitycraft_block_2",
 			"minecraft:material_instances": {
 				"*": {
@@ -37,8 +38,8 @@
 			},
 			"minecraft:tick": {
 				"interval_range": [
-					4,
-					4
+					20,
+					20
 				]
 			},
 			"minecraft:destructible_by_mining": {

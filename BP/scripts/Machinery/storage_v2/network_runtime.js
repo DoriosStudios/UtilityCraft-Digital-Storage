@@ -8,6 +8,7 @@ import {
   writeCellRecord,
   writeNetworkRecord,
 } from "./cell_store.js";
+import { syncNetworkDriveCellItems } from "./cell_item_sync.js";
 import { createItemFromKey } from "./item_registry.js";
 
 /**
@@ -694,6 +695,7 @@ export function flushNetwork(networkId) {
     }
   }
 
+  const savedCellsById = new Map();
   for (const cell of cellList) {
     const saved = writeCellRecord(cell.cellId, {
       networkId: runtime.networkId,
@@ -702,7 +704,10 @@ export function flushNetwork(networkId) {
       used: cell.used,
       items: toObject(cell.items),
     });
-    if (saved) cell.version = saved.version;
+    if (saved) {
+      cell.version = saved.version;
+      savedCellsById.set(saved.cellId, saved);
+    }
   }
 
   writeNetworkRecord(runtime.networkId, {
@@ -719,6 +724,8 @@ export function flushNetwork(networkId) {
     changeSeq: runtime.changeSeq,
     changes: runtime.changes,
   });
+
+  syncNetworkDriveCellItems(runtime, savedCellsById);
 
   runtime.dirty = false;
   return true;

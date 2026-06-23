@@ -1,5 +1,5 @@
 import { system, world } from "@minecraft/server";
-import { ensureCellId, isStorageCell, readCellRecord } from "./cell_store.js";
+import { isStorageCell, readCellRecord } from "./cell_store.js";
 import {
   addItem,
   createNetworkFromCellIds,
@@ -13,6 +13,13 @@ import {
   setNetworkOnline,
 } from "./network_runtime.js";
 import { createItemFromKey, getItemKey } from "./item_registry.js";
+import {
+  getDriveEntity,
+  getDriveKey,
+  readDriveCells,
+  setDriveNetworkId,
+  setStoredDriveSignature,
+} from "./drive_cells.js";
 
 /**
  * Temporary debug command surface for Storage V2.
@@ -38,7 +45,7 @@ function reply(event, message) {
  * their own usage messages.
  *
  * @param {string} message Raw script event message.
- * @returns {object} Parsed payload.
+ * @returns {object | object[]} Parsed payload.
  */
 function parseMessage(message) {
   if (!message || String(message).trim().length === 0) return {};
@@ -64,49 +71,88 @@ function getDimension(id = "overworld") {
 }
 
 /**
+ * Reads a block from command coordinates.
+ *
+ * @param {{dim?: string, x: number, y: number, z: number}} params Command params.
+ * @returns {import("@minecraft/server").Block | undefined}
+ */
+function getBlockAt(params) {
+  const dimension = getDimension(params.dim);
+  return dimension.getBlock({
+    x: Math.floor(Number(params.x) || 0),
+    y: Math.floor(Number(params.y) || 0),
+    z: Math.floor(Number(params.z) || 0),
+  });
+}
+
+/**
  * Reads a block inventory container from command coordinates.
  *
  * @param {{dim?: string, x: number, y: number, z: number}} params Command params.
  * @returns {import("@minecraft/server").Container | undefined}
  */
 function getContainerAt(params) {
-  const dimension = getDimension(params.dim);
-  const block = dimension.getBlock({
-    x: Math.floor(Number(params.x) || 0),
-    y: Math.floor(Number(params.y) || 0),
-    z: Math.floor(Number(params.z) || 0),
-  });
+  const block = getBlockAt(params);
   return block?.getComponent("inventory")?.container;
 }
 
 /**
- * Creates an online runtime network from storage cells found in a chest.
+ * Normalizes create-network drive coordinates from a debug payload.
+ *
+ * @param {object | object[]} params Parsed command params.
+ * @returns {object[]} Drive coordinate entries.
+ */
+function getDriveParams(params) {
+  const rootDim = !Array.isArray(params) && typeof params?.dim === "string" ? params.dim : undefined;
+  const drives = Array.isArray(params)
+    ? params
+    : Array.isArray(params?.drives)
+      ? params.drives
+      : Array.isArray(params?.coords)
+        ? params.coords
+        : [params];
+
+  return drives
+    .filter((entry) => entry && typeof entry === "object")
+    .map((entry) => ({
+      ...entry,
+      dim: entry.dim ?? rootDim ?? "overworld",
+    }));
+}
+
+/**
+ * Creates an online runtime network from storage cells found in one or more drives.
  *
  * This command simulates what a future network center will do after scanning
  * connected drives: collect cell ids, assign ownership, and build runtime state.
  */
-function createNetworkFromChest(event, params) {
-  const container = getContainerAt(params);
-  if (!container) {
-    reply(event, "No container found at target coords.");
+function createNetworkFromDrives(event, params) {
+  const driveParams = getDriveParams(params);
+  if (driveParams.length === 0) {
+    reply(event, "Usage: create_network_from_drives { drives:[{dim,x,y,z}, ...] }");
     return;
   }
 
   const cellIds = [];
   const ownedNetworkIds = new Set();
-  for (let slot = 0; slot < container.size; slot++) {
-    const item = container.getItem(slot);
-    if (!isStorageCell(item)) continue;
-    const cellId = ensureCellId(item);
-    if (!cellId) continue;
-    container.setItem(slot, item);
-    cellIds.push(cellId);
-    const record = readCellRecord(cellId);
-    if (record?.networkId) ownedNetworkIds.add(record.networkId);
+  const driveEntries = [];
+
+  for (const driveParam of driveParams) {
+    const block = getBlockAt(driveParam);
+    const entity = getDriveEntity(block);
+    if (!block || !entity) {
+      reply(event, `No storage cell drive found at ${driveParam.dim}:${driveParam.x},${driveParam.y},${driveParam.z}`);
+      return;
+    }
+
+    const snapshot = readDriveCells(entity);
+    for (const cellId of snapshot.cellIds) cellIds.push(cellId);
+    for (const networkId of snapshot.ownedNetworkIds) ownedNetworkIds.add(networkId);
+    driveEntries.push({ block, entity, signature: snapshot.signature });
   }
 
   if (cellIds.length === 0) {
-    reply(event, "No storage cells found in that container.");
+    reply(event, "No storage cells found in those drives.");
     return;
   }
 
@@ -116,19 +162,19 @@ function createNetworkFromChest(event, params) {
   }
 
   const existingNetworkId = [...ownedNetworkIds][0];
-  if (existingNetworkId) {
-    const runtime = reloadNetwork(existingNetworkId);
-    if (!runtime) {
-      reply(event, `network ${existingNetworkId} could not be loaded`);
-      return;
-    }
-    setNetworkOnline(existingNetworkId, true);
-    reply(event, `reused network ${existingNetworkId} with ${cellIds.length} cells, capacity ${runtime.capacity}, used ${runtime.used}`);
-    return;
+  const driveKeys = driveEntries.map(({ block }) => getDriveKey(block));
+  const runtime = createNetworkFromCellIds(cellIds, {
+    networkId: existingNetworkId,
+    online: true,
+    drives: driveKeys,
+  });
+
+  for (const { entity, signature } of driveEntries) {
+    setDriveNetworkId(entity, runtime.networkId);
+    setStoredDriveSignature(entity, signature);
   }
 
-  const runtime = createNetworkFromCellIds(cellIds, { online: true });
-  reply(event, `created network ${runtime.networkId} with ${cellIds.length} cells, capacity ${runtime.capacity}, used ${runtime.used}`);
+  reply(event, `created network ${runtime.networkId} from ${driveEntries.length} drive(s), ${cellIds.length} cells, capacity ${runtime.capacity}, used ${runtime.used}`);
 }
 
 /**
@@ -313,7 +359,7 @@ function printCell(event, params) {
  * Commands are namespaced as `ucds:*` and are documented in `README.md`.
  */
 const handlers = {
-  "ucds:create_network_from_chest": createNetworkFromChest,
+  "ucds:create_network_from_drives": createNetworkFromDrives,
   "ucds:add_item": addPlainItem,
   "ucds:remove_item": removePlainItem,
   "ucds:add_from_chest": addFromChest,

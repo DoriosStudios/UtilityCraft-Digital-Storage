@@ -163,18 +163,17 @@ export class StorageTerminalInterface {
       return;
     }
 
+    const terminalId = this.getTerminalId(entity);
+    const snapshot = getNetworkSnapshot(networkId);
+    if (!snapshot) {
+      this.handleMissingNetwork(entity, inv, networkId, terminalId, hasOpenUI);
+      return;
+    }
+
     this.processBurnSlots(entity, inv, networkId);
     if (!hasOpenUI) return;
 
-    const terminalId = this.getTerminalId(entity);
     const displayState = registerTerminalDisplay(networkId, terminalId);
-
-    const snapshot = getNetworkSnapshot(networkId);
-    if (!snapshot) {
-      unregisterTerminalDisplay(networkId, terminalId);
-      this.renderEmpty(entity, inv);
-      return;
-    }
 
     const pageCount = this.getPageCount(snapshot);
     const page = this.clampPage(entity, pageCount);
@@ -195,6 +194,36 @@ export class StorageTerminalInterface {
     }
 
     this.applyPendingItemUpdates(entity, inv, networkId, snapshot);
+  }
+
+  /**
+   * Unlinks a terminal whose persisted network no longer exists.
+   *
+   * Powering off a network deletes its runtime and persistent record, but
+   * terminal entities may still remember that old id. Clear that link so open
+   * terminals do not repeatedly try to render against a missing network.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @param {import("@minecraft/server").Container} inv Terminal inventory.
+   * @param {number} networkId Missing network id.
+   * @param {string} terminalId Runtime terminal id.
+   * @param {boolean} hasOpenUI Whether the UI is currently open.
+   */
+  handleMissingNetwork(entity, inv, networkId, terminalId, hasOpenUI) {
+    unregisterTerminalDisplay(networkId, terminalId);
+    entity.setDynamicProperty("ucds:network_id", undefined);
+
+    const lastNetwork = Math.floor(Number(entity.getDynamicProperty("ucds:terminal_last_network") || 0));
+    if (hasOpenUI && lastNetwork !== 0) {
+      this.renderEmpty(entity, inv);
+      return;
+    }
+
+    entity.setDynamicProperty("ucds:terminal_rendered_slots", "{}");
+    entity.setDynamicProperty("ucds:terminal_last_network", 0);
+    entity.setDynamicProperty("ucds:terminal_last_page", 0);
+    entity.setDynamicProperty("ucds:terminal_last_change_seq", -1);
+    entity.setDynamicProperty("ucds:terminal_force_render", false);
   }
 
   /**
