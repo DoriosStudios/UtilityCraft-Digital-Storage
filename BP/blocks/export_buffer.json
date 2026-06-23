@@ -8,6 +8,19 @@
 			}
 		},
 		"components": {
+			"utilitycraft:export_buffer": {
+				"entity": {
+					"id": "utilitycraft:export_buffer",
+					"type": "machine",
+					"skip_machine_event": false,
+					"skip_inventory_event": false,
+					"input_type": "none",
+					"output_type": "none"
+				},
+				"machine": {
+					"rate_speed_base": 0
+				}
+			},
 			"minecraft:geometry": "geometry.utilitycraft_block_2",
 			"minecraft:material_instances": {
 				"*": {
@@ -17,8 +30,8 @@
 			},
 			"minecraft:tick": {
 				"interval_range": [
-					20,
-					20
+					10,
+					10
 				]
 			},
 			"minecraft:destructible_by_mining": {
@@ -26,6 +39,7 @@
 			},
 			"minecraft:destructible_by_explosion": false,
 			"tag:dorios:machine": {},
+			"tag:dorios:item": {},
 			"tag:ucds:network": {},
 			"tag:ucds:network_machine": {},
 			"tag:minecraft:is_pickaxe_item_destructible": {}

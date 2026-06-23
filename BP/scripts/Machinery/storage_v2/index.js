@@ -6,6 +6,7 @@ import {
 } from "./network_runtime.js";
 import "./network_debug.js";
 import "./network_topology.js";
+import "./machines/export_buffer.js";
 import "./machines/import_buffer.js";
 import "./machines/storage_cell_drive.js";
 import "./machines/storage_center.js";

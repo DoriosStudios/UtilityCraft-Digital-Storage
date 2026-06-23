@@ -4,6 +4,7 @@ import { spawnEntity } from "DoriosCore/utils/entity.js";
 import { getDriveEntity, getDriveKey, readDriveCells, setDriveNetworkId, setStoredDriveSignature } from "../drive_cells.js";
 import { createNetworkFromCellIds, getNetwork, getNetworkSnapshot, powerOffNetwork } from "../network_runtime.js";
 import { NETWORK_TOPOLOGY_PROPERTY } from "../network_topology.js";
+import { getExportBufferEntity, setExportBufferNetworkId } from "./export_buffer.js";
 import { getImportBufferEntity, setImportBufferNetworkId } from "./import_buffer.js";
 import { storageTerminalInterface } from "./storage_terminal.js";
 
@@ -12,6 +13,7 @@ export const STORAGE_CENTER_ENTITY_TYPE = "utilitycraft:storage_center";
 const STORAGE_TERMINAL_ENTITY_TYPE = "utilitycraft:storage_terminal";
 const STORAGE_CELL_DRIVE_TYPE = "utilitycraft:storage_cell_drive";
 const IMPORT_BUFFER_TYPE = "utilitycraft:import_buffer";
+const EXPORT_BUFFER_TYPE = "utilitycraft:export_buffer";
 
 const CENTER_NETWORK_PROPERTY = "ucds:network_id";
 const CENTER_STATUS_PROPERTY = "ucds:center_status";
@@ -177,6 +179,7 @@ function powerOffCenterNetwork(entity, topology, networkId = getNetworkId(entity
 
   unlinkTopologyDrives(entity.dimension, topology);
   unlinkTopologyImportBuffers(entity.dimension, topology);
+  unlinkTopologyExportBuffers(entity.dimension, topology);
   const poweredOff = powerOffNetwork(networkId);
   setNetworkId(entity, 0);
   return poweredOff;
@@ -195,6 +198,14 @@ function unlinkTopologyImportBuffers(dimension, topology) {
     const block = getBlockAt(dimension, position);
     const bufferEntity = getImportBufferEntity(block);
     if (bufferEntity?.isValid) setImportBufferNetworkId(bufferEntity, 0);
+  }
+}
+
+function unlinkTopologyExportBuffers(dimension, topology) {
+  for (const position of getMachinePositions(topology, EXPORT_BUFFER_TYPE)) {
+    const block = getBlockAt(dimension, position);
+    const bufferEntity = getExportBufferEntity(block);
+    if (bufferEntity?.isValid) setExportBufferNetworkId(bufferEntity, 0);
   }
 }
 
@@ -248,6 +259,19 @@ function linkTopologyImportBuffers(dimension, topology, networkId) {
     if (!bufferEntity?.isValid) continue;
 
     setImportBufferNetworkId(bufferEntity, networkId);
+    linked += 1;
+  }
+  return linked;
+}
+
+function linkTopologyExportBuffers(dimension, topology, networkId) {
+  let linked = 0;
+  for (const position of getMachinePositions(topology, EXPORT_BUFFER_TYPE)) {
+    const block = getBlockAt(dimension, position);
+    const bufferEntity = getExportBufferEntity(block);
+    if (!bufferEntity?.isValid) continue;
+
+    setExportBufferNetworkId(bufferEntity, networkId);
     linked += 1;
   }
   return linked;
@@ -313,6 +337,7 @@ function initializeNetwork(entity, block, energy, topology) {
   system.run(() => {
     const linked = linkTopologyTerminals(block.dimension, topology, network.networkId);
     linkTopologyImportBuffers(block.dimension, topology, network.networkId);
+    linkTopologyExportBuffers(block.dimension, topology, network.networkId);
     setStatus(entity, `Online (${linked} terminals)`, { force: true });
   });
 }
