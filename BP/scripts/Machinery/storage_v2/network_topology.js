@@ -64,6 +64,18 @@ function getMachineEntityAt(block) {
     ?.find((entity) => entity.typeId === block.typeId);
 }
 
+function readExistingTopology(entity) {
+  const raw = entity?.getDynamicProperty?.(NETWORK_TOPOLOGY_PROPERTY);
+  if (typeof raw !== "string" || raw.length === 0) return undefined;
+
+  try {
+    const topology = JSON.parse(raw);
+    return topology && typeof topology === "object" ? topology : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function addMachineToTopology(topology, block) {
   const typeId = block.typeId;
   topology.machinesCount[typeId] = (topology.machinesCount[typeId] ?? 0) + 1;
@@ -149,6 +161,7 @@ export function scanNetworkTopology(startBlock) {
     version: TOPOLOGY_VERSION,
     dimensionId: startBlock.dimension.id,
     updatedTick: system.currentTick,
+    read: false,
     energyTickCost: 0,
     machinesCount: {},
     machinesPos: {},
@@ -186,14 +199,13 @@ export function scanNetworkTopology(startBlock) {
  *
  * @param {import("@minecraft/server").Dimension} dimension Network dimension.
  * @param {object | undefined} topology Topology snapshot.
+ * @param {{preserveRead?: boolean}} [options] Write behavior.
  * @returns {number} Number of centers written.
  */
-export function writeTopologyToCenters(dimension, topology) {
+export function writeTopologyToCenters(dimension, topology, { preserveRead = false } = {}) {
   const centerPositions = topology?.machinesPos?.[STORAGE_CENTER_TYPE] ?? [];
   if (!dimension || centerPositions.length === 0) return 0;
 
-  const serialized = JSON.stringify(topology);
-  console.warn(`[DSv2] network topology:\n${JSON.stringify(topology, null, 2)}`);
   let written = 0;
 
   for (const [x, y, z] of centerPositions) {
@@ -204,7 +216,11 @@ export function writeTopologyToCenters(dimension, topology) {
     if (!entity?.isValid) continue;
 
     try {
-      entity.setDynamicProperty(NETWORK_TOPOLOGY_PROPERTY, serialized);
+      const existing = preserveRead ? readExistingTopology(entity) : undefined;
+      const nextTopology = preserveRead && existing?.read === true
+        ? { ...topology, read: true }
+        : topology;
+      entity.setDynamicProperty(NETWORK_TOPOLOGY_PROPERTY, JSON.stringify(nextTopology));
       written += 1;
     } catch {}
   }
@@ -212,7 +228,7 @@ export function writeTopologyToCenters(dimension, topology) {
   return written;
 }
 
-function rebuildTopologyFromCandidates(block) {
+function rebuildTopologyFromCandidates(block, options = {}) {
   if (!block?.dimension) return;
 
   const positions = [
@@ -232,25 +248,29 @@ function rebuildTopologyFromCandidates(block) {
     if (scanned.has(signature)) continue;
     scanned.add(signature);
 
-    writeTopologyToCenters(block.dimension, topology);
+    writeTopologyToCenters(block.dimension, topology, options);
   }
 }
 
-function scheduleNetworkTopologyUpdate(block) {
+function scheduleNetworkTopologyUpdate(block, options = {}) {
   if (!block?.dimension) return;
 
   system.runTimeout(() => {
     updateNetworkCableVisualAround(block);
-    rebuildTopologyFromCandidates(block);
+    rebuildTopologyFromCandidates(block, options);
   }, 3);
 }
 
 world.afterEvents.playerPlaceBlock.subscribe(({ block }) => {
   if (!isNetworkBlock(block)) return;
-  scheduleNetworkTopologyUpdate(block);
+  scheduleNetworkTopologyUpdate(block, {
+    preserveRead: isNetworkCable(block),
+  });
 });
 
 world.afterEvents.playerBreakBlock.subscribe(({ block, brokenBlockPermutation }) => {
   if (brokenBlockPermutation?.hasTag?.(NETWORK_TAG) !== true) return;
-  scheduleNetworkTopologyUpdate(block);
+  scheduleNetworkTopologyUpdate(block, {
+    preserveRead: brokenBlockPermutation?.hasTag?.(NETWORK_CABLE_TAG) === true,
+  });
 });

@@ -1,3 +1,4 @@
+import { system } from "@minecraft/server";
 import {
   allocateNetworkId,
   deleteNetworkRecord,
@@ -21,7 +22,11 @@ import { createItemFromKey } from "./item_registry.js";
 
 const CHANGE_LIMIT = 64;
 const UI_ELEMENT_TAG = "utilitycraft:ui_element";
+const AUTO_FLUSH_INTERVAL_TICKS = 100;
+const AUTO_FLUSH_COOLDOWN_TICKS = 1200;
 const uiElementKeyCache = new Map();
+let autoFlushRunId;
+let autoFlushCursor = 0;
 
 function isUiElementKey(itemKey) {
   const key = String(itemKey ?? "");
@@ -236,6 +241,7 @@ function buildRuntime(networkRecord, cellRecords) {
     drives: new Set(networkRecord.drives ?? []),
     terminals: new Set(networkRecord.terminals ?? []),
     terminalDisplays: new Map(),
+    lastAutoFlushTick: system.currentTick,
   };
 }
 
@@ -325,6 +331,7 @@ export function* loadAllNetworksJob({ recordsPerTick = 8, onComplete } = {}) {
       drives: new Set(record.drives ?? []),
       terminals: new Set(record.terminals ?? []),
       terminalDisplays: new Map(),
+      lastAutoFlushTick: system.currentTick,
     };
 
     for (const cellId of record.cells) {
@@ -670,9 +677,10 @@ export function getSortedItems(networkId, sortMode = "count") {
  * is treated as one storage pool.
  *
  * @param {number} networkId Network id.
+ * @param {{syncDriveItems?: boolean}} [options] Flush options.
  * @returns {boolean} True when flushed.
  */
-export function flushNetwork(networkId) {
+export function flushNetwork(networkId, { syncDriveItems = true } = {}) {
   const runtime = getNetwork(networkId);
   if (!runtime) return false;
 
@@ -725,7 +733,13 @@ export function flushNetwork(networkId) {
     changes: runtime.changes,
   });
 
-  syncNetworkDriveCellItems(runtime, savedCellsById);
+  if (syncDriveItems) {
+    try {
+      syncNetworkDriveCellItems(runtime, savedCellsById);
+    } catch (error) {
+      console.warn(`[DSv2] skipped drive cell item sync for network ${runtime.networkId}: ${error?.message ?? error}`);
+    }
+  }
 
   runtime.dirty = false;
   return true;
@@ -794,14 +808,14 @@ export function powerOffAllNetworks() {
  *
  * Used on world shutdown. By default clean runtimes are skipped.
  *
- * @param {{onlyDirty?: boolean}} [options]
+ * @param {{onlyDirty?: boolean, syncDriveItems?: boolean}} [options]
  * @returns {number} Number of networks flushed.
  */
-export function flushAllNetworks({ onlyDirty = true } = {}) {
+export function flushAllNetworks({ onlyDirty = true, syncDriveItems = true } = {}) {
   let flushed = 0;
   for (const runtime of runtimeNetworks.values()) {
     if (onlyDirty && !runtime.dirty) continue;
-    if (flushNetwork(runtime.networkId)) flushed += 1;
+    if (flushNetwork(runtime.networkId, { syncDriveItems })) flushed += 1;
   }
   return flushed;
 }
@@ -817,4 +831,38 @@ export function flushAllNetworks({ onlyDirty = true } = {}) {
  */
 export function reloadNetwork(networkId) {
   return loadNetwork(networkId);
+}
+
+/**
+ * Starts the global staggered auto-flush loop.
+ *
+ * The loop checks one runtime network every 100 ticks. A dirty online network is
+ * flushed only when at least 1200 ticks have passed since its previous
+ * auto-flush, so several networks naturally spread their disk writes across
+ * different ticks.
+ *
+ * @returns {number | undefined} Run interval id.
+ */
+export function startNetworkAutoFlush() {
+  if (autoFlushRunId !== undefined) return autoFlushRunId;
+
+  autoFlushRunId = system.runInterval(() => {
+    const runtimes = [...runtimeNetworks.values()];
+    if (runtimes.length === 0) return;
+
+    const runtime = runtimes[autoFlushCursor % runtimes.length];
+    autoFlushCursor = (autoFlushCursor + 1) % Math.max(1, runtimes.length);
+
+    if (!runtime?.online || !runtime.dirty) return;
+
+    const lastFlushTick = Math.floor(Number(runtime.lastAutoFlushTick) || 0);
+    if (system.currentTick - lastFlushTick < AUTO_FLUSH_COOLDOWN_TICKS) return;
+
+    runtime.lastAutoFlushTick = system.currentTick;
+    if (flushNetwork(runtime.networkId)) {
+      console.warn(`[DSv2] auto-flushed network ${runtime.networkId}.`);
+    }
+  }, AUTO_FLUSH_INTERVAL_TICKS);
+
+  return autoFlushRunId;
 }

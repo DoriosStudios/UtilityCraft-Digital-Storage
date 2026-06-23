@@ -2,6 +2,8 @@ import { system, world } from "@minecraft/server";
 import { spawnEntity } from "DoriosCore/utils/entity.js";
 import { StorageTerminalInterface } from "../../interface/terminal.js";
 
+const TERMINAL_INPUT_RANGE = [0, 3];
+
 export const storageTerminalInterface = new StorageTerminalInterface({
   machineId: "storage_terminal",
   entityType: "utilitycraft:storage_terminal",
@@ -113,7 +115,7 @@ DoriosAPI.register.blockComponent("storage_terminal", {
         entity: {
           identifier: storageTerminalInterface.entityType,
           inventory_size: 178,
-          input_range: [0, 3],
+          input_range: TERMINAL_INPUT_RANGE,
           name: "storage_terminal",
         },
       });

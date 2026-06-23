@@ -61,6 +61,21 @@ function readTopology(entity) {
   }
 }
 
+function markTopologyRead(entity, topology) {
+  if (!entity?.isValid || !topology) return;
+
+  try {
+    entity.setDynamicProperty(NETWORK_TOPOLOGY_PROPERTY, JSON.stringify({
+      ...topology,
+      read: true,
+    }));
+  } catch {}
+}
+
+function topologyNeedsApply(topology) {
+  return topology?.read === false;
+}
+
 function getMachineCount(topology, typeId) {
   return Math.max(0, Math.floor(Number(topology?.machinesCount?.[typeId]) || 0));
 }
@@ -110,7 +125,7 @@ function writeStatusDisplay(entity, status, topology, snapshot, { force = false 
     `\u00A7r\u00A7bStorage Network`,
     `\u00A7r\u00A77  Status: \u00A7f${status}`,
     `\u00A7r\u00A77  Stored: \u00A7f${formatAmount(snapshot?.used ?? 0)} / ${formatAmount(snapshot?.capacity ?? 0)}`,
-    `\u00A7r\u00A77  Usage: \u00A7f${formatPercent(snapshot?.used ?? 0, snapshot?.capacity ?? 0)}`,
+    `\u00A7r\u00A77  Usage: \u00A7f${formatPercent(snapshot?.used ?? 0, snapshot?.capacity ?? 0)}%%`,
     `\u00A7r\u00A77  Cells: \u00A7f${snapshot?.cells?.length ?? 0}`,
     `\u00A7r\u00A77  Drives: \u00A7f${getMachineCount(topology, STORAGE_CELL_DRIVE_TYPE)}`,
     `\u00A7r\u00A77  Cost: \u00A7f${EnergyStorage.formatEnergyToText(cost)}/t`,
@@ -265,6 +280,7 @@ function initializeNetwork(entity, block, energy, topology) {
   }
 
   setNetworkId(entity, network.networkId);
+  markTopologyRead(entity, topology);
   for (const drive of driveEntities) {
     setDriveNetworkId(drive.entity, network.networkId);
     setStoredDriveSignature(drive.entity, drive.signature);
@@ -293,6 +309,13 @@ function tickCenter(entity, block) {
   const networkId = getNetworkId(entity);
   if (!networkId) {
     initializeNetwork(entity, block, energy, topology);
+    return;
+  }
+
+  if (topologyNeedsApply(topology)) {
+    setStatus(entity, "Topology Changed", { warn: true, force: true });
+    writeStatusDisplay(entity, "Topology Changed", topology, undefined, { force: true });
+    powerOffCenterNetwork(entity, topology, networkId);
     return;
   }
 

@@ -2,6 +2,7 @@ import { system, world } from "@minecraft/server";
 import {
   flushAllNetworks,
   loadAllNetworksJob,
+  startNetworkAutoFlush,
 } from "./network_runtime.js";
 import "./network_debug.js";
 import "./network_topology.js";
@@ -19,6 +20,7 @@ import "./machines/storage_terminal.js";
 
 world.afterEvents.worldLoad.subscribe(() => {
   console.warn("[DSv2] queued incremental storage network load.");
+  startNetworkAutoFlush();
   system.runJob(loadAllNetworksJob({
     recordsPerTick: 8,
     onComplete: ({ loaded, total, cells }) => {
@@ -28,6 +30,6 @@ world.afterEvents.worldLoad.subscribe(() => {
 });
 
 system.beforeEvents.shutdown.subscribe(() => {
-  const flushed = flushAllNetworks({ onlyDirty: true });
+  const flushed = flushAllNetworks({ onlyDirty: true, syncDriveItems: false });
   console.warn(`[DSv2] flushed ${flushed} dirty storage network runtime(s).`);
 });
