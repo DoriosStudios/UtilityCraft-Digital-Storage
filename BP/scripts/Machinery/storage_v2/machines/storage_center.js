@@ -6,14 +6,20 @@ import { createNetworkFromCellIds, getNetwork, getNetworkSnapshot, powerOffNetwo
 import { NETWORK_TOPOLOGY_PROPERTY } from "../network_topology.js";
 import { getExportBufferEntity, setExportBufferNetworkId } from "./export_buffer.js";
 import { getImportBufferEntity, setImportBufferNetworkId } from "./import_buffer.js";
+import { CraftingTerminalInterface } from "../../interface/crafting_terminal.js";
 import { StorageTerminalInterface } from "../../interface/terminal.js";
 
 export const STORAGE_CENTER_ENTITY_TYPE = "utilitycraft:storage_center";
 
 const STORAGE_TERMINAL_ENTITY_TYPE = "utilitycraft:storage_terminal";
+const CRAFTING_TERMINAL_ENTITY_TYPE = "utilitycraft:crafting_terminal";
 const STORAGE_CELL_DRIVE_TYPE = "utilitycraft:storage_cell_drive";
 const IMPORT_BUFFER_TYPE = "utilitycraft:import_buffer";
 const EXPORT_BUFFER_TYPE = "utilitycraft:export_buffer";
+const TERMINAL_TYPES = [
+  { typeId: STORAGE_TERMINAL_ENTITY_TYPE, TerminalClass: StorageTerminalInterface },
+  { typeId: CRAFTING_TERMINAL_ENTITY_TYPE, TerminalClass: CraftingTerminalInterface },
+];
 
 const CENTER_NETWORK_PROPERTY = "ucds:network_id";
 const CENTER_STATUS_PROPERTY = "ucds:center_status";
@@ -237,17 +243,21 @@ function collectDriveCells(dimension, topology) {
 
 function buildTerminalKeys(topology) {
   const dimensionId = topology?.dimensionId ?? "minecraft:overworld";
-  return getMachinePositions(topology, STORAGE_TERMINAL_ENTITY_TYPE).map((position) => getPositionKey(dimensionId, position));
+  return TERMINAL_TYPES.flatMap(({ typeId }) =>
+    getMachinePositions(topology, typeId).map((position) => getPositionKey(dimensionId, position)),
+  );
 }
 
 function linkTopologyTerminals(dimension, topology, networkId) {
   let linked = 0;
-  for (const position of getMachinePositions(topology, STORAGE_TERMINAL_ENTITY_TYPE)) {
-    const block = getBlockAt(dimension, position);
-    const terminal = new StorageTerminalInterface(block);
-    if (!terminal.valid) continue;
+  for (const { typeId, TerminalClass } of TERMINAL_TYPES) {
+    for (const position of getMachinePositions(topology, typeId)) {
+      const block = getBlockAt(dimension, position);
+      const terminal = new TerminalClass(block);
+      if (!terminal.valid) continue;
 
-    if (terminal.linkNetwork(networkId)) linked += 1;
+      if (terminal.linkNetwork(networkId)) linked += 1;
+    }
   }
   return linked;
 }

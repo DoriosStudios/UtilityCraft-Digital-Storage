@@ -124,18 +124,9 @@
     "$output_index|default": 9,
     "$quantity_index|default": 10,
     "$remove_index|default": 11,
-    "$blueprint_index|default": 12,
-    "$mode_index|default": 13,
-    "$craft_index|default": 14,
+    "$mode_index|default": 12,
+    "$craft_index|default": 13,
     "controls": [
-      {
-        "blueprint_slot@sh.small_slot": {
-          "anchor_from": "top_left",
-          "anchor_to": "top_left",
-          "offset": [ 75, 600 ],
-          "collection_index": "$blueprint_index"
-        }
-      },
       {
         "3x3_grid@sh.3x3_grid": {
           "anchor_from": "top_middle",

@@ -36,10 +36,12 @@ const UI_OPEN_STATE = "utilitycraft:ui_open";
 export const STORAGE_TERMINAL_CONFIG = {
   machineId: TERMINAL_MACHINE_ID,
   entityType: TERMINAL_ENTITY_TYPE,
+  entityName: "storage_terminal",
   inventorySize: 178,
   inputRange: [BURN_SLOTS[0], BURN_SLOTS[BURN_SLOTS.length - 1]],
   slots: {
     burn: BURN_SLOTS,
+    controls: CONTROL_SLOTS,
     gridStart: GRID_START,
     gridEnd: GRID_END,
     gridSize: GRID_SIZE,
@@ -60,6 +62,10 @@ export const STORAGE_TERMINAL_CONFIG = {
  * block/entity lifecycle wiring and feature-specific extensions.
  */
 export class StorageTerminalInterface {
+  static get config() {
+    return STORAGE_TERMINAL_CONFIG;
+  }
+
   /**
    * Creates a lightweight terminal runtime wrapper.
    *
@@ -68,7 +74,7 @@ export class StorageTerminalInterface {
   constructor(block) {
     this.valid = false;
     this.block = block;
-    this.entity = StorageTerminalInterface.getEntity(block);
+    this.entity = this.constructor.getEntity(block);
     if (!this.entity?.isValid) return;
     this.shouldUpdateUI = TickScheduler.hasOpenUI(this.entity);
     this.shouldProcess = this.shouldUpdateUI || TickScheduler.shouldProcessMachine(this.entity);
@@ -85,10 +91,13 @@ export class StorageTerminalInterface {
    * Registers button callbacks for the control slots owned by this interface.
    */
   static registerButtons() {
-    ButtonManager.registerMachineButton(TERMINAL_MACHINE_ID, CONTROL_SLOTS, ({ entity, slot }) => {
-      const block = StorageTerminalInterface.getBlock(entity);
+    const TerminalClass = this;
+    const config = TerminalClass.config;
+
+    ButtonManager.registerMachineButton(config.machineId, config.slots.controls, ({ entity, slot }) => {
+      const block = TerminalClass.getBlock(entity);
       if (!block) return undefined;
-      return new StorageTerminalInterface(block).handleControlPress(slot);
+      return new TerminalClass(block).handleControlPress(slot);
     });
   }
 
@@ -99,7 +108,8 @@ export class StorageTerminalInterface {
    * @returns {import("@minecraft/server").Entity|undefined} Terminal entity.
    */
   static getEntity(block) {
-    return block?.dimension?.getEntitiesAtBlockLocation(block.location)?.find((entity) => entity.typeId === TERMINAL_ENTITY_TYPE);
+    const entityType = this.config.entityType;
+    return block?.dimension?.getEntitiesAtBlockLocation(block.location)?.find((entity) => entity.typeId === entityType);
   }
 
   /**
@@ -124,16 +134,19 @@ export class StorageTerminalInterface {
    * @param {import("@minecraft/server").Block} block Terminal block.
    */
   static place(block) {
+    const TerminalClass = this;
+    const config = TerminalClass.config;
+
     system.run(() => {
       spawnEntity(block, {
         entity: {
-          identifier: STORAGE_TERMINAL_CONFIG.entityType,
-          inventory_size: STORAGE_TERMINAL_CONFIG.inventorySize,
-          input_range: STORAGE_TERMINAL_CONFIG.inputRange,
-          name: "storage_terminal",
+          identifier: config.entityType,
+          inventory_size: config.inventorySize,
+          input_range: config.inputRange,
+          name: config.entityName,
         },
       });
-      new StorageTerminalInterface(block).setup();
+      new TerminalClass(block).setup();
     });
   }
 
@@ -143,7 +156,7 @@ export class StorageTerminalInterface {
    * @param {import("@minecraft/server").Block} block Terminal block.
    */
   static destroyBlock(block) {
-    const terminal = new StorageTerminalInterface(block);
+    const terminal = new this(block);
     if (!terminal.valid) return;
 
     terminal.destroy();
@@ -281,7 +294,7 @@ export class StorageTerminalInterface {
     const inv = this.container;
     if (!inv) return;
 
-    ButtonManager.ensureWatching(entity, TERMINAL_MACHINE_ID);
+    ButtonManager.ensureWatching(entity, this.constructor.config.machineId);
     this.restorePendingUiSlots(entity, inv);
 
     this.networkId = this.getLinkedNetworkId(entity);
