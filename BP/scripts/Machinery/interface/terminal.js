@@ -1,7 +1,12 @@
 import { ItemStack, system, world } from "@minecraft/server";
 import { ButtonManager, TickScheduler } from "DoriosCore/index.js";
 import { spawnEntity } from "DoriosCore/utils/entity.js";
-import { attachOutputToken, attachUiSlotToken, consumeUiSlotRestores, materializeOutputItem } from "./terminal_output.js";
+import {
+  attachOutputToken,
+  attachUiSlotToken,
+  consumeUiSlotRestores,
+  materializeOutputItem,
+} from "./terminal_output.js";
 import { createItemFromKey, getItemKey } from "../storage_v2/item_registry.js";
 import {
   addItem,
@@ -791,6 +796,7 @@ export class StorageTerminalInterface {
     return attachOutputToken(item, {
       terminalId: this.getTerminalId(outputContext.entity),
       networkId: outputContext.networkId,
+      entity: outputContext.entity,
       slot: outputContext.slot,
       itemKey,
       amount,

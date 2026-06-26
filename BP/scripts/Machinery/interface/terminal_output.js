@@ -1,6 +1,6 @@
 import { system, world } from "@minecraft/server";
-import { createItemFromKey } from "../storage_v2/item_registry.js";
-import { removeItem } from "../storage_v2/network_runtime.js";
+import { createItemFromKey, getItemKey } from "../storage_v2/item_registry.js";
+import { addItem, removeItem } from "../storage_v2/network_runtime.js";
 
 /**
  * Runtime output-token resolver for storage terminals.
@@ -193,15 +193,50 @@ function reserveClaimAmount(claim, requestedAmount) {
   if (requested <= 0) return 0;
 
   const outstanding = Math.max(0, claim.reserved - claim.delivered);
-  if (outstanding >= requested) return requested;
+  if (outstanding >= requested) {
+    return requested;
+  }
 
   const needed = requested - outstanding;
   const result = removeItem(claim.networkId, claim.itemKey, needed, "terminal_output");
   const removed = Math.max(0, Math.floor(Number(result.removed) || 0));
   claim.reserved += removed;
   claim.updatedTick = system.currentTick;
+  if (removed > 0) rescueSwappedTerminalSlotItem(claim);
 
   return Math.min(requested, outstanding + removed);
+}
+
+/**
+ * Adds any item swapped into the source terminal slot back to the network.
+ *
+ * This runs only at the moment an output claim actually removes items from the
+ * network. It deliberately does not clear or re-render the slot; the normal
+ * terminal renderer owns that.
+ *
+ * @param {object} claim Runtime output claim.
+ */
+function rescueSwappedTerminalSlotItem(claim) {
+  const entity = claim?.entity;
+  const slot = Math.max(0, Math.floor(Number(claim?.slot) || 0));
+  const networkId = Math.floor(Number(claim?.networkId) || 0);
+  if (!entity?.isValid || !networkId) return;
+
+  const container = entity.getComponent("minecraft:inventory")?.container;
+  const item = container?.getItem(slot);
+  if (!item || isUiElementItem(item)) return;
+
+  const outputToken = readOutputToken(item);
+  if (outputToken?.terminalId === claim.terminalId && outputToken.claimId === claim.claimId) return;
+
+  const materialized = materializeOutputItem(item);
+  const rescuedItem = materialized.item ?? (!materialized.handled ? item : undefined);
+  if (!rescuedItem) return;
+
+  const itemKey = getItemKey(rescuedItem);
+  if (!itemKey) return;
+
+  addItem(networkId, itemKey, rescuedItem.amount, "terminal_swap_rescue");
 }
 
 /**
@@ -254,6 +289,7 @@ export function attachOutputToken(item, context) {
     claimId,
     terminalId: String(context.terminalId),
     networkId: Math.floor(Number(context.networkId) || 0),
+    entity: context.entity,
     slot: Math.max(0, Math.floor(Number(context.slot) || 0)),
     itemKey: String(context.itemKey ?? ""),
     displayAmount: Math.max(1, Math.floor(Number(context.amount) || 1)),
@@ -416,8 +452,12 @@ export function materializeOutputItem(item) {
 function resolveInventoryItem(player, slot, item) {
   if (isUiElementItem(item)) {
     const outputToken = readOutputToken(item);
-    if (outputToken) materializeOutputItem(item);
-    else queueUiSlotRestore(readUiSlotToken(item));
+    if (outputToken) {
+      materializeOutputItem(item);
+    } else {
+      const uiToken = readUiSlotToken(item);
+      queueUiSlotRestore(uiToken);
+    }
 
     const inventory = player.getComponent("minecraft:inventory")?.container;
     if (inventory && slot >= 0 && slot < inventory.size) {
@@ -456,8 +496,12 @@ function resolveDroppedItemEntity(entity) {
 
   if (isUiElementItem(item)) {
     const outputToken = readOutputToken(item);
-    if (outputToken) materializeOutputItem(item);
-    else queueUiSlotRestore(readUiSlotToken(item));
+    if (outputToken) {
+      materializeOutputItem(item);
+    } else {
+      const uiToken = readUiSlotToken(item);
+      queueUiSlotRestore(uiToken);
+    }
     try {
       if (entity.isValid) entity.remove();
     } catch {}
@@ -492,8 +536,12 @@ function cleanupPlayerInventoryUiElements(player) {
     if (!isUiElementItem(item)) continue;
 
     const outputToken = readOutputToken(item);
-    if (outputToken) materializeOutputItem(item);
-    else queueUiSlotRestore(readUiSlotToken(item));
+    if (outputToken) {
+      materializeOutputItem(item);
+    } else {
+      const uiToken = readUiSlotToken(item);
+      queueUiSlotRestore(uiToken);
+    }
     inventory.setItem(slot, undefined);
   }
 }
@@ -518,8 +566,12 @@ function watchPlayerCursors() {
 
     if (isUiElementItem(cursorItem)) {
       const outputToken = readOutputToken(cursorItem);
-      if (outputToken) materializeOutputItem(cursorItem);
-      else queueUiSlotRestore(readUiSlotToken(cursorItem));
+      if (outputToken) {
+        materializeOutputItem(cursorItem);
+      } else {
+        const uiToken = readUiSlotToken(cursorItem);
+        queueUiSlotRestore(uiToken);
+      }
       try {
         player.getComponent("minecraft:cursor_inventory")?.clear();
       } catch {}
