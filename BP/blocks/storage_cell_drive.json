@@ -29,10 +29,14 @@
 					"rate_speed_base": 0
 				}
 			},
-			"minecraft:geometry": "geometry.utilitycraft_block_2",
+			"minecraft:geometry": "minecraft:geometry.full_block",
 			"minecraft:material_instances": {
 				"*": {
-					"texture": "utilitycraft_storage_cell_drive",
+					"texture": "utilitycraft_storage_port",
+					"render_method": "alpha_test"
+				},
+				"north": {
+					"texture": "utilitycraft_storage_cell_drive_front",
 					"render_method": "alpha_test"
 				}
 			},

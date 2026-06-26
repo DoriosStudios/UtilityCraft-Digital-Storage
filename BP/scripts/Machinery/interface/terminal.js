@@ -1,11 +1,7 @@
-import { ItemStack } from "@minecraft/server";
+import { ItemStack, system, world } from "@minecraft/server";
 import { ButtonManager, TickScheduler } from "DoriosCore/index.js";
-import {
-  attachOutputToken,
-  attachUiSlotToken,
-  consumeUiSlotRestores,
-  materializeOutputItem,
-} from "./terminal_output.js";
+import { spawnEntity } from "DoriosCore/utils/entity.js";
+import { attachOutputToken, attachUiSlotToken, consumeUiSlotRestores, materializeOutputItem } from "./terminal_output.js";
 import { createItemFromKey, getItemKey } from "../storage_v2/item_registry.js";
 import {
   addItem,
@@ -20,6 +16,41 @@ import {
 const DEFAULT_FILLER_ID = "utilitycraft:storage_filler";
 const DEFAULT_BUTTON_ID = "utilitycraft:ui_filler";
 const UI_ELEMENT_TAG = "utilitycraft:ui_element";
+const TERMINAL_MACHINE_ID = "storage_terminal";
+const TERMINAL_ENTITY_TYPE = "utilitycraft:storage_terminal";
+const BURN_SLOTS = [0, 1, 2, 3];
+const GRID_START = 4;
+const GRID_COLUMNS = 9;
+const GRID_ROWS = 18;
+const GRID_SIZE = GRID_COLUMNS * GRID_ROWS;
+const GRID_END = GRID_START + GRID_SIZE - 1;
+const RELOAD_SLOT = 166;
+const PREVIOUS_SLOT = 167;
+const NEXT_SLOT = 168;
+const CONTROL_SLOTS = [RELOAD_SLOT, PREVIOUS_SLOT, NEXT_SLOT];
+const COUNT_LABEL_BASE_SLOT = 169;
+const COUNT_LABEL_COLUMNS = GRID_COLUMNS;
+const COUNT_LABEL_ROWS = GRID_ROWS;
+const UI_OPEN_STATE = "utilitycraft:ui_open";
+
+export const STORAGE_TERMINAL_CONFIG = {
+  machineId: TERMINAL_MACHINE_ID,
+  entityType: TERMINAL_ENTITY_TYPE,
+  inventorySize: 178,
+  inputRange: [BURN_SLOTS[0], BURN_SLOTS[BURN_SLOTS.length - 1]],
+  slots: {
+    burn: BURN_SLOTS,
+    gridStart: GRID_START,
+    gridEnd: GRID_END,
+    gridSize: GRID_SIZE,
+    reload: RELOAD_SLOT,
+    previous: PREVIOUS_SLOT,
+    next: NEXT_SLOT,
+    countLabelBase: COUNT_LABEL_BASE_SLOT,
+    countLabelColumns: COUNT_LABEL_COLUMNS,
+    countLabelRows: COUNT_LABEL_ROWS,
+  },
+};
 
 /**
  * Shared terminal UI renderer for Digital Storage interfaces.
@@ -30,52 +61,153 @@ const UI_ELEMENT_TAG = "utilitycraft:ui_element";
  */
 export class StorageTerminalInterface {
   /**
-   * Creates one reusable terminal UI controller.
+   * Creates a lightweight terminal runtime wrapper.
    *
-   * @param {object} [config] Slot layout and item id overrides.
+   * @param {import("@minecraft/server").Block} block Terminal block.
    */
-  constructor(config = {}) {
-    this.machineId = config.machineId ?? "storage_terminal";
-    this.entityType = config.entityType ?? "utilitycraft:storage_terminal";
-
-    this.burnSlots = config.burnSlots ?? [0, 1, 2, 3];
-    this.visibleBurnSlot = config.visibleBurnSlot ?? this.burnSlots[0];
-
-    this.gridStart = config.gridStart ?? 4;
-    this.gridColumns = config.gridColumns ?? 9;
-    this.gridRows = config.gridRows ?? 18;
-    this.gridSize = this.gridColumns * this.gridRows;
-    this.gridEnd = this.gridStart + this.gridSize - 1;
-
-    this.reloadSlot = config.reloadSlot ?? 166;
-    this.previousSlot = config.previousSlot ?? 167;
-    this.nextSlot = config.nextSlot ?? 168;
-    this.controlSlots = [this.reloadSlot, this.previousSlot, this.nextSlot];
-
-    this.countLabelBaseSlot = config.countLabelBaseSlot ?? 169;
-    this.countLabelColumns = config.countLabelColumns ?? this.gridColumns;
-    this.countLabelRows = config.countLabelRows ?? this.gridRows;
-
-    this.fillerId = config.fillerId ?? DEFAULT_FILLER_ID;
-    this.buttonId = config.buttonId ?? DEFAULT_BUTTON_ID;
-    this.uiOpenState = config.uiOpenState ?? "utilitycraft:ui_open";
+  constructor(block) {
+    this.valid = false;
+    this.block = block;
+    this.entity = StorageTerminalInterface.getEntity(block);
+    if (!this.entity?.isValid) return;
+    this.shouldUpdateUI = TickScheduler.hasOpenUI(this.entity);
+    this.shouldProcess = this.shouldUpdateUI || TickScheduler.shouldProcessMachine(this.entity);
+    this.dimension = block.dimension;
+    const inventory = this.entity.getComponent("minecraft:inventory");
+    if (!inventory) return;
+    this.container = inventory.container;
+    this.processingInterval = TickScheduler.getProcessingInterval(this.entity);
+    this.networkId = this.getLinkedNetworkId(this.entity);
+    this.valid = true;
   }
 
   /**
    * Registers button callbacks for the control slots owned by this interface.
    */
-  registerButtons() {
-    ButtonManager.registerMachineButton(this.machineId, this.controlSlots, ({ entity, slot }) => {
-      return this.handleControlPress(entity, slot);
+  static registerButtons() {
+    ButtonManager.registerMachineButton(TERMINAL_MACHINE_ID, CONTROL_SLOTS, ({ entity, slot }) => {
+      const block = StorageTerminalInterface.getBlock(entity);
+      if (!block) return undefined;
+      return new StorageTerminalInterface(block).handleControlPress(slot);
     });
   }
 
   /**
-   * Initializes a freshly spawned terminal entity inventory and render state.
+   * Finds the terminal backing entity sitting on a terminal block.
+   *
+   * @param {import("@minecraft/server").Block} block Terminal block.
+   * @returns {import("@minecraft/server").Entity|undefined} Terminal entity.
+   */
+  static getEntity(block) {
+    return block?.dimension?.getEntitiesAtBlockLocation(block.location)?.find((entity) => entity.typeId === TERMINAL_ENTITY_TYPE);
+  }
+
+  /**
+   * Resolves the terminal block represented by a helper entity.
    *
    * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @returns {import("@minecraft/server").Block|undefined} Terminal block.
    */
-  setupEntity(entity) {
+  static getBlock(entity) {
+    if (!entity?.dimension || !entity.location) return undefined;
+
+    return entity.dimension.getBlock({
+      x: Math.floor(entity.location.x),
+      y: Math.floor(entity.location.y),
+      z: Math.floor(entity.location.z),
+    });
+  }
+
+  /**
+   * Spawns and initializes the helper entity for a placed terminal block.
+   *
+   * @param {import("@minecraft/server").Block} block Terminal block.
+   */
+  static place(block) {
+    system.run(() => {
+      spawnEntity(block, {
+        entity: {
+          identifier: STORAGE_TERMINAL_CONFIG.entityType,
+          inventory_size: STORAGE_TERMINAL_CONFIG.inventorySize,
+          input_range: STORAGE_TERMINAL_CONFIG.inputRange,
+          name: "storage_terminal",
+        },
+      });
+      new StorageTerminalInterface(block).setup();
+    });
+  }
+
+  /**
+   * Destroys the helper entity associated with a broken terminal block.
+   *
+   * @param {import("@minecraft/server").Block} block Terminal block.
+   */
+  static destroyBlock(block) {
+    const terminal = new StorageTerminalInterface(block);
+    if (!terminal.valid) return;
+
+    terminal.destroy();
+    const entity = terminal.entity;
+    const inv = terminal.container;
+    inv?.clearAll();
+    entity.triggerEvent("despawn");
+  }
+
+  /**
+   * Registers debug script events owned by the terminal interface.
+   */
+  static registerScriptEvents() {
+    system.afterEvents.scriptEventReceive.subscribe(
+      (event) => {
+        if (event.id !== "ucds:link_terminal") return;
+
+        try {
+          StorageTerminalInterface.linkTerminalFromEvent(event, parseMessage(event.message));
+        } catch (error) {
+          reply(event, `link_terminal failed: ${error?.message ?? error}`);
+        }
+      },
+      { namespaces: ["ucds"] },
+    );
+  }
+
+  /**
+   * Debug helper that links a terminal entity at coordinates to a network id.
+   *
+   * @param {import("@minecraft/server").ScriptEventCommandMessageAfterEvent} event Script event.
+   * @param {object} params Parsed payload.
+   */
+  static linkTerminalFromEvent(event, params) {
+    const networkId = Math.floor(Number(params.networkId ?? params.id) || 0);
+    const dimension = getDimension(params.dim);
+    const location = {
+      x: Math.floor(Number(params.x) || 0),
+      y: Math.floor(Number(params.y) || 0),
+      z: Math.floor(Number(params.z) || 0),
+    };
+    const block = dimension.getBlock(location);
+
+    if (!networkId) {
+      reply(event, "Usage: link_terminal { networkId, dim, x, y, z }");
+      return;
+    }
+
+    const terminal = new StorageTerminalInterface(block);
+    if (!terminal.valid) {
+      reply(event, "No storage terminal entity found at target coords.");
+      return;
+    }
+
+    terminal.linkNetwork(networkId);
+    terminal.tick();
+    reply(event, `linked storage terminal at ${location.x},${location.y},${location.z} to network ${networkId}`);
+  }
+
+  /**
+   * Initializes a freshly spawned terminal entity inventory and render state.
+   */
+  setup() {
+    const entity = this.entity;
     if (!entity?.isValid) return;
 
     entity.setDynamicProperty("ucds:terminal_page", 0);
@@ -84,7 +216,7 @@ export class StorageTerminalInterface {
     entity.setDynamicProperty("ucds:terminal_last_change_seq", -1);
     entity.setDynamicProperty("ucds:terminal_force_render", true);
 
-    const inv = this.getInventory(entity);
+    const inv = this.container;
     if (!inv) return;
 
     this.clearBurnSlots(inv);
@@ -96,11 +228,11 @@ export class StorageTerminalInterface {
   /**
    * Links a terminal entity to an already-loaded storage network.
    *
-   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
    * @param {number|string} networkId Network id to link.
    * @returns {boolean} True when the link was accepted.
    */
-  linkNetwork(entity, networkId) {
+  linkNetwork(networkId) {
+    const entity = this.entity;
     if (!entity?.isValid) return false;
 
     const id = Math.floor(Number(networkId) || 0);
@@ -112,6 +244,7 @@ export class StorageTerminalInterface {
     }
 
     entity.setDynamicProperty("ucds:network_id", id);
+    this.networkId = id;
     entity.setDynamicProperty("ucds:terminal_page", 0);
     entity.setDynamicProperty("ucds:terminal_force_render", true);
     registerTerminalDisplay(id, this.getTerminalId(entity));
@@ -120,14 +253,12 @@ export class StorageTerminalInterface {
 
   /**
    * Unregisters runtime display state before the backing entity is removed.
-   *
-   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
    */
-  destroyEntity(entity) {
+  destroy() {
+    const entity = this.entity;
     if (!entity?.isValid) return;
 
-    const networkId = this.getLinkedNetworkId(entity)
-      || Math.floor(Number(entity.getDynamicProperty("ucds:terminal_last_network") || 0));
+    const networkId = this.getLinkedNetworkId(entity) || Math.floor(Number(entity.getDynamicProperty("ucds:terminal_last_network") || 0));
     if (networkId) unregisterTerminalDisplay(networkId, this.getTerminalId(entity));
   }
 
@@ -136,24 +267,25 @@ export class StorageTerminalInterface {
    *
    * Closed terminals only process non-UI work. Open terminals render pages,
    * apply network display updates, and keep the visible grid synchronized.
-   *
-   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
-   * @param {import("@minecraft/server").Block} [block] Terminal block.
    */
-  tick(entity, block) {
-    if (!entity?.isValid) return;
+  tick() {
+    if (!this.valid) return;
 
-    const hasOpenUI = TickScheduler.hasOpenUI(entity);
+    const entity = this.entity;
+    const block = this.block;
+
+    const hasOpenUI = this.shouldUpdateUI;
     this.syncOpenTickState(block, hasOpenUI);
-    if (!hasOpenUI && !TickScheduler.shouldProcessMachine(entity)) return;
+    if (!this.shouldProcess) return;
 
-    const inv = this.getInventory(entity);
+    const inv = this.container;
     if (!inv) return;
 
-    ButtonManager.ensureWatching(entity, this.machineId);
+    ButtonManager.ensureWatching(entity, TERMINAL_MACHINE_ID);
     this.restorePendingUiSlots(entity, inv);
 
-    const networkId = this.getLinkedNetworkId(entity);
+    this.networkId = this.getLinkedNetworkId(entity);
+    const networkId = this.networkId;
     if (!networkId) {
       if (hasOpenUI && entity.getDynamicProperty("ucds:terminal_last_network") !== 0) {
         const lastNetwork = Math.floor(Number(entity.getDynamicProperty("ucds:terminal_last_network") || 0));
@@ -184,12 +316,7 @@ export class StorageTerminalInterface {
     const displayMapped = this.ensureTerminalDisplayMapped(entity, inv, networkId, page, displayState, snapshot);
     const needsDisplayRender = !displayMapped && hasStoredItems;
 
-    if (
-      forceRender ||
-      lastNetwork !== networkId ||
-      lastPage !== page ||
-      needsDisplayRender
-    ) {
+    if (forceRender || lastNetwork !== networkId || lastPage !== page || needsDisplayRender) {
       this.renderPage(entity, inv, snapshot, page, pageCount);
     }
 
@@ -234,13 +361,13 @@ export class StorageTerminalInterface {
    * @param {boolean} hasOpenUI Whether a player currently has this UI open.
    */
   syncOpenTickState(block, hasOpenUI) {
-    if (!this.uiOpenState || !block?.permutation) return;
+    if (!block?.permutation) return;
 
-    const isOpen = block.permutation.getState(this.uiOpenState) === true;
+    const isOpen = block.permutation.getState(UI_OPEN_STATE) === true;
     if (isOpen === hasOpenUI) return;
 
     try {
-      block.setPermutation(block.permutation.withState(this.uiOpenState, hasOpenUI));
+      block.setPermutation(block.permutation.withState(UI_OPEN_STATE, hasOpenUI));
     } catch {}
   }
 
@@ -251,20 +378,22 @@ export class StorageTerminalInterface {
    * @param {number} slot Pressed container slot.
    * @returns {string|undefined} Button display name for feedback.
    */
-  handleControlPress(entity, slot) {
+  handleControlPress(slot) {
+    const entity = this.entity;
     if (!entity?.isValid) return undefined;
 
-    const networkId = this.getLinkedNetworkId(entity);
+    this.networkId = this.getLinkedNetworkId(entity);
+    const networkId = this.networkId;
     const snapshot = networkId ? getNetworkSnapshot(networkId) : undefined;
     const pageCount = snapshot ? this.getPageCount(snapshot) : 1;
     const page = this.clampPage(entity, pageCount);
 
-    if (slot === this.reloadSlot) {
+    if (slot === RELOAD_SLOT) {
       entity.setDynamicProperty("ucds:terminal_force_render", true);
-    } else if (slot === this.previousSlot) {
+    } else if (slot === PREVIOUS_SLOT) {
       entity.setDynamicProperty("ucds:terminal_page", Math.max(0, page - 1));
       entity.setDynamicProperty("ucds:terminal_force_render", true);
-    } else if (slot === this.nextSlot) {
+    } else if (slot === NEXT_SLOT) {
       entity.setDynamicProperty("ucds:terminal_page", Math.min(pageCount - 1, page + 1));
       entity.setDynamicProperty("ucds:terminal_force_render", true);
     }
@@ -287,14 +416,14 @@ export class StorageTerminalInterface {
   renderPage(entity, inv, snapshot, page, pageCount) {
     const networkId = snapshot.networkId;
     const entries = getSortedItems(networkId, "count");
-    const start = page * this.gridSize;
-    const pageEntries = entries.slice(start, start + this.gridSize);
+    const start = page * GRID_SIZE;
+    const pageEntries = entries.slice(start, start + GRID_SIZE);
 
     const renderedSlots = new Map();
     const countColumns = this.createEmptyCountColumns();
 
-    for (let i = 0; i < this.gridSize; i++) {
-      const slot = this.gridStart + i;
+    for (let i = 0; i < GRID_SIZE; i++) {
+      const slot = GRID_START + i;
       const entry = pageEntries[i];
 
       if (!entry) {
@@ -325,8 +454,8 @@ export class StorageTerminalInterface {
     setTerminalRenderedSlots(networkId, this.getTerminalId(entity), renderedSlots, {
       page,
       visibleCount: pageEntries.length,
-      gridStart: this.gridStart,
-      gridSize: this.gridSize,
+      gridStart: GRID_START,
+      gridSize: GRID_SIZE,
       knownItemKeys: Object.keys(snapshot.totals ?? {}),
     });
   }
@@ -387,8 +516,8 @@ export class StorageTerminalInterface {
     const mapped = setTerminalRenderedSlots(networkId, this.getTerminalId(entity), renderedSlots, {
       page,
       visibleCount: renderedSlots.size,
-      gridStart: this.gridStart,
-      gridSize: this.gridSize,
+      gridStart: GRID_START,
+      gridSize: GRID_SIZE,
       knownItemKeys: Object.keys(totals),
     });
     if (mapped && renderedSlots.size > 0) {
@@ -409,7 +538,7 @@ export class StorageTerminalInterface {
    */
   refreshRenderedOutputTokens(entity, inv, networkId, renderedSlots, totals) {
     for (const [itemKey, slot] of renderedSlots.entries()) {
-      if (slot < this.gridStart || slot > this.gridEnd) continue;
+      if (slot < GRID_START || slot > GRID_END) continue;
 
       const count = Math.floor(Number(totals[itemKey] ?? 0));
       if (count <= 0) {
@@ -418,12 +547,15 @@ export class StorageTerminalInterface {
         continue;
       }
 
-      inv.setItem(slot, this.createDisplayItem(itemKey, count, {
-        entity,
-        networkId,
+      inv.setItem(
         slot,
-        itemKey,
-      }));
+        this.createDisplayItem(itemKey, count, {
+          entity,
+          networkId,
+          slot,
+          itemKey,
+        }),
+      );
       this.setCountLabel(inv, slot, count);
     }
   }
@@ -443,7 +575,7 @@ export class StorageTerminalInterface {
       const slots = new Map();
       for (const [itemKey, slot] of Object.entries(object ?? {})) {
         const normalizedSlot = Math.floor(Number(slot) || 0);
-        if (itemKey && normalizedSlot >= this.gridStart && normalizedSlot <= this.gridEnd) {
+        if (itemKey && normalizedSlot >= GRID_START && normalizedSlot <= GRID_END) {
           slots.set(itemKey, normalizedSlot);
         }
       }
@@ -464,9 +596,9 @@ export class StorageTerminalInterface {
     const inv = this.getInventory(entity);
     if (!inv) return;
 
-    this.setButton(inv, this.reloadSlot, "§r§7- Reload");
-    this.setButton(inv, this.previousSlot, `§r§7- Previous Page §f${page + 1}/${pageCount}`);
-    this.setButton(inv, this.nextSlot, `§r§7- Next Page §f${page + 1}/${pageCount}`);
+    this.setButton(inv, RELOAD_SLOT, "§r§7- Reload");
+    this.setButton(inv, PREVIOUS_SLOT, `§r§7- Previous Page §f${page + 1}/${pageCount}`);
+    this.setButton(inv, NEXT_SLOT, `§r§7- Next Page §f${page + 1}/${pageCount}`);
   }
 
   /**
@@ -480,7 +612,7 @@ export class StorageTerminalInterface {
    * @param {number} networkId Linked network id.
    */
   processBurnSlots(entity, inv, networkId) {
-    for (const slot of this.burnSlots) {
+    for (const slot of BURN_SLOTS) {
       const item = inv.getItem(slot);
       if (!item) continue;
 
@@ -528,7 +660,7 @@ export class StorageTerminalInterface {
     if (updates.length === 0 && !forceReload) return;
 
     for (const update of updates) {
-      if (update.slot < this.gridStart || update.slot > this.gridEnd) continue;
+      if (update.slot < GRID_START || update.slot > GRID_END) continue;
 
       if (update.amount <= 0) {
         this.setFiller(inv, update.slot, entity);
@@ -536,12 +668,15 @@ export class StorageTerminalInterface {
         continue;
       }
 
-      inv.setItem(update.slot, this.createDisplayItem(update.itemKey, update.amount, {
-        entity,
-        networkId,
-        slot: update.slot,
-        itemKey: update.itemKey,
-      }));
+      inv.setItem(
+        update.slot,
+        this.createDisplayItem(update.itemKey, update.amount, {
+          entity,
+          networkId,
+          slot: update.slot,
+          itemKey: update.itemKey,
+        }),
+      );
       this.setCountLabel(inv, update.slot, update.amount);
     }
 
@@ -565,10 +700,10 @@ export class StorageTerminalInterface {
     if (slots.length === 0) return;
 
     for (const slot of slots) {
-      if (slot < this.gridStart || slot > this.gridEnd) continue;
+      if (slot < GRID_START || slot > GRID_END) continue;
 
       const current = inv.getItem(slot);
-      if (current && current.typeId !== this.fillerId) continue;
+      if (current && current.typeId !== DEFAULT_FILLER_ID) continue;
 
       this.setFiller(inv, slot, entity);
     }
@@ -607,7 +742,7 @@ export class StorageTerminalInterface {
    */
   getPageCount(snapshot) {
     const itemCount = Object.keys(snapshot?.totals ?? {}).length;
-    return Math.max(1, Math.ceil(itemCount / this.gridSize));
+    return Math.max(1, Math.ceil(itemCount / GRID_SIZE));
   }
 
   /**
@@ -658,24 +793,24 @@ export class StorageTerminalInterface {
    * @param {number} count Amount to display.
    */
   setCountLabel(inv, slot, count) {
-    const relativeSlot = slot - this.gridStart;
-    if (relativeSlot < 0 || relativeSlot >= this.gridSize) return;
+    const relativeSlot = slot - GRID_START;
+    if (relativeSlot < 0 || relativeSlot >= GRID_SIZE) return;
 
-    const column = relativeSlot % this.countLabelColumns;
-    const row = Math.floor(relativeSlot / this.countLabelColumns);
-    if (column < 0 || column >= this.countLabelColumns || row < 0 || row >= this.countLabelRows) return;
+    const column = relativeSlot % COUNT_LABEL_COLUMNS;
+    const row = Math.floor(relativeSlot / COUNT_LABEL_COLUMNS);
+    if (column < 0 || column >= COUNT_LABEL_COLUMNS || row < 0 || row >= COUNT_LABEL_ROWS) return;
 
-    const labelSlot = this.countLabelBaseSlot + column;
+    const labelSlot = COUNT_LABEL_BASE_SLOT + column;
     let labelItem = inv.getItem(labelSlot);
-    if (!labelItem || labelItem.typeId !== this.buttonId) {
-      labelItem = new ItemStack(this.buttonId, 1);
+    if (!labelItem || labelItem.typeId !== DEFAULT_BUTTON_ID) {
+      labelItem = new ItemStack(DEFAULT_BUTTON_ID, 1);
       labelItem.nameTag = " ";
     }
 
     const lore = labelItem.getLore() ?? [];
-    while (lore.length < this.countLabelRows) lore.push(" ");
+    while (lore.length < COUNT_LABEL_ROWS) lore.push(" ");
     lore[row] = count > 1 ? `§r§f${this.formatCount(count)}` : " ";
-    labelItem.setLore(lore.slice(0, this.countLabelRows));
+    labelItem.setLore(lore.slice(0, COUNT_LABEL_ROWS));
     inv.setItem(labelSlot, labelItem);
   }
 
@@ -685,10 +820,7 @@ export class StorageTerminalInterface {
    * @returns {string[][]} Column-major count text rows.
    */
   createEmptyCountColumns() {
-    return Array.from(
-      { length: this.countLabelColumns },
-      () => Array(this.countLabelRows).fill(" "),
-    );
+    return Array.from({ length: COUNT_LABEL_COLUMNS }, () => Array(COUNT_LABEL_ROWS).fill(" "));
   }
 
   /**
@@ -699,11 +831,11 @@ export class StorageTerminalInterface {
    * @param {number} count Amount to display.
    */
   setCountColumnValue(columns, relativeSlot, count) {
-    if (relativeSlot < 0 || relativeSlot >= this.gridSize) return;
+    if (relativeSlot < 0 || relativeSlot >= GRID_SIZE) return;
 
-    const column = relativeSlot % this.countLabelColumns;
-    const row = Math.floor(relativeSlot / this.countLabelColumns);
-    if (!columns[column] || row < 0 || row >= this.countLabelRows) return;
+    const column = relativeSlot % COUNT_LABEL_COLUMNS;
+    const row = Math.floor(relativeSlot / COUNT_LABEL_COLUMNS);
+    if (!columns[column] || row < 0 || row >= COUNT_LABEL_ROWS) return;
 
     columns[column][row] = count > 1 ? `§r§f${this.formatCount(count)}` : " ";
   }
@@ -715,11 +847,11 @@ export class StorageTerminalInterface {
    * @param {string[][]} columns Count column text buffers.
    */
   writeCountColumns(inv, columns) {
-    for (let column = 0; column < this.countLabelColumns; column++) {
-      const label = new ItemStack(this.buttonId, 1);
+    for (let column = 0; column < COUNT_LABEL_COLUMNS; column++) {
+      const label = new ItemStack(DEFAULT_BUTTON_ID, 1);
       label.nameTag = " ";
-      label.setLore(columns[column] ?? Array(this.countLabelRows).fill(" "));
-      inv.setItem(this.countLabelBaseSlot + column, label);
+      label.setLore(columns[column] ?? Array(COUNT_LABEL_ROWS).fill(" "));
+      inv.setItem(COUNT_LABEL_BASE_SLOT + column, label);
     }
   }
 
@@ -752,7 +884,7 @@ export class StorageTerminalInterface {
    * @param {import("@minecraft/server").Container} inv Terminal inventory.
    */
   clearBurnSlots(inv) {
-    for (const slot of this.burnSlots) inv.setItem(slot, undefined);
+    for (const slot of BURN_SLOTS) inv.setItem(slot, undefined);
   }
 
   /**
@@ -762,7 +894,7 @@ export class StorageTerminalInterface {
    * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
    */
   clearGrid(inv, entity) {
-    for (let slot = this.gridStart; slot <= this.gridEnd; slot++) {
+    for (let slot = GRID_START; slot <= GRID_END; slot++) {
       this.setFiller(inv, slot, entity);
     }
   }
@@ -773,11 +905,11 @@ export class StorageTerminalInterface {
    * @param {import("@minecraft/server").Container} inv Terminal inventory.
    */
   clearCountLabels(inv) {
-    for (let column = 0; column < this.countLabelColumns; column++) {
-      const label = new ItemStack(this.buttonId, 1);
+    for (let column = 0; column < COUNT_LABEL_COLUMNS; column++) {
+      const label = new ItemStack(DEFAULT_BUTTON_ID, 1);
       label.nameTag = " ";
-      label.setLore(Array(this.countLabelRows).fill(" "));
-      inv.setItem(this.countLabelBaseSlot + column, label);
+      label.setLore(Array(COUNT_LABEL_ROWS).fill(" "));
+      inv.setItem(COUNT_LABEL_BASE_SLOT + column, label);
     }
   }
 
@@ -789,7 +921,7 @@ export class StorageTerminalInterface {
    * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
    */
   setFiller(inv, slot, entity) {
-    const filler = new ItemStack(this.fillerId, 1);
+    const filler = new ItemStack(DEFAULT_FILLER_ID, 1);
     filler.nameTag = "§rStorage Slot";
     attachUiSlotToken(filler, {
       terminalId: this.getTerminalId(entity),
@@ -806,7 +938,7 @@ export class StorageTerminalInterface {
    * @param {string} nameTag Button display name.
    */
   setButton(inv, slot, nameTag) {
-    const item = new ItemStack(this.buttonId, 1);
+    const item = new ItemStack(DEFAULT_BUTTON_ID, 1);
     item.nameTag = nameTag;
     inv.setItem(slot, item);
   }
@@ -838,9 +970,9 @@ export class StorageTerminalInterface {
    * @returns {string|undefined} Control display name.
    */
   getControlName(slot, page, pageCount) {
-    if (slot === this.reloadSlot) return "§r§7- Reload";
-    if (slot === this.previousSlot) return `§r§7- Previous Page §f${page + 1}/${pageCount}`;
-    if (slot === this.nextSlot) return `§r§7- Next Page §f${page + 1}/${pageCount}`;
+    if (slot === RELOAD_SLOT) return "§r§7- Reload";
+    if (slot === PREVIOUS_SLOT) return `§r§7- Previous Page §f${page + 1}/${pageCount}`;
+    if (slot === NEXT_SLOT) return `§r§7- Next Page §f${page + 1}/${pageCount}`;
     return undefined;
   }
 
@@ -852,5 +984,48 @@ export class StorageTerminalInterface {
    */
   getInventory(entity) {
     return entity?.getComponent("minecraft:inventory")?.container;
+  }
+}
+
+/**
+ * Gets a dimension by id, falling back to overworld for debug commands.
+ *
+ * @param {string} [id="overworld"] Dimension id.
+ * @returns {import("@minecraft/server").Dimension} Dimension instance.
+ */
+function getDimension(id = "overworld") {
+  try {
+    return world.getDimension(id);
+  } catch {
+    return world.getDimension("overworld");
+  }
+}
+
+/**
+ * Sends script-event feedback to the caller and console.
+ *
+ * @param {import("@minecraft/server").ScriptEventCommandMessageAfterEvent} event Script event.
+ * @param {string} message Message body.
+ */
+function reply(event, message) {
+  const text = `[DSv2] ${message}`;
+  try {
+    event.sourceEntity?.sendMessage?.(text);
+  } catch {}
+  console.warn(text);
+}
+
+/**
+ * Parses a JSON script-event payload.
+ *
+ * @param {string} message Raw event message.
+ * @returns {object} Parsed payload, or an empty object on failure.
+ */
+function parseMessage(message) {
+  if (!message || String(message).trim().length === 0) return {};
+  try {
+    return JSON.parse(message);
+  } catch {
+    return {};
   }
 }

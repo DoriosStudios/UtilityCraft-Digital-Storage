@@ -16,10 +16,14 @@
 			}
 		},
 		"components": {
-			"minecraft:geometry": "geometry.utilitycraft_block_2",
+			"minecraft:geometry": "minecraft:geometry.full_block",
 			"minecraft:material_instances": {
 				"*": {
-					"texture": "utilitycraft_crafting_terminal",
+					"texture": "utilitycraft_storage_port",
+					"render_method": "alpha_test"
+				},
+				"north": {
+					"texture": "utilitycraft_crafting_terminal_front",
 					"render_method": "alpha_test"
 				}
 			},

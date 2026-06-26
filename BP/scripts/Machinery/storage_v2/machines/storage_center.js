@@ -6,7 +6,7 @@ import { createNetworkFromCellIds, getNetwork, getNetworkSnapshot, powerOffNetwo
 import { NETWORK_TOPOLOGY_PROPERTY } from "../network_topology.js";
 import { getExportBufferEntity, setExportBufferNetworkId } from "./export_buffer.js";
 import { getImportBufferEntity, setImportBufferNetworkId } from "./import_buffer.js";
-import { storageTerminalInterface } from "./storage_terminal.js";
+import { StorageTerminalInterface } from "../../interface/terminal.js";
 
 export const STORAGE_CENTER_ENTITY_TYPE = "utilitycraft:storage_center";
 
@@ -243,10 +243,11 @@ function buildTerminalKeys(topology) {
 function linkTopologyTerminals(dimension, topology, networkId) {
   let linked = 0;
   for (const position of getMachinePositions(topology, STORAGE_TERMINAL_ENTITY_TYPE)) {
-    const terminalEntity = getMachineEntityAt(dimension, STORAGE_TERMINAL_ENTITY_TYPE, position);
-    if (!terminalEntity?.isValid) continue;
+    const block = getBlockAt(dimension, position);
+    const terminal = new StorageTerminalInterface(block);
+    if (!terminal.valid) continue;
 
-    if (storageTerminalInterface.linkNetwork(terminalEntity, networkId)) linked += 1;
+    if (terminal.linkNetwork(networkId)) linked += 1;
   }
   return linked;
 }
