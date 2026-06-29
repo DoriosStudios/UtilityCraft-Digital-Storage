@@ -1770,51 +1770,6 @@
                 ],
                 "$scrolling_content": "sh.storage_grid_scroll_content"
               }
-            },
-            {
-              "grid_burn_slot_overlay": {
-                "type": "collection_panel",
-                "collection_name": "container_items",
-                "$item_collection_name": "container_items",
-                "anchor_from": "top_left",
-                "anchor_to": "top_left",
-                "size": [
-                  164,
-                  75
-                ],
-                "offset": [
-                  0,
-                  -2
-                ],
-                "layer": 40,
-                "bindings": [
-                  {
-                    "binding_name": "#inventory_selected_item",
-                    "binding_name_override": "#item_id_aux",
-                    "binding_condition": "always"
-                  },
-                  {
-                    "binding_type": "view",
-                    "source_property_name": "(not (#item_id_aux = -1))",
-                    "target_property_name": "#visible"
-                  }
-                ],
-                "controls": [
-                  {
-                    "drop_slot@sh.invisible_slot_button_prototype": {
-                      "$item_collection_name": "$item_collection_name",
-                      "collection_index": "$burn_index",
-                      "anchor_from": "top_left",
-                      "anchor_to": "top_left",
-                      "size": [
-                        164,
-                        75
-                      ],
-                      "layer": 41
-                    }
-                  }
-                ]
-              }
             }
           ]
         }

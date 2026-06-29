@@ -16,12 +16,10 @@ const TOKEN_SEPARATOR = "§r";
 const SECTION = "\u00A7";
 const UI_TOKEN_NAMESPACE = `${SECTION}d${SECTION}b`;
 const UI_ELEMENT_TAG = "utilitycraft:ui_element";
-const CLAIM_TTL_TICKS = 20 * 60 * 5;
 
 const outputClaims = new Map();
 const pendingUiSlotRestores = new Map();
 let nextClaimId = 0;
-let lastPruneTick = 0;
 
 /**
  * Encodes text as invisible formatting pairs.
@@ -156,19 +154,6 @@ function queueUiSlotRestore(token) {
 }
 
 /**
- * Drops stale output claims to keep runtime memory bounded.
- */
-function pruneClaims() {
-  const tick = system.currentTick;
-  if (tick - lastPruneTick < 20 * 30) return;
-
-  lastPruneTick = tick;
-  for (const [claimId, claim] of outputClaims.entries()) {
-    if (tick - claim.updatedTick > CLAIM_TTL_TICKS) outputClaims.delete(claimId);
-  }
-}
-
-/**
  * Reads a safe positive requested amount from an ItemStack.
  *
  * @param {import("@minecraft/server").ItemStack|undefined} item ItemStack.
@@ -282,8 +267,6 @@ function resolveClaim(token, requestedAmount) {
  * @returns {import("@minecraft/server").ItemStack}
  */
 export function attachOutputToken(item, context) {
-  pruneClaims();
-
   const claimId = createClaimId(context.slot);
   outputClaims.set(claimId, {
     claimId,
@@ -550,8 +533,6 @@ function cleanupPlayerInventoryUiElements(player) {
  * Watches cursor stacks for output reservations and UI-only item cleanup.
  */
 function watchPlayerCursors() {
-  pruneClaims();
-
   for (const player of world.getAllPlayers()) {
     if (system.currentTick % 20 === 0) {
       cleanupPlayerInventoryUiElements(player);
