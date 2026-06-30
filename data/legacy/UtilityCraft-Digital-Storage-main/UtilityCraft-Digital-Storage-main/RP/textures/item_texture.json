@@ -1,0 +1,57 @@
+{
+  "resource_pack_name": "Digital Storage",
+  "texture_name": "atlas.items",
+  "texture_data": {
+     "utilitycraft_storage_cell": {
+      "textures": "textures/items/cells/storage_cell"
+    },
+     "utilitycraft_basic_storage_cell": {
+      "textures": "textures/items/cells/basic_storage_cell"
+    },
+     "utilitycraft_advanced_storage_cell": {
+      "textures": "textures/items/cells/advanced_storage_cell"
+    },
+     "utilitycraft_expert_storage_cell": {
+      "textures": "textures/items/cells/expert_storage_cell"
+    },
+     "utilitycraft_ultimate_storage_cell": {
+      "textures": "textures/items/cells/ultimate_storage_cell"
+    },
+     "utilitycraft_storage_part": {
+      "textures": "textures/items/parts/storage_part"
+    },
+     "utilitycraft_basic_storage_part": {
+      "textures": "textures/items/parts/basic_storage_part"
+    },
+     "utilitycraft_advanced_storage_part": {
+      "textures": "textures/items/parts/advanced_storage_part"
+    },
+     "utilitycraft_expert_storage_part": {
+      "textures": "textures/items/parts/expert_storage_part"
+    },
+     "utilitycraft_ultimate_storage_part": {
+      "textures": "textures/items/parts/ultimate_storage_part"
+    },
+     "utilitycraft_storage_core": {
+      "textures": "textures/items/storage_core"
+    },
+     "utilitycraft_fluxite": {
+      "textures": "textures/items/fluxite"
+    },
+     "utilitycraft_wireless_panel_off": {
+      "textures": "textures/items/wireless/wireless_panel_off"
+    },
+     "utilitycraft_wireless_panel_on": {
+      "textures": "textures/items/wireless/wireless_panel_on"
+    },
+     "utilitycraft_wireless_crafting_panel_off": {
+      "textures": "textures/items/wireless/wireless_crafting_panel_off"
+    },
+     "utilitycraft_wireless_crafting_panel_on": {
+      "textures": "textures/items/wireless/wireless_crafting_panel_on"
+    },
+     "utilitycraft_storage_filler": {
+      "textures": "textures/ui/empty_cell"
+    }
+  }
+}

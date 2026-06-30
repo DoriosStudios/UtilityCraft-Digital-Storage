@@ -67,7 +67,7 @@
             {
                 "next_button@sh.button": {
                     "layer": 10,
-                    "$index": 237,
+                    "$index": 168,
                     "$button_size": [
                         22,
                         22
@@ -79,7 +79,7 @@
                     "anchor_to": "top_middle",
                     "offset": [
                         106,
-                        134
+                        112
                     ]
                 }
             },
@@ -87,7 +87,7 @@
             {
                 "previous_button@sh.button": {
                     "layer": 10,
-                    "$index": 238,
+                    "$index": 167,
                     "$button_size": [
                         22,
                         22
@@ -99,39 +99,19 @@
                     "anchor_to": "top_middle",
                     "offset": [
                         106,
-                        112
+                        90
                     ]
                 }
             },
-            // Quantity Button
             {
-                "quantity_button@uc.dynamic_button": {
+                "reload_button@sh.button": {
                     "layer": 10,
-                    "$index": 239,
+                    "$index": 166,
                     "$default_texture": "textures/ui/buttons/button",
                     "$hover_texture": "textures/ui/buttons/button_selected",
                     "$pressed_texture": "textures/ui/buttons/button_pressed",
-                    "$text_scale": 1,
-                    "anchor_from": "top_middle",
-                    "anchor_to": "top_middle",
-                    "offset": [
-                        106,
-                        90
-                    ],
-                    "$button_size": [
-                        22,
-                        22
-                    ]
-                }
-            },
-            // Sort Button
-            {
-                "sort_button@sh.button": {
-                    "layer": 10,
-                    "$index": 240,
-                    "$default_texture": "textures/ui/buttons/sort/button",
-                    "$hover_texture": "textures/ui/buttons/sort/selected",
-                    "$pressed_texture": "textures/ui/buttons/sort/pressed",
+                    "$button_text": "R",
+                    "$text_scale": 0.8,
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
                     "offset": [
@@ -205,21 +185,20 @@
                                     -114,
                                     -32
                                 ],
-                                "$quantity_index": 241,
-                                "$remove_index": 242,
-                                "$blueprint_index": 243,
-                                "$grid_index_1": 244,
-                                "$grid_index_2": 245,
-                                "$grid_index_3": 246,
-                                "$grid_index_4": 247,
-                                "$grid_index_5": 248,
-                                "$grid_index_6": 249,
-                                "$grid_index_7": 250,
-                                "$grid_index_8": 251,
-                                "$grid_index_9": 252,
-                                "$output_index": 253,
-                                "$craft_index": 254,
-                                "$mode_index": 255
+                                "$quantity_index": 178,
+                                "$remove_index": 179,
+                                "$grid_index_1": 180,
+                                "$grid_index_2": 181,
+                                "$grid_index_3": 182,
+                                "$grid_index_4": 183,
+                                "$grid_index_5": 184,
+                                "$grid_index_6": 185,
+                                "$grid_index_7": 186,
+                                "$grid_index_8": 187,
+                                "$grid_index_9": 188,
+                                "$output_index": 189,
+                                "$craft_index": 190,
+                                "$mode_index": 191
                             }
                         },
                         {

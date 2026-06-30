@@ -76,8 +76,8 @@
 				]
 			},
 			"minecraft:destructible_by_explosion": false,
-			"tag:ucds:item_network": {},
-      "tag:ucds:is_conduit": {}
+			"tag:ucds:network": {},
+			"tag:ucds:network_cable": {}
 		}
 	}
 }

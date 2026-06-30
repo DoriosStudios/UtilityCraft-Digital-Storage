@@ -1,0 +1,44 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "utilitycraft:storage_part"
+    },
+    "tags": [
+      "utilitycraft_workbench"
+    ],
+    "key": {
+      "S": {
+        "item": "utilitycraft:steel_ingot"
+      },
+      "R": {
+        "item": "minecraft:redstone"
+      },
+      "C": {
+        "item": "utilitycraft:chip"
+      },
+      "O": {
+        "item": "utilitycraft:storage_core"
+      },
+      "F": {
+        "item": "utilitycraft:fluxite"
+      }
+    },
+    "pattern": [
+      "SRS",
+      "COC",
+      "SFS"
+    ],
+    "result": {
+      "item": "utilitycraft:storage_part"
+    },
+    "unlock": [
+      {
+        "item": "utilitycraft:storage_core"
+      },
+      {
+        "item": "utilitycraft:fluxite"
+      }
+    ]
+  }
+}

@@ -46,23 +46,10 @@
             {
                 "next_button@sh.button": {
                     "layer": 10,
-                    "$index": 237,
+                    "$index": 168,
                     "$default_texture": "textures/ui/buttons/next/button",
                     "$hover_texture": "textures/ui/buttons/next/selected",
                     "$pressed_texture": "textures/ui/buttons/next/pressed",
-                    "anchor_from": "top_middle",
-                    "anchor_to": "top_middle",
-                    "offset": [ 106, 134 ],
-                    "$button_size": [ 22, 22 ]
-                }
-            },
-            {
-                "previous_button@sh.button": {
-                    "layer": 10,
-                    "$index": 238,
-                    "$default_texture": "textures/ui/buttons/previous/button",
-                    "$hover_texture": "textures/ui/buttons/previous/selected",
-                    "$pressed_texture": "textures/ui/buttons/previous/pressed",
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
                     "offset": [ 106, 112 ],
@@ -70,13 +57,12 @@
                 }
             },
             {
-                "quantity_button@uc.dynamic_button": {
+                "previous_button@sh.button": {
                     "layer": 10,
-                    "$index": 239,
-                    "$default_texture": "textures/ui/buttons/button",
-                    "$hover_texture": "textures/ui/buttons/button_selected",
-                    "$pressed_texture": "textures/ui/buttons/button_pressed",
-                    "$text_scale": 1,
+                    "$index": 167,
+                    "$default_texture": "textures/ui/buttons/previous/button",
+                    "$hover_texture": "textures/ui/buttons/previous/selected",
+                    "$pressed_texture": "textures/ui/buttons/previous/pressed",
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
                     "offset": [ 106, 90 ],
@@ -84,12 +70,14 @@
                 }
             },
             {
-                "sort_button@sh.button": {
+                "reload_button@sh.button": {
                     "layer": 10,
-                    "$index": 240,
-                    "$default_texture": "textures/ui/buttons/sort/button",
-                    "$hover_texture": "textures/ui/buttons/sort/selected",
-                    "$pressed_texture": "textures/ui/buttons/sort/pressed",
+                    "$index": 166,
+                    "$default_texture": "textures/ui/buttons/button",
+                    "$hover_texture": "textures/ui/buttons/button_selected",
+                    "$pressed_texture": "textures/ui/buttons/button_pressed",
+                    "$button_text": "R",
+                    "$text_scale": 0.8,
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
                     "offset": [ 106, 68 ],

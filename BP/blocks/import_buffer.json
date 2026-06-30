@@ -10,27 +10,44 @@
 		"components": {
 			"utilitycraft:import_buffer": {
 				"entity": {
-					"inventory_size": 27,
-					"input_range": [
-						0,
-						26
-					]
+					"id": "utilitycraft:import_buffer",
+					"type": "machine",
+					"skip_machine_event": false,
+					"skip_inventory_event": false,
+					"input_type": "none",
+					"output_type": "none"
 				},
 				"machine": {
 					"rate_speed_base": 0
 				}
 			},
-			"minecraft:geometry": "geometry.utilitycraft_block_2",
+			"minecraft:geometry": "minecraft:geometry.full_block",
 			"minecraft:material_instances": {
 				"*": {
-					"texture": "utilitycraft_import_buffer",
+					"texture": "utilitycraft_storage_port",
+					"render_method": "alpha_test"
+				},
+				"north": {
+					"texture": "utilitycraft_import_buffer_front",
+					"render_method": "alpha_test"
+				},
+				"south": {
+					"texture": "utilitycraft_import_buffer_front",
+					"render_method": "alpha_test"
+				},
+				"east": {
+					"texture": "utilitycraft_import_buffer_front",
+					"render_method": "alpha_test"
+				},
+				"west": {
+					"texture": "utilitycraft_import_buffer_front",
 					"render_method": "alpha_test"
 				}
 			},
 			"minecraft:tick": {
 				"interval_range": [
-					20,
-					20
+					10,
+					10
 				]
 			},
 			"minecraft:destructible_by_mining": {
@@ -39,7 +56,8 @@
 			"minecraft:destructible_by_explosion": false,
 			"tag:dorios:machine": {},
 			"tag:dorios:item": {},
-			"tag:ucds:item_network": {},
+			"tag:ucds:network": {},
+			"tag:ucds:network_machine": {},
 			"tag:minecraft:is_pickaxe_item_destructible": {}
 		}
 	}

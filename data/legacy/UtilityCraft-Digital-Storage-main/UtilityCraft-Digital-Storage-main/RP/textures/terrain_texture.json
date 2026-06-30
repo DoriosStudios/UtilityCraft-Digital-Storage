@@ -1,0 +1,32 @@
+{
+	"num_mip_levels": 4,
+	"padding": 8,
+	"resource_pack_name": "Digital Storage",
+	"texture_name": "atlas.terrain",
+	"texture_data": {
+		"utilitycraft_storage_terminal": {
+			"textures": "textures/blocks/storage_terminal"
+		},
+		"utilitycraft_crafting_terminal": {
+			"textures": "textures/blocks/crafting_terminal"
+		},
+		"utilitycraft_blueprint_terminal": {
+			"textures": "textures/blocks/blueprint_terminal"
+		},
+		"utilitycraft_storage_cell_drive": {
+			"textures": "textures/blocks/storage_cell_drive"
+		},
+		"utilitycraft_network_cable": {
+			"textures": "textures/blocks/network_cable"
+		},
+		"utilitycraft_import_buffer": {
+			"textures": "textures/blocks/import_buffer"
+		},
+		"utilitycraft_export_buffer": {
+			"textures": "textures/blocks/export_buffer"
+		},
+		"utilitycraft_storage_center": {
+			"textures": "textures/blocks/storage_center"
+		}
+	}
+}

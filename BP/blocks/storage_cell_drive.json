@@ -18,27 +18,32 @@
 		"components": {
 			"utilitycraft:storage_cell_drive": {
 				"entity": {
-					"input_type": "simple",
-					"output_type": "simple",
-					"inventory_size": 10
+					"id": "utilitycraft:storage_cell_drive",
+					"type": "machine",
+					"skip_machine_event": false,
+					"skip_inventory_event": false,
+					"input_type": "none",
+					"output_type": "none"
 				},
 				"machine": {
-					"rate_speed_base": 0,
-					"energy_cap": 0,
-					"fluid_cap": 0
+					"rate_speed_base": 0
 				}
 			},
-			"minecraft:geometry": "geometry.utilitycraft_block_2",
+			"minecraft:geometry": "minecraft:geometry.full_block",
 			"minecraft:material_instances": {
 				"*": {
-					"texture": "utilitycraft_storage_cell_drive",
+					"texture": "utilitycraft_storage_port",
+					"render_method": "alpha_test"
+				},
+				"north": {
+					"texture": "utilitycraft_storage_cell_drive_front",
 					"render_method": "alpha_test"
 				}
 			},
 			"minecraft:tick": {
 				"interval_range": [
-					4,
-					4
+					20,
+					20
 				]
 			},
 			"minecraft:destructible_by_mining": {
@@ -46,7 +51,8 @@
 			},
 			"minecraft:destructible_by_explosion": false,
 			"tag:dorios:machine": {},
-			"tag:ucds:item_network": {},
+			"tag:ucds:network": {},
+			"tag:ucds:network_machine": {},
 			"tag:minecraft:is_pickaxe_item_destructible": {}
 		},
 		"permutations": [
