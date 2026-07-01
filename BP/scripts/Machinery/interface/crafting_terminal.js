@@ -420,13 +420,20 @@ export class CraftingTerminalInterface extends StorageTerminalInterface {
   dropCraftingGridItems() {
     if (!this.container) return;
 
+    const dropLocation = this.block.center();
     for (const slot of CRAFTING_GRID) {
       const item = this.container.getItem(slot);
-      if (!item || this.isUiElementItem(item)) continue;
+      if (!item) continue;
+
+      if (this.isUiElementItem(item)) {
+        this.container.setItem(slot, undefined);
+        continue;
+      }
 
       const materialized = materializeOutputItem(item);
       const realItem = materialized.item ?? (!materialized.handled ? item : undefined);
-      if (realItem) this.dimension.spawnItem(realItem, this.block.center());
+      if (realItem) this.dimension.spawnItem(realItem, dropLocation);
+      this.container.setItem(slot, undefined);
     }
   }
 

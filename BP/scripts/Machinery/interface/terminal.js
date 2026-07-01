@@ -164,6 +164,7 @@ export class StorageTerminalInterface {
     const terminal = new this(block);
     if (!terminal.valid) return;
 
+    terminal.dropBurnSlotItems();
     terminal.destroy();
     const entity = terminal.entity;
     const inv = terminal.container;
@@ -659,6 +660,30 @@ export class StorageTerminalInterface {
 
       inputItem.amount = result.remaining;
       inv.setItem(slot, inputItem);
+    }
+  }
+
+  /**
+   * Drops real input items from the burn slots when the terminal block breaks.
+   */
+  dropBurnSlotItems() {
+    if (!this.container) return;
+
+    const dropLocation = this.block.center();
+    const burnSlots = this.constructor.config.slots.burn ?? BURN_SLOTS;
+    for (const slot of burnSlots) {
+      const item = this.container.getItem(slot);
+      if (!item) continue;
+
+      if (this.isUiElementItem(item)) {
+        this.container.setItem(slot, undefined);
+        continue;
+      }
+
+      const materialized = materializeOutputItem(item);
+      const realItem = materialized.item ?? (!materialized.handled ? item : undefined);
+      if (realItem) this.dimension.spawnItem(realItem, dropLocation);
+      this.container.setItem(slot, undefined);
     }
   }
 
