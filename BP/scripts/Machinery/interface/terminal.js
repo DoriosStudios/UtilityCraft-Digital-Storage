@@ -1,5 +1,5 @@
 import { ItemStack, system, world } from "@minecraft/server";
-import { ButtonManager, TickScheduler } from "DoriosCore/index.js";
+import { InterfaceManager, TickScheduler } from "DoriosCore/index.js";
 import { spawnEntity } from "DoriosCore/utils/entity.js";
 import {
   attachOutputToken,
@@ -22,6 +22,7 @@ const DEFAULT_FILLER_ID = "utilitycraft:storage_filler";
 const DEFAULT_BUTTON_ID = "utilitycraft:ui_filler";
 const UI_ELEMENT_TAG = "utilitycraft:ui_element";
 const TERMINAL_MACHINE_ID = "storage_terminal";
+const TERMINAL_BLOCK_TYPE = "utilitycraft:storage_terminal";
 const TERMINAL_ENTITY_TYPE = "utilitycraft:storage_terminal";
 const BURN_SLOTS = [0, 1, 2, 3];
 const GRID_START = 4;
@@ -40,6 +41,7 @@ const UI_OPEN_STATE = "utilitycraft:ui_open";
 
 export const STORAGE_TERMINAL_CONFIG = {
   machineId: TERMINAL_MACHINE_ID,
+  blockType: TERMINAL_BLOCK_TYPE,
   entityType: TERMINAL_ENTITY_TYPE,
   entityName: "storage_terminal",
   inventorySize: 178,
@@ -93,17 +95,80 @@ export class StorageTerminalInterface {
   }
 
   /**
-   * Registers button callbacks for the control slots owned by this interface.
+   * Registers this terminal's button interface and links it to the terminal
+   * block/entity ids.
    */
   static registerButtons() {
     const TerminalClass = this;
     const config = TerminalClass.config;
 
-    ButtonManager.registerMachineButton(config.machineId, config.slots.controls, ({ entity, slot }) => {
-      const block = TerminalClass.getBlock(entity);
-      if (!block) return undefined;
-      return new TerminalClass(block).handleControlPress(slot);
+    InterfaceManager.registerInterface(config.machineId, {
+      buttons: TerminalClass.getInterfaceButtons(),
     });
+    InterfaceManager.linkBlockInterface(config.blockType, config.machineId);
+    InterfaceManager.linkEntityInterface(config.entityType, config.machineId);
+  }
+
+  /**
+   * Creates the InterfaceManager button descriptors for storage terminal
+   * controls.
+   *
+   * @returns {Record<string, { slot:number, nameTag:function, onPress:function }>} Button descriptors.
+   */
+  static getInterfaceButtons() {
+    const TerminalClass = this;
+
+    return {
+      reload: {
+        slot: RELOAD_SLOT,
+        nameTag: ({ entity }) => TerminalClass.getButtonDisplayName(entity, RELOAD_SLOT),
+        onPress: ({ entity, slot }) => TerminalClass.pressButton(entity, slot),
+      },
+      previous: {
+        slot: PREVIOUS_SLOT,
+        nameTag: ({ entity }) => TerminalClass.getButtonDisplayName(entity, PREVIOUS_SLOT),
+        onPress: ({ entity, slot }) => TerminalClass.pressButton(entity, slot),
+      },
+      next: {
+        slot: NEXT_SLOT,
+        nameTag: ({ entity }) => TerminalClass.getButtonDisplayName(entity, NEXT_SLOT),
+        onPress: ({ entity, slot }) => TerminalClass.pressButton(entity, slot),
+      },
+    };
+  }
+
+  /**
+   * Dispatches a pressed interface button to the terminal control handler.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @param {number} slot Pressed slot.
+   * @returns {string|undefined} Updated button name tag.
+   */
+  static pressButton(entity, slot) {
+    const block = this.getBlock(entity);
+    if (!block) return undefined;
+    return new this(block).handleControlPress(slot);
+  }
+
+  /**
+   * Computes the current visible name for a storage terminal button.
+   *
+   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
+   * @param {number} slot Button slot.
+   * @returns {string} Current button name tag.
+   */
+  static getButtonDisplayName(entity, slot) {
+    const block = this.getBlock(entity);
+    if (!block) return "";
+
+    const terminal = new this(block);
+    if (!terminal.valid) return "";
+
+    const networkId = terminal.getLinkedNetworkId(entity);
+    const snapshot = networkId ? getNetworkSnapshot(networkId) : undefined;
+    const pageCount = snapshot ? terminal.getPageCount(snapshot) : 1;
+    const page = terminal.clampPage(entity, pageCount);
+    return terminal.getControlName(slot, page, pageCount) ?? "";
   }
 
   /**
@@ -299,7 +364,6 @@ export class StorageTerminalInterface {
     const inv = this.container;
     if (!inv) return;
 
-    ButtonManager.ensureWatching(entity, this.constructor.config.machineId);
     this.restorePendingUiSlots(entity, inv);
 
     this.networkId = this.getLinkedNetworkId(entity);
@@ -958,7 +1022,7 @@ export class StorageTerminalInterface {
    */
   setButton(inv, slot, nameTag) {
     const item = new ItemStack(DEFAULT_BUTTON_ID, 1);
-    item.nameTag = nameTag;
+    item.nameTag = InterfaceManager.createSlotNameTag(slot, nameTag);
     inv.setItem(slot, item);
   }
 

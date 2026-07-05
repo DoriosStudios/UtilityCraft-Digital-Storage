@@ -6,6 +6,7 @@ import { createItemFromKey, getItemKey } from "../storage_v2/item_registry.js";
 import { addItem, getNetworkSnapshot, removeItem } from "../storage_v2/network_runtime.js";
 
 const CRAFTING_TERMINAL_ENTITY_TYPE = "utilitycraft:crafting_terminal";
+const CRAFTING_TERMINAL_BLOCK_TYPE = "utilitycraft:crafting_terminal";
 const CRAFTING_TERMINAL_MACHINE_ID = "crafting_terminal";
 const CRAFT_QTY_SLOT = 178;
 const CLEAR_RECIPE_SLOT = 179;
@@ -31,6 +32,7 @@ const MIN_Y_BY_DIMENSION = {
 export const CRAFTING_TERMINAL_CONFIG = {
   ...STORAGE_TERMINAL_CONFIG,
   machineId: CRAFTING_TERMINAL_MACHINE_ID,
+  blockType: CRAFTING_TERMINAL_BLOCK_TYPE,
   entityType: CRAFTING_TERMINAL_ENTITY_TYPE,
   entityName: "crafting_terminal",
   inventorySize: CRAFTING_INVENTORY_SIZE,
@@ -55,6 +57,56 @@ export const CRAFTING_TERMINAL_CONFIG = {
 export class CraftingTerminalInterface extends StorageTerminalInterface {
   static get config() {
     return CRAFTING_TERMINAL_CONFIG;
+  }
+
+  /**
+   * Extends the storage terminal interface with crafting-specific buttons.
+   *
+   * @returns {Record<string, { slot:number, nameTag:function, onPress:function }>} Button descriptors.
+   */
+  static getInterfaceButtons() {
+    const TerminalClass = this;
+
+    return {
+      ...super.getInterfaceButtons(),
+      craftQty: {
+        slot: CRAFT_QTY_SLOT,
+        nameTag: ({ entity }) => TerminalClass.getCraftingButtonDisplayName(entity, CRAFT_QTY_SLOT),
+        onPress: ({ entity, slot }) => TerminalClass.pressButton(entity, slot),
+      },
+      clearRecipe: {
+        slot: CLEAR_RECIPE_SLOT,
+        nameTag: ({ entity }) => TerminalClass.getCraftingButtonDisplayName(entity, CLEAR_RECIPE_SLOT),
+        onPress: ({ entity, slot }) => TerminalClass.pressButton(entity, slot),
+      },
+      craft: {
+        slot: CRAFT_SLOT,
+        nameTag: ({ entity }) => TerminalClass.getCraftingButtonDisplayName(entity, CRAFT_SLOT),
+        onPress: ({ entity, slot }) => TerminalClass.pressButton(entity, slot),
+      },
+      outputMode: {
+        slot: OUTPUT_MODE_SLOT,
+        nameTag: ({ entity }) => TerminalClass.getCraftingButtonDisplayName(entity, OUTPUT_MODE_SLOT),
+        onPress: ({ entity, slot }) => TerminalClass.pressButton(entity, slot),
+      },
+    };
+  }
+
+  /**
+   * Computes the current visible name for a crafting terminal button.
+   *
+   * @param {import("@minecraft/server").Entity} entity Crafting terminal backing entity.
+   * @param {number} slot Button slot.
+   * @returns {string} Current button name tag.
+   */
+  static getCraftingButtonDisplayName(entity, slot) {
+    const block = this.getBlock(entity);
+    if (!block) return "";
+
+    const terminal = new this(block);
+    if (!terminal.valid) return "";
+
+    return terminal.getCraftingControlName(slot) ?? "";
   }
 
   setup() {
