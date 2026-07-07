@@ -23,93 +23,6 @@
     ],
     "controls": [
       {
-        "digital_storage_separator": {
-          "type": "panel",
-          "size": [
-            126,
-            14
-          ],
-          "controls": [
-            {
-              "line": {
-                "type": "image",
-                "texture": "textures/ui/White",
-                "anchor_from": "top_left",
-                "anchor_to": "top_left",
-                "size": [
-                  112,
-                  1
-                ],
-                "offset": [
-                  7,
-                  3
-                ],
-                "color": [
-                  0.25,
-                  0.45,
-                  0.75
-                ],
-                "alpha": 0.55,
-                "layer": 1
-              }
-            },
-            {
-              "label": {
-                "type": "label",
-                "text": "Digital Storage",
-                "anchor_from": "top_middle",
-                "anchor_to": "top_middle",
-                "offset": [
-                  0,
-                  6
-                ],
-                "color": [
-                  0.3,
-                  0.45,
-                  0.75
-                ],
-                "font_scale_factor": 0.6,
-                "layer": 1
-              }
-            }
-          ]
-        }
-      },
-      {
-        "digital_storage_recipe_row_0": {
-          "type": "panel",
-          "size": [
-            126,
-            18
-          ],
-          "controls": [
-            {
-              "ds_fluxite_toggle@uc.infuser_recipe_toggle": {
-                "anchor_from": "top_left",
-                "anchor_to": "top_left",
-                "$toggle_index": 1000,
-                "$toggle_hover_text": "Fluxite",
-                "$toggle_control_name": "ds_fluxite_recipe",
-                "$recipe_icon": "textures/items/fluxite",
-                "offset": [
-                  0,
-                  0
-                ]
-              }
-            }
-          ]
-        }
-      },
-      {
-        "digital_storage_bottom_padding": {
-          "type": "panel",
-          "size": [
-            126,
-            8
-          ]
-        }
-      },
-      {
         "recipe_row_0": {
           "type": "panel",
           "size": [
@@ -609,6 +522,93 @@
                 ]
               }
             }
+          ]
+        }
+      },
+      {
+        "digital_storage_separator": {
+          "type": "panel",
+          "size": [
+            126,
+            14
+          ],
+          "controls": [
+            {
+              "line": {
+                "type": "image",
+                "texture": "textures/ui/White",
+                "anchor_from": "top_left",
+                "anchor_to": "top_left",
+                "size": [
+                  112,
+                  1
+                ],
+                "offset": [
+                  7,
+                  3
+                ],
+                "color": [
+                  0.25,
+                  0.45,
+                  0.75
+                ],
+                "alpha": 0.55,
+                "layer": 1
+              }
+            },
+            {
+              "label": {
+                "type": "label",
+                "text": "Digital Storage",
+                "anchor_from": "top_middle",
+                "anchor_to": "top_middle",
+                "offset": [
+                  0,
+                  6
+                ],
+                "color": [
+                  0.3,
+                  0.45,
+                  0.75
+                ],
+                "font_scale_factor": 0.6,
+                "layer": 1
+              }
+            }
+          ]
+        }
+      },
+      {
+        "digital_storage_recipe_row_0": {
+          "type": "panel",
+          "size": [
+            126,
+            18
+          ],
+          "controls": [
+            {
+              "ds_fluxite_toggle@uc.infuser_recipe_toggle": {
+                "anchor_from": "top_left",
+                "anchor_to": "top_left",
+                "$toggle_index": 1000,
+                "$toggle_hover_text": "Fluxite",
+                "$toggle_control_name": "ds_fluxite_recipe",
+                "$recipe_icon": "textures/items/fluxite",
+                "offset": [
+                  0,
+                  0
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "digital_storage_bottom_padding": {
+          "type": "panel",
+          "size": [
+            126,
+            8
           ]
         }
       },
