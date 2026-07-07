@@ -14,6 +14,7 @@
     "ui/core/slot_button_prototype.json",
     "ui/core/toggle_button.json",
     "ui/core/panels.json",
-    "ui/core/button.json"
+    "ui/core/button.json",
+    "ui/recipes/infuser.json"
   ]
 }
