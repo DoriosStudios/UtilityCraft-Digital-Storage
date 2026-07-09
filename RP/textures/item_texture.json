@@ -38,6 +38,9 @@
      "utilitycraft_fluxite": {
       "textures": "textures/items/fluxite"
     },
+     "utilitycraft_silicon": {
+      "textures": "textures/items/silicon"
+    },
      "utilitycraft_wireless_panel_off": {
       "textures": "textures/items/wireless/wireless_panel_off"
     },

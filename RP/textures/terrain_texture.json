@@ -30,6 +30,12 @@
 		},
 		"utilitycraft_storage_center_front": {
 			"textures": "textures/blocks/storage_center_front"
+		},
+		"utilitycraft_fluxite_block": {
+			"textures": "textures/blocks/fluxite_block"
+		},
+		"utilitycraft_silicon_block": {
+			"textures": "textures/blocks/silicon_block"
 		}
 	}
 }

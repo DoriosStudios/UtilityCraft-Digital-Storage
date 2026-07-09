@@ -58,7 +58,10 @@
                             "name": "dorios:itemGroup.name.materials"
                         },
                         "items": [
-                            "utilitycraft:fluxite"
+                            "utilitycraft:fluxite",
+                            "utilitycraft:silicon",
+                            "utilitycraft:fluxite_block",
+                            "utilitycraft:silicon_block"
                         ]
                     }
                 ]

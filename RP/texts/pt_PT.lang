@@ -13,6 +13,8 @@ tile.utilitycraft:network_cable.name=Cabo de Rede\n§7- Liga blocos de armazenam
 tile.utilitycraft:import_buffer.name=Buffer de Importação\n§7- Envia itens para o armazenamento digital ligado\n§o§9@UC: Digital Storage
 tile.utilitycraft:export_buffer.name=Buffer de Exportação\n§7- Retira itens filtrados do armazenamento digital ligado\n§7- Melhorias aceites:\n   §a§7\n§o§9@UC: Digital Storage
 tile.utilitycraft:storage_center.name=Centro de Armazenamento\n§7- Alimenta e controla uma rede de armazenamento digital\n§o§9@UC: Digital Storage
+tile.utilitycraft:fluxite_block.name=Bloco de Fluxite\n§7- Material de craft\n§o§9@UC: Digital Storage
+tile.utilitycraft:silicon_block.name=Bloco de Silicon\n§7- Material de craft\n§o§9@UC: Digital Storage
 
 #######################
 ####   ENTIDADES   ####
@@ -42,6 +44,7 @@ item.utilitycraft:expert_storage_part=§bParte de Armazenamento Especialista\n§
 item.utilitycraft:ultimate_storage_part=§8Parte de Armazenamento Suprema\n§7- Usada para criar células de armazenamento supremas\n§o§9@UC: Digital Storage
 item.utilitycraft:storage_core=Núcleo de Armazenamento\n§7- Um componente importante para máquinas e células de armazenamento\n§o§9@UC: Digital Storage
 item.utilitycraft:fluxite=Fluxite\n§7- Obtida ao infundir ametista com pó de diamante\n§o§9@UC: Digital Storage
+item.utilitycraft:silicon=Silicon\n§7- Material de craft\n§o§9@UC: Digital Storage
 item.utilitycraft:storage_filler=Preenchedor de Armazenamento\n§o§9@UC: Digital Storage
 item.utilitycraft:wireless_panel_off=Painel Sem Fios - Desligado\n§o§9@UC: Digital Storage
 item.utilitycraft:wireless_panel_on=Painel Sem Fios - Ligado\n§7- Associa-o a um terminal para usar\n§o§9@UC: Digital Storage
