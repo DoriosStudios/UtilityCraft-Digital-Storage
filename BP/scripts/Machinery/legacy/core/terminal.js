@@ -452,7 +452,7 @@ export class Terminal extends BasicMachine {
       }
       block.dimension.spawnItem(itemStack, block.center());
     } catch (e) {
-      console.warn("Terminal entity was removed before item could be returned.");
+      // console.warn("Terminal entity was removed before item could be returned.");
     }
   }
 
@@ -707,7 +707,7 @@ export class Terminal extends BasicMachine {
       delete renderedSlots[itemKey];
       entity.setDynamicProperty("rendered_slot_keys", JSON.stringify(renderedSlots));
       entity.setDynamicProperty("force_refresh", true);
-      console.warn(`Digital Storage removed an item that could not render: ${itemKey}`);
+      // console.warn(`Digital Storage removed an item that could not render: ${itemKey}`);
       return true;
     }
     return true;
@@ -804,7 +804,7 @@ export class Terminal extends BasicMachine {
             renderedSlots[key] = currentSlot;
           } catch (error) {
             purgeItemFromNetwork(networkId, key, "render_error");
-            console.warn(`Digital Storage skipped an item that could not render: ${key}`);
+            // console.warn(`Digital Storage skipped an item that could not render: ${key}`);
           }
         }
 

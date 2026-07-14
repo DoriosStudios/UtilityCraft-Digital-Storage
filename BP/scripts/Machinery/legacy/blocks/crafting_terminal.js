@@ -69,7 +69,7 @@ function renderCraftingTerminalNow(entity) {
     if (!block) return;
     runCraftingStorageTerminalTick(block, entity, RENDER_SETTINGS);
   } catch (e) {
-    console.warn("Crafting terminal button render skipped.");
+    // console.warn("Crafting terminal button render skipped.");
   }
 }
 function scheduleCraftingTerminalRender(entity) {

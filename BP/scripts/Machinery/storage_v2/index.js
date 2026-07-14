@@ -22,17 +22,17 @@ import "./machines/storage_terminal.js";
  */
 
 world.afterEvents.worldLoad.subscribe(() => {
-  console.warn("[DSv2] queued incremental storage network load.");
+  // console.warn("[DSv2] queued incremental storage network load.");
   startNetworkAutoFlush();
   system.runJob(loadAllNetworksJob({
     recordsPerTick: 8,
     onComplete: ({ loaded, total, cells }) => {
-      console.warn(`[DSv2] loaded ${loaded}/${total} storage network runtime(s), ${cells} cell record(s).`);
+      // console.warn(`[DSv2] loaded ${loaded}/${total} storage network runtime(s), ${cells} cell record(s).`);
     },
   }));
 });
 
 system.beforeEvents.shutdown.subscribe(() => {
   const flushed = flushAllNetworks({ onlyDirty: true, syncDriveItems: false });
-  console.warn(`[DSv2] flushed ${flushed} dirty storage network runtime(s).`);
+  // console.warn(`[DSv2] flushed ${flushed} dirty storage network runtime(s).`);
 });

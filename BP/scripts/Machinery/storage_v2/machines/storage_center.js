@@ -105,7 +105,7 @@ function setStatus(entity, message, { warn = false, force = false } = {}) {
   if (!force && previous === message) return;
 
   entity.setDynamicProperty(CENTER_STATUS_PROPERTY, message);
-  if (warn) console.warn(`[DSv2] Storage Center: ${message}`);
+  // if (warn) console.warn(`[DSv2] Storage Center: ${message}`);
 }
 
 function shouldRefreshDisplay(entity, force = false) {

@@ -737,7 +737,7 @@ export function flushNetwork(networkId, { syncDriveItems = true } = {}) {
     try {
       syncNetworkDriveCellItems(runtime, savedCellsById);
     } catch (error) {
-      console.warn(`[DSv2] skipped drive cell item sync for network ${runtime.networkId}: ${error?.message ?? error}`);
+      // console.warn(`[DSv2] skipped drive cell item sync for network ${runtime.networkId}: ${error?.message ?? error}`);
     }
   }
 
@@ -860,7 +860,7 @@ export function startNetworkAutoFlush() {
 
     runtime.lastAutoFlushTick = system.currentTick;
     if (flushNetwork(runtime.networkId)) {
-      console.warn(`[DSv2] auto-flushed network ${runtime.networkId}.`);
+      // console.warn(`[DSv2] auto-flushed network ${runtime.networkId}.`);
     }
   }, AUTO_FLUSH_INTERVAL_TICKS);
 

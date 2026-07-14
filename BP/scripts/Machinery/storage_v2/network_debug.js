@@ -35,7 +35,7 @@ function reply(event, message) {
   try {
     event.sourceEntity?.sendMessage?.(text);
   } catch {}
-  console.warn(text);
+  // console.warn(text);
 }
 
 /**

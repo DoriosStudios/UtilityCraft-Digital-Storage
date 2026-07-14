@@ -61,7 +61,7 @@ function renderBlueprintTerminalNow(entity) {
     if (!block) return;
     runCraftingStorageTerminalTick(block, entity, RENDER_SETTINGS);
   } catch (e) {
-    console.warn("Blueprint terminal button render skipped.");
+    // console.warn("Blueprint terminal button render skipped.");
   }
 }
 function scheduleBlueprintTerminalRender(entity) {

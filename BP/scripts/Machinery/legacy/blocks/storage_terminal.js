@@ -55,7 +55,7 @@ function renderStorageTerminalNow(entity) {
     if (!block) return;
     runStorageTerminalTick(block, entity, RENDER_SETTINGS);
   } catch (e) {
-    console.warn("Storage terminal button render skipped.");
+    // console.warn("Storage terminal button render skipped.");
   }
 }
 function scheduleStorageTerminalRender(entity) {

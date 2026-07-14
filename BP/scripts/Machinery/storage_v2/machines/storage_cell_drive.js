@@ -79,7 +79,7 @@ function tickDrive(entity) {
   setStoredDriveSignature(entity, signature);
 
   if (networkId) {
-    console.warn(`[DSv2] storage cell drive changed; powered off network ${networkId}.`);
+    // console.warn(`[DSv2] storage cell drive changed; powered off network ${networkId}.`);
   }
 }
 

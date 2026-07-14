@@ -129,7 +129,7 @@ function flushExportBuffer(block, entity) {
     // This keeps extraction lossless.
     const restoreRemainder = addToNetwork(networkId, filter.itemKey, exportRemainder);
     if (restoreRemainder > 0) {
-      console.warn("Export Buffer could not restore an extraction remainder.");
+      // console.warn("Export Buffer could not restore an extraction remainder.");
     }
   }
 }
