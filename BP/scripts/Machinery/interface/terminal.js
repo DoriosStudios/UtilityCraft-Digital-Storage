@@ -1,6 +1,6 @@
 import { ItemStack, system, world } from "@minecraft/server";
 import { ButtonManager, TickScheduler } from "DoriosCore/index.js";
-import { registerFixedItemIO, spawnStorageMachine } from "../../DigitalStorageCore/entities.js";
+import { spawnStorageMachine } from "../../DigitalStorageCore/entities.js";
 import {
   attachOutputToken,
   attachUiSlotToken,
@@ -37,8 +37,6 @@ const COUNT_LABEL_BASE_SLOT = 169;
 const COUNT_LABEL_COLUMNS = GRID_COLUMNS;
 const COUNT_LABEL_ROWS = GRID_ROWS;
 const UI_OPEN_STATE = "utilitycraft:ui_open";
-
-registerFixedItemIO(TERMINAL_ENTITY_TYPE, BURN_SLOTS, []);
 
 /** @param {number[]|undefined} range */
 function expandSlotRange(range) {
@@ -750,12 +748,45 @@ export class StorageTerminalInterface {
     const slots = consumeUiSlotRestores(this.getTerminalId(entity));
     if (slots.length === 0) return;
 
+    const networkId = this.getLinkedNetworkId(entity);
+
     for (const slot of slots) {
       if (slot < GRID_START || slot > GRID_END) continue;
 
       const current = inv.getItem(slot);
-      if (current && current.typeId !== DEFAULT_FILLER_ID) continue;
+      if (!current || current.typeId === DEFAULT_FILLER_ID) {
+        this.setFiller(inv, slot, entity);
+        continue;
+      }
 
+      if (this.isUiElementItem(current)) {
+        this.setFiller(inv, slot, entity);
+        continue;
+      }
+
+      if (!networkId) continue;
+
+      const materialized = materializeOutputItem(current);
+      if (materialized.handled && !materialized.item) {
+        this.setFiller(inv, slot, entity);
+        continue;
+      }
+
+      const inputItem = materialized.item ?? current;
+      const itemKey = getItemKey(inputItem);
+      if (!itemKey) continue;
+
+      const result = addItem(networkId, itemKey, inputItem.amount, "terminal_empty_slot_swap");
+      if (result.inserted <= 0) continue;
+
+      if (result.remaining > 0) {
+        inputItem.amount = result.remaining;
+        inv.setItem(slot, inputItem);
+        continue;
+      }
+
+      // Reset the emptied UI slot; the normal network update can replace this
+      // filler with the newly stored visual item on the same terminal tick.
       this.setFiller(inv, slot, entity);
     }
   }

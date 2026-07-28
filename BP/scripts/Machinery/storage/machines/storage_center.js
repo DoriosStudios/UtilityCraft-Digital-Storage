@@ -1,7 +1,7 @@
 import { ItemStack, system } from "@minecraft/server";
 import { EnergyStorage, TickScheduler } from "DoriosCore/index.js";
 import * as DoriosLib from "DoriosLib/index.js";
-import { registerFixedItemIO, spawnStorageMachine } from "../../../DigitalStorageCore/entities.js";
+import { spawnStorageMachine } from "../../../DigitalStorageCore/entities.js";
 import { getDriveEntity, getDriveKey, readDriveCells, setDriveNetworkId, setStoredDriveSignature } from "../drive_cells.js";
 import { createNetworkFromCellIds, getNetwork, getNetworkSnapshot, powerOffNetwork } from "../network_runtime.js";
 import { NETWORK_TOPOLOGY_PROPERTY } from "../network_topology.js";
@@ -11,8 +11,6 @@ import { CraftingTerminalInterface } from "../../interface/crafting_terminal.js"
 import { StorageTerminalInterface } from "../../interface/terminal.js";
 
 export const STORAGE_CENTER_ENTITY_TYPE = "utilitycraft:storage_center";
-
-registerFixedItemIO(STORAGE_CENTER_ENTITY_TYPE, [], []);
 
 const STORAGE_TERMINAL_ENTITY_TYPE = "utilitycraft:storage_terminal";
 const CRAFTING_TERMINAL_ENTITY_TYPE = "utilitycraft:crafting_terminal";

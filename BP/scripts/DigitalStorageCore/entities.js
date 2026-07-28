@@ -1,9 +1,7 @@
 // @ts-check
 
-import { Machine, registerIOInterface } from "DoriosCore/index.js";
+import { Machine } from "DoriosCore/index.js";
 import * as DoriosLib from "DoriosLib/index.js";
-
-const CONTAINER_FACES = ["up", "down", "north", "south", "east", "west"];
 
 /**
  * @typedef {object} StorageMachineOptions
@@ -36,60 +34,20 @@ export function spawnStorageMachine(event, settings, options, callback) {
 }
 
 /**
- * Registers one immutable slot policy with DoriosCore. No interface buttons
- * are declared, so players cannot cycle or reassign individual faces.
- *
- * @param {string} blockTypeId
- * @param {number[]} [inputSlots]
- * @param {number[]} [outputSlots]
- */
-export function registerFixedItemIO(blockTypeId, inputSlots = [], outputSlots = []) {
-  const inputs = normalizeSlots(inputSlots);
-  const outputs = normalizeSlots(outputSlots);
-  const modes = [{ id: "disabled" }];
-
-  if (inputs.length > 0 || outputs.length > 0) {
-    modes.push({ id: "fixed", inputSlots: inputs, outputSlots: outputs });
-  }
-
-  return registerIOInterface(blockTypeId, {
-    items: {
-      anyInputSlots: inputs,
-      anyOutputSlots: outputs,
-      modes,
-    },
-  });
-}
-
-/**
- * Publishes the registered non-dynamic slot policy. Every face receives the
- * same explicit lists, so automation can only access the intended slots while
- * DoriosCore can validate the document without replacing it on machine ticks.
+ * Publishes one face-independent Dorios container policy. These machines have
+ * no configurable IO, so every connection uses the same explicit slot lists.
  *
  * @param {import("@minecraft/server").Entity} entity
  * @param {number[]} inputSlots
  * @param {number[]} outputSlots
  */
 export function configureFixedItemSlots(entity, inputSlots, outputSlots) {
-  const inputs = normalizeSlots(inputSlots);
-  const outputs = normalizeSlots(outputSlots);
-  const inputConfig = createFaceConfig(inputs);
-  const outputConfig = createFaceConfig(outputs);
-
   DoriosLib.container.setConfig(entity, {
     version: 1,
-    type: "complex",
-    anyInputSlots: inputs,
-    anyOutputSlots: outputs,
-    inputConfig,
-    outputConfig,
+    type: "simple",
+    inputConfig: normalizeSlots(inputSlots),
+    outputConfig: normalizeSlots(outputSlots),
   });
-}
-
-/** @param {number[]} slots */
-function createFaceConfig(slots) {
-  if (slots.length === 0) return {};
-  return Object.fromEntries(CONTAINER_FACES.map((face) => [face, [...slots]]));
 }
 
 /** @param {number[]} slots */

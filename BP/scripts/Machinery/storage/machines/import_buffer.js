@@ -1,5 +1,5 @@
 import * as DoriosLib from "DoriosLib/index.js";
-import { registerFixedItemIO, spawnStorageMachine } from "../../../DigitalStorageCore/entities.js";
+import { spawnStorageMachine } from "../../../DigitalStorageCore/entities.js";
 import { getItemKey } from "../item_registry.js";
 import { addItem, getNetwork } from "../network_runtime.js";
 
@@ -15,8 +15,6 @@ const INPUT_SLOTS = Array.from(
 );
 const SPEED_UPGRADE_ID = "utilitycraft:speed_upgrade";
 const MAX_SPEED_UPGRADES = 8;
-
-registerFixedItemIO(IMPORT_BUFFER_ENTITY_TYPE, INPUT_SLOTS, []);
 
 /**
  * Finds the helper entity backing an import buffer block.

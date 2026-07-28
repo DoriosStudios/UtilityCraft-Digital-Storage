@@ -1,5 +1,5 @@
 import * as DoriosLib from "DoriosLib/index.js";
-import { registerFixedItemIO, spawnStorageMachine } from "../../../DigitalStorageCore/entities.js";
+import { spawnStorageMachine } from "../../../DigitalStorageCore/entities.js";
 import {
   DRIVE_ENTITY_TYPE,
   getDriveEntity,
@@ -12,8 +12,6 @@ import {
   setStoredDriveSignature,
 } from "../drive_cells.js";
 import { getNetwork, powerOffNetwork, reloadNetwork } from "../network_runtime.js";
-
-registerFixedItemIO(DRIVE_ENTITY_TYPE, [], []);
 
 /**
  * Drops every item currently stored in the drive helper entity.

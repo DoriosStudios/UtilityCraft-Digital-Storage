@@ -5,7 +5,6 @@ import { attachOutputToken, materializeOutputItem, readOutputToken } from "./ter
 import { StorageTerminalInterface, STORAGE_TERMINAL_CONFIG } from "./terminal.js";
 import { createItemFromKey, getItemKey } from "../storage/item_registry.js";
 import { addItem, getNetworkSnapshot, removeItem } from "../storage/network_runtime.js";
-import { registerFixedItemIO } from "../../DigitalStorageCore/entities.js";
 
 const CRAFTING_TERMINAL_ENTITY_TYPE = "utilitycraft:crafting_terminal";
 const CRAFTING_TERMINAL_MACHINE_ID = "crafting_terminal";
@@ -53,12 +52,6 @@ export const CRAFTING_TERMINAL_CONFIG = {
     outputMode: OUTPUT_MODE_SLOT,
   },
 };
-
-registerFixedItemIO(
-  CRAFTING_TERMINAL_ENTITY_TYPE,
-  STORAGE_TERMINAL_CONFIG.slots.burn,
-  [],
-);
 
 export class CraftingTerminalInterface extends StorageTerminalInterface {
   static get config() {

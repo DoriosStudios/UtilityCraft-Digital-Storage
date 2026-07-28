@@ -1,5 +1,5 @@
 import * as DoriosLib from "DoriosLib/index.js";
-import { registerFixedItemIO, spawnStorageMachine } from "../../../DigitalStorageCore/entities.js";
+import { spawnStorageMachine } from "../../../DigitalStorageCore/entities.js";
 import { createItemFromKey, getItemKey } from "../item_registry.js";
 import { getNetwork, removeItem } from "../network_runtime.js";
 
@@ -11,18 +11,12 @@ const FILTER_END_SLOT = 8;
 const OUTPUT_START_SLOT = 9;
 const OUTPUT_END_SLOT = 35;
 const UPGRADE_SLOT = 36;
-const FILTER_SLOTS = Array.from(
-  { length: FILTER_END_SLOT - FILTER_START_SLOT + 1 },
-  (_, index) => FILTER_START_SLOT + index,
-);
 const OUTPUT_SLOTS = Array.from(
   { length: OUTPUT_END_SLOT - OUTPUT_START_SLOT + 1 },
   (_, index) => OUTPUT_START_SLOT + index,
 );
 const SPEED_UPGRADE_ID = "utilitycraft:speed_upgrade";
 const MAX_SPEED_UPGRADES = 8;
-
-registerFixedItemIO(EXPORT_BUFFER_ENTITY_TYPE, FILTER_SLOTS, OUTPUT_SLOTS);
 
 /**
  * Finds the helper entity backing an export buffer block.
@@ -165,7 +159,7 @@ function dropInventory(entity, block) {
 DoriosLib.registry.blockComponent("utilitycraft:export_buffer", {
   beforeOnPlayerPlace(event, { params: settings }) {
     spawnStorageMachine(event, settings, {
-      inputSlots: FILTER_SLOTS,
+      inputSlots: [],
       outputSlots: OUTPUT_SLOTS,
     }, (entity) => {
       entity.nameTag = "entity.utilitycraft:export_buffer.name";
