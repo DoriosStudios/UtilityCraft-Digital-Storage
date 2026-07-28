@@ -1,8 +1,18 @@
 {
+  "name": "utilitycraft-digital-storage",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "check": "tsc --noEmit --project jsconfig.json",
+    "bundle": "node tools/bundle.mjs",
+    "verify:imports": "node tools/verify-public-imports.mjs"
+  },
   "dependencies": {
-    "@minecraft/server": "^2.7.0"
+    "@minecraft/server": "^2.8.0",
+    "@minecraft/server-ui": "^2.0.0"
   },
   "devDependencies": {
-    "esbuild": "^0.28.0"
+    "esbuild": "^0.28.0",
+    "typescript": "^6.0.3"
   }
 }

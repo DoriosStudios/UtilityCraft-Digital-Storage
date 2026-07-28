@@ -10,14 +10,12 @@
 		"components": {
 			"utilitycraft:import_buffer": {
 				"entity": {
-					"id": "utilitycraft:import_buffer",
-					"type": "machine",
-					"skip_machine_event": false,
-					"skip_inventory_event": false,
-					"input_type": "none",
-					"output_type": "none"
+					"identifier": "utilitycraft:import_buffer",
+					"inventory_size": 19,
+					"name": "import_buffer"
 				},
 				"machine": {
+					"energy_cap": 0,
 					"rate_speed_base": 0
 				}
 			},

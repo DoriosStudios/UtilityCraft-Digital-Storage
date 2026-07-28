@@ -1,7 +1,10 @@
 /build
 /builds
+/dist
 /.regolith
 /.bridge
 /node_modules/.bin
 /node_modules/@esbuild
 /node_modules/esbuild
+/node_modules/@minecraft/server-ui
+/node_modules/typescript

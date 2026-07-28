@@ -1,6 +1,6 @@
 import { system, world } from "@minecraft/server";
-import { createItemFromKey, getItemKey } from "../storage_v2/item_registry.js";
-import { addItem, removeItem } from "../storage_v2/network_runtime.js";
+import { createItemFromKey, getItemKey } from "../storage/item_registry.js";
+import { addItem, removeItem } from "../storage/network_runtime.js";
 
 /**
  * Runtime output-token resolver for storage terminals.
@@ -263,7 +263,7 @@ function resolveClaim(token, requestedAmount) {
  * Adds a hidden terminal output marker to one visual grid item.
  *
  * @param {import("@minecraft/server").ItemStack} item Display item.
- * @param {{terminalId:string, networkId:number, slot:number, itemKey:string, amount:number, totalCount:number|string}} context
+ * @param {{terminalId:string, networkId:number, entity?:import("@minecraft/server").Entity, slot:number, itemKey:string, amount:number, totalCount:number|string}} context
  * @returns {import("@minecraft/server").ItemStack}
  */
 export function attachOutputToken(item, context) {

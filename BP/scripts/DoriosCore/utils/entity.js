@@ -56,7 +56,9 @@ export function initializeEntity(entity) {
  * @returns {import("@minecraft/server").Entity | undefined} The first entity found at the block location, or undefined if none exist.
  */
 export function tryGetEntityFromBlock(block) {
-  return block.dimension.getEntitiesAtBlockLocation(block.location)[0];
+  return block.dimension
+    .getEntitiesAtBlockLocation(block.location)
+    .find((entity) => entity.typeId !== "utilitycraft:machine_area_outline");
 }
 
 /**
@@ -78,34 +80,6 @@ export function tryGetBlockFromEntity(entity) {
     y: Math.floor(entity.location.y),
     z: Math.floor(entity.location.z),
   });
-}
-
-/**
- * Returns the block type id represented by a machine helper entity.
- *
- * Preference order:
- * 1. Current block under the entity (keeps renamed/swapped machines accurate)
- * 2. Persisted dynamic property written at spawn time
- *
- * @param {import("@minecraft/server").Entity} entity The helper entity to inspect.
- * @returns {string | undefined} Represented block type id.
- */
-export function getRepresentedBlockId(entity) {
-  const block = tryGetBlockFromEntity(entity);
-  if (typeof block?.typeId === "string" && block.typeId.length > 0 && block.typeId !== "minecraft:air") {
-    return block.typeId;
-  }
-
-  try {
-    const storedBlockId = entity?.getDynamicProperty?.(GlobalConstants.MACHINE_BLOCK_ID_PROPERTY_ID);
-    if (typeof storedBlockId === "string" && storedBlockId.trim().length > 0) {
-      return storedBlockId.trim();
-    }
-  } catch {
-    // Ignore dynamic property access failures.
-  }
-
-  return undefined;
 }
 
 /**
@@ -173,25 +147,12 @@ export function removeOpenUICount(entity) {
   return setOpenUICount(entity, getOpenUICount(entity) - 1);
 }
 
-function persistRepresentedBlockId(entity, blockId) {
-  if (!entity || typeof blockId !== "string" || blockId.length === 0) {
-    return;
-  }
-
-  try {
-    entity.setDynamicProperty(GlobalConstants.MACHINE_BLOCK_ID_PROPERTY_ID, blockId);
-  } catch {
-    // Ignore environments where the property is not registered yet.
-  }
-}
-
 /**
  * Spawns a UtilityCraft machine entity at the given block location
  * and initializes its inventory size and name tag.
  *
  * The entity is assigned inventory size, name tag, represented block metadata,
- * slot routing configuration, scoreboard identity, tick group, and optional
- * type-specific entity event.
+ * scoreboard identity, tick group, and an optional type-specific entity event.
  *
  * @param {import("@minecraft/server").Block} block The block where the machine will be placed.
  * @param {Object} config Machine configuration object.
@@ -199,11 +160,8 @@ function persistRepresentedBlockId(entity, blockId) {
  * @param {string} [config.entity.identifier] Entity identifier.
  * @param {number} config.entity.inventory_size Inventory slot count.
  * @param {string} [config.entity.name] Optional name.
- * @param {[number, number]} [config.entity.input_range] Input slot range.
- * @param {[number, number]} [config.entity.output_range] Output slot range.
- * @param {number} [config.entity.input_slot] Single input slot.
- * @param {number} [config.entity.output_slot] Single output slot.
  * @param {boolean} [config.entity.fixed_fluid_types] Keeps fluid type tags even when tanks are empty.
+ * @param {boolean} [config.entity.fixed_gas_types] Keeps gas type tags even when tanks are empty.
  * @param {string} [config.entity.type] Optional entity event suffix triggered after initialization.
  * @param {{x:number,y:number,z:number}} [config.spawn_offset] Optional spawn offset.
  *
@@ -226,6 +184,9 @@ export function spawnEntity(block, config) {
   if (entityData.fixed_fluid_types === true) {
     entity.addTag(MachineryConstants.CONSTANT_FLUID_TYPE_TAG);
   }
+  if (entityData.fixed_gas_types === true) {
+    entity.addTag(MachineryConstants.CONSTANT_GAS_TYPE_TAG);
+  }
 
   const inventorySize = entityData.inventory_size ?? 1;
   try {
@@ -234,29 +195,7 @@ export function spawnEntity(block, config) {
 
   const name = entityData.name ?? block.typeId.split(":")[1];
   entity.nameTag = `entity.utilitycraft:${name}.name`;
-  persistRepresentedBlockId(entity, block.typeId);
   TickScheduler.assignTickGroup(entity);
-
-  // Normalize slot config independently
-  const inputRange = Array.isArray(entityData.input_range)
-    ? entityData.input_range
-    : typeof entityData.input_slot === "number"
-      ? [entityData.input_slot, entityData.input_slot]
-      : undefined;
-
-  const outputRange = Array.isArray(entityData.output_range)
-    ? entityData.output_range
-    : typeof entityData.output_slot === "number"
-      ? [entityData.output_slot, entityData.output_slot]
-      : undefined;
-
-  if (inputRange || outputRange) {
-    registerSlotConfig(entity, {
-      input_range: inputRange,
-      output_range: outputRange,
-      block_id: block.typeId,
-    });
-  }
 
   initializeEntity(entity);
 
@@ -265,77 +204,6 @@ export function spawnEntity(block, config) {
   }
 
   return entity;
-}
-
-/**
- * Registers slot configuration for a machine container.
- *
- * Sends slot data to multiple compatibility systems:
- * - Dorios internal container config
- * - AE2BE container registry
- * - Item Ducts compatibility
- *
- * @param {import("@minecraft/server").Entity} entity The entity that owns the container.
- * @param {{ input_range?: number[], output_range?: number[], block_id: string }} config Slot configuration object.
- * @returns {void}
- */
-export function registerSlotConfig(entity, config) {
-  const slotRegister = {};
-
-  let inputSlots = [];
-  let outputSlots = [];
-
-  const rangeToSlots = (range) => {
-    const [start, end] = range;
-    const arr = [];
-    for (let i = start; i <= end; i++) arr.push(i);
-    return arr;
-  };
-
-  const validRange = (range) => Array.isArray(range) && range.length === 2 && typeof range[0] === "number" && typeof range[1] === "number";
-
-  const inputRange = validRange(config.input_range) ? config.input_range : [-1, -1];
-  const outputRange = validRange(config.output_range) ? config.output_range : [-1, -1];
-
-  slotRegister.input = inputRange;
-  slotRegister.output = outputRange;
-
-  if (inputRange[0] !== -1) {
-    inputSlots = rangeToSlots(inputRange);
-  }
-
-  if (outputRange[0] !== -1) {
-    outputSlots = rangeToSlots(outputRange);
-  }
-
-  // Dorios internal config
-  entity.runCommand(`scriptevent ${Constants.SPECIAL_CONTAINER_EVENT_ID} ${JSON.stringify(slotRegister)}`);
-
-  // AE2BE container registry
-  // system.sendScriptEvent(
-  //   "ae2be://api/v1/container-registry",
-  //   JSON.stringify({
-  //     typeId: entity.typeId,
-  //     containerType: "entity",
-  //     container: {
-  //       insertsItems: true,
-  //       useStorageBus: {
-  //         excludedSlots: inputSlots
-  //       },
-  //       inputSlots,
-  //       outputSlots
-  //     }
-  //   })
-  // );
-
-  // Item Ducts compatibility
-  entity.runCommand(
-    `scriptevent ${Constants.ITEM_DUCTS_REGISTER_EVENT_ID} ${JSON.stringify({
-      typeId: config.block_id,
-      extractSlots: outputSlots,
-      insertSlots: inputSlots,
-    })}`,
-  );
 }
 
 /**
@@ -364,6 +232,10 @@ export function updateAdjacentNetwork(block, permutationToPlace = block.permutat
 
     if (permutationToPlace.hasTag(Constants.FLUID_BLOCK_TAG)) {
       block.dimension.runCommand(`execute as @n run scriptevent ${Constants.UPDATE_PIPES_EVENT_ID} fluid|[${x},${y},${z}]`);
+    }
+
+    if (permutationToPlace.hasTag(Constants.GAS_BLOCK_TAG)) {
+      block.dimension.runCommand(`execute as @n run scriptevent ${Constants.UPDATE_PIPES_EVENT_ID} gas|[${x},${y},${z}]`);
     }
   }, 2);
 }

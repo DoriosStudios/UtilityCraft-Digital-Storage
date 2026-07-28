@@ -18,12 +18,9 @@
 		"components": {
 			"utilitycraft:storage_center": {
 				"entity": {
-					"id": "utilitycraft:storage_center",
-					"type": "machine",
-					"skip_machine_event": false,
-					"skip_inventory_event": false,
-					"input_type": "none",
-					"output_type": "none"
+					"identifier": "utilitycraft:storage_center",
+					"inventory_size": 2,
+					"name": "storage_center"
 				},
 				"machine": {
 					"energy_cap": 512000,

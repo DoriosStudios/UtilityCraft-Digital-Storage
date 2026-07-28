@@ -1,13 +1,13 @@
 import { ItemStack, system, world } from "@minecraft/server";
 import { ButtonManager, TickScheduler } from "DoriosCore/index.js";
-import { spawnEntity } from "DoriosCore/utils/entity.js";
+import { registerFixedItemIO, spawnStorageMachine } from "../../DigitalStorageCore/entities.js";
 import {
   attachOutputToken,
   attachUiSlotToken,
   consumeUiSlotRestores,
   materializeOutputItem,
 } from "./terminal_output.js";
-import { createItemFromKey, getItemKey } from "../storage_v2/item_registry.js";
+import { createItemFromKey, getItemKey } from "../storage/item_registry.js";
 import {
   addItem,
   consumeTerminalItemUpdates,
@@ -16,7 +16,7 @@ import {
   registerTerminalDisplay,
   setTerminalRenderedSlots,
   unregisterTerminalDisplay,
-} from "../storage_v2/network_runtime.js";
+} from "../storage/network_runtime.js";
 
 const DEFAULT_FILLER_ID = "utilitycraft:storage_filler";
 const DEFAULT_BUTTON_ID = "utilitycraft:ui_filler";
@@ -37,6 +37,16 @@ const COUNT_LABEL_BASE_SLOT = 169;
 const COUNT_LABEL_COLUMNS = GRID_COLUMNS;
 const COUNT_LABEL_ROWS = GRID_ROWS;
 const UI_OPEN_STATE = "utilitycraft:ui_open";
+
+registerFixedItemIO(TERMINAL_ENTITY_TYPE, BURN_SLOTS, []);
+
+/** @param {number[]|undefined} range */
+function expandSlotRange(range) {
+  if (!Array.isArray(range) || range.length !== 2) return [];
+  const start = Math.max(0, Math.floor(Number(range[0]) || 0));
+  const end = Math.max(start, Math.floor(Number(range[1]) || 0));
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+}
 
 export const STORAGE_TERMINAL_CONFIG = {
   machineId: TERMINAL_MACHINE_ID,
@@ -79,7 +89,8 @@ export class StorageTerminalInterface {
   constructor(block) {
     this.valid = false;
     this.block = block;
-    this.entity = this.constructor.getEntity(block);
+    const TerminalClass = /** @type {typeof StorageTerminalInterface} */ (this.constructor);
+    this.entity = TerminalClass.getEntity(block);
     if (!this.entity?.isValid) return;
     this.shouldUpdateUI = TickScheduler.hasOpenUI(this.entity);
     this.shouldProcess = this.shouldUpdateUI || TickScheduler.shouldProcessMachine(this.entity);
@@ -136,21 +147,18 @@ export class StorageTerminalInterface {
   /**
    * Spawns and initializes the helper entity for a placed terminal block.
    *
-   * @param {import("@minecraft/server").Block} block Terminal block.
+   * @param {import("@minecraft/server").BlockComponentPlayerPlaceBeforeEvent} event Placement event.
+   * @param {unknown} settings Component settings.
    */
-  static place(block) {
+  static place(event, settings) {
     const TerminalClass = this;
     const config = TerminalClass.config;
+    const block = event.block;
 
-    system.run(() => {
-      spawnEntity(block, {
-        entity: {
-          identifier: config.entityType,
-          inventory_size: config.inventorySize,
-          input_range: config.inputRange,
-          name: config.entityName,
-        },
-      });
+    spawnStorageMachine(event, settings, {
+      inputSlots: expandSlotRange(config.inputRange),
+      outputSlots: [],
+    }, () => {
       new TerminalClass(block).setup();
     });
   }
@@ -300,7 +308,7 @@ export class StorageTerminalInterface {
     const inv = this.container;
     if (!inv) return;
 
-    ButtonManager.ensureWatching(entity, this.constructor.config.machineId);
+    ButtonManager.ensureWatching(entity, this.getInterfaceConfig().machineId);
     this.restorePendingUiSlots(entity, inv);
 
     this.networkId = this.getLinkedNetworkId(entity);
@@ -382,18 +390,18 @@ export class StorageTerminalInterface {
   syncOpenTickState(block, hasOpenUI) {
     if (!block?.permutation) return;
 
-    const isOpen = block.permutation.getState(UI_OPEN_STATE) === true;
+    const stateName = /** @type {any} */ (UI_OPEN_STATE);
+    const isOpen = block.permutation.getState(stateName) === true;
     if (isOpen === hasOpenUI) return;
 
     try {
-      block.setPermutation(block.permutation.withState(UI_OPEN_STATE, hasOpenUI));
+      block.setPermutation(block.permutation.withState(stateName, hasOpenUI));
     } catch {}
   }
 
   /**
    * Handles reload and page navigation control slots.
    *
-   * @param {import("@minecraft/server").Entity} entity Terminal backing entity.
    * @param {number} slot Pressed container slot.
    * @returns {string|undefined} Button display name for feedback.
    */
@@ -670,7 +678,7 @@ export class StorageTerminalInterface {
     if (!this.container) return;
 
     const dropLocation = this.block.center();
-    const burnSlots = this.constructor.config.slots.burn ?? BURN_SLOTS;
+    const burnSlots = this.getInterfaceConfig().slots.burn ?? BURN_SLOTS;
     for (const slot of burnSlots) {
       const item = this.container.getItem(slot);
       if (!item) continue;
@@ -772,7 +780,7 @@ export class StorageTerminalInterface {
     if (!entity) return "";
     if (entity.id) return String(entity.id);
 
-    const location = entity.location ?? {};
+    const location = entity.location;
     const dimensionId = entity.dimension?.id ?? "unknown";
     return `${dimensionId}:${Math.floor(location.x ?? 0)},${Math.floor(location.y ?? 0)},${Math.floor(location.z ?? 0)}`;
   }
@@ -807,7 +815,7 @@ export class StorageTerminalInterface {
    *
    * @param {string} itemKey Stable storage item key.
    * @param {number} count Total amount stored in the network.
-   * @param {object} [outputContext] Output token context.
+   * @param {{entity:import("@minecraft/server").Entity,networkId:number,slot:number,itemKey:string}|undefined} [outputContext] Output token context.
    * @returns {import("@minecraft/server").ItemStack} Display item.
    */
   createDisplayItem(itemKey, count, outputContext) {
@@ -827,6 +835,11 @@ export class StorageTerminalInterface {
       amount,
       totalCount: Math.max(0, Math.floor(Number(count) || 0)),
     });
+  }
+
+  /** @returns {typeof STORAGE_TERMINAL_CONFIG} */
+  getInterfaceConfig() {
+    return /** @type {typeof StorageTerminalInterface} */ (this.constructor).config;
   }
 
   /**
@@ -1052,9 +1065,9 @@ function getDimension(id = "overworld") {
  * @param {string} message Message body.
  */
 function reply(event, message) {
-  const text = `[DSv2] ${message}`;
+  const text = `[DigitalStorage] ${message}`;
   try {
-    event.sourceEntity?.sendMessage?.(text);
+    /** @type {import("@minecraft/server").Player|undefined} */ (event.sourceEntity)?.sendMessage(text);
   } catch {}
   // console.warn(text);
 }

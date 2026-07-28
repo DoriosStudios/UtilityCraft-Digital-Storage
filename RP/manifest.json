@@ -9,11 +9,11 @@
 	},
 	"header": {
 		"name": "§bDigital Storage",
-		"description": "1.0.0.06 §6Dorios Studios",
+		"description": "1.0.0 - Requires UtilityCraft 3.5.0+ §6Dorios Studios",
 		"min_engine_version": [
 			1,
 			21,
-			0
+			120
 		],
 		"uuid": "3e925e65-b723-4a41-a226-47937568ba59",
 		"version": [

@@ -1,9 +1,11 @@
 import { ItemStack, system } from "@minecraft/server";
+import * as DoriosLib from "DoriosLib/index.js";
 import { crafterRecipes } from "Config/recipes/crafter.js";
 import { attachOutputToken, materializeOutputItem, readOutputToken } from "./terminal_output.js";
 import { StorageTerminalInterface, STORAGE_TERMINAL_CONFIG } from "./terminal.js";
-import { createItemFromKey, getItemKey } from "../storage_v2/item_registry.js";
-import { addItem, getNetworkSnapshot, removeItem } from "../storage_v2/network_runtime.js";
+import { createItemFromKey, getItemKey } from "../storage/item_registry.js";
+import { addItem, getNetworkSnapshot, removeItem } from "../storage/network_runtime.js";
+import { registerFixedItemIO } from "../../DigitalStorageCore/entities.js";
 
 const CRAFTING_TERMINAL_ENTITY_TYPE = "utilitycraft:crafting_terminal";
 const CRAFTING_TERMINAL_MACHINE_ID = "crafting_terminal";
@@ -23,9 +25,9 @@ const CRAFT_QTY_PROPERTY = "ucds:craft_qty";
 const CRAFT_OUTPUT_MODE_PROPERTY = "ucds:craft_output_mode";
 const CRAFT_LAST_PREVIEW_PROPERTY = "ucds:craft_last_preview";
 const MIN_Y_BY_DIMENSION = {
-  "minecraft:overworld": DoriosAPI.constants.dimensions.overworld.minY,
-  "minecraft:nether": DoriosAPI.constants.dimensions.nether.minY,
-  "minecraft:the_end": DoriosAPI.constants.dimensions.end.minY,
+  "minecraft:overworld": DoriosLib.constants.DIMENSIONS.overworld.minY,
+  "minecraft:nether": DoriosLib.constants.DIMENSIONS.nether.minY,
+  "minecraft:the_end": DoriosLib.constants.DIMENSIONS.end.minY,
 };
 
 export const CRAFTING_TERMINAL_CONFIG = {
@@ -51,6 +53,12 @@ export const CRAFTING_TERMINAL_CONFIG = {
     outputMode: OUTPUT_MODE_SLOT,
   },
 };
+
+registerFixedItemIO(
+  CRAFTING_TERMINAL_ENTITY_TYPE,
+  STORAGE_TERMINAL_CONFIG.slots.burn,
+  [],
+);
 
 export class CraftingTerminalInterface extends StorageTerminalInterface {
   static get config() {
@@ -169,7 +177,7 @@ export class CraftingTerminalInterface extends StorageTerminalInterface {
 
       this.dimension.setBlockType(redstoneLocation, "minecraft:redstone_block");
     } catch (error) {
-      console.warn(`[DSv2] Crafting Terminal recipe setup failed: ${error?.message ?? error}`);
+      console.warn(`[DigitalStorage] Crafting Terminal recipe setup failed: ${error?.message ?? error}`);
       this.finishRecipeResolve(undefined, crafterLocation, redstoneLocation, previousCrafterBlock, previousRedstoneBlock);
       return;
     }

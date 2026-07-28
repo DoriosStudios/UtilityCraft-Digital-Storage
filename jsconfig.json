@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowJs": true,
+    "checkJs": true,
+    "strict": false,
+    "noEmit": true,
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "DoriosCore": ["types/DoriosCore/index.d.ts"],
+      "DoriosCore/index.js": ["types/DoriosCore/index.d.ts"],
+      "DoriosLib": ["types/DoriosLib/index.d.ts"],
+      "DoriosLib/index.js": ["types/DoriosLib/index.d.ts"],
+      "DoriosLib/*": ["types/DoriosLib/index.d.ts"],
+      "Config/*": ["BP/scripts/Config/*"],
+      "Machinery/*": ["BP/scripts/Machinery/*"],
+      "DigitalStorageCore/*": ["BP/scripts/DigitalStorageCore/*"]
+    },
+    "skipLibCheck": true
+  },
+  "include": [
+    "BP/scripts/main.js",
+    "BP/scripts/Config/**/*.js",
+    "BP/scripts/DigitalStorageCore/**/*.js",
+    "BP/scripts/Machinery/interface/**/*.js",
+    "BP/scripts/Machinery/storage/**/*.js",
+    "types/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".regolith",
+    "build",
+    "builds",
+    "dist",
+    "data",
+    "BP/scripts/DoriosCore",
+    "BP/scripts/DoriosLib"
+  ]
+}

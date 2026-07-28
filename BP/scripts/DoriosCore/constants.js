@@ -10,12 +10,6 @@
 export const DEFAULT_ENTITY_ID = "utilitycraft:machine_entity";
 
 /**
- * Dynamic property used to persist which block a machine helper entity
- * currently represents.
- */
-export const MACHINE_BLOCK_ID_PROPERTY_ID = "dorios:machine_block_id";
-
-/**
  * Default machine processing interval.
  *
  * Represents the number of ticks between machine updates.
@@ -69,6 +63,15 @@ export const REGISTER_FLUID_ITEM_EVENT_ID = "utilitycraft:register_fluid_item";
  * Script event used to register fluid holder items at runtime.
  */
 export const REGISTER_FLUID_HOLDER_EVENT_ID = "utilitycraft:register_fluid_holder";
+
+/** Script event used to register gas container items at runtime. */
+export const REGISTER_GAS_ITEM_EVENT_ID = "utilitycraft:register_gas_item";
+
+/** Script event used to register gas holder items at runtime. */
+export const REGISTER_GAS_HOLDER_EVENT_ID = "utilitycraft:register_gas_holder";
+
+/** Script event used to register machine upgrade items and their level perks. */
+export const REGISTER_MACHINE_UPGRADE_EVENT_ID = "utilitycraft:register_machine_upgrade";
 
 /**
  * Script event used to update the shared machinery tick speed.

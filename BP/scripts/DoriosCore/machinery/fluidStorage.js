@@ -1,3 +1,4 @@
+import * as DoriosLib from "DoriosLib/index.js";
 import { world, ItemStack, system } from "@minecraft/server";
 import * as Constants from "./constants.js";
 import { OutputTracker } from "./outputTracker.js";
@@ -309,7 +310,7 @@ export class FluidStorage {
   static getFluidFromText(input) {
     const cleaned = input.replace(/§./g, "").trim();
 
-    const match = cleaned.match(/([^:]+):\s*([\d.]+)\s*(mB|B|kB|MB|GB|TB|PB|EB)/i);
+    const match = cleaned.match(/([^:]+):\s*([\d.]+(?:e[+-]?\d+)?)\s*(mB|B|kB|MB|GB|TB|PB|EB)/i);
     if (!match) return { type: "empty", amount: 0 };
 
     const [, rawType, rawValue, unit] = match;
@@ -385,7 +386,7 @@ export class FluidStorage {
    */
   static replaceHeldFluidItem(player, expectedTypeId, nextTypeId) {
     if (!player || !expectedTypeId) return false;
-    if (typeof player.isInCreative === "function" && player.isInCreative()) return true;
+    if (DoriosLib.player.isCreative(player)) return true;
     if (expectedTypeId === nextTypeId) return true;
 
     const selected = FluidStorage.getSelectedInventoryItem(player);
@@ -521,7 +522,7 @@ export class FluidStorage {
    * @param {ItemStack} [mainHand] Optional item used for the interaction
    */
   static handleFluidItemInteraction(player, entity, mainHand) {
-    mainHand = mainHand ?? player.getEquipment("Mainhand");
+    mainHand = mainHand ?? DoriosLib.entity.getEquipment(player, "Mainhand");
     if (!mainHand) return;
 
     const containerData = FluidStorage.getContainerData(mainHand.typeId);
@@ -539,10 +540,10 @@ export class FluidStorage {
     const percent = ((amount / cap) * 100).toFixed(2);
 
     player.onScreenDisplay.setActionBar(
-      `§b${DoriosAPI.utils.formatIdToText(type)}: §f${FluidStorage.formatFluid(amount)}§7 / §f${FluidStorage.formatFluid(cap)} §7(${percent}%)`,
+      `§b${DoriosLib.text.formatIdentifier(type)}: §f${FluidStorage.formatFluid(amount)}§7 / §f${FluidStorage.formatFluid(cap)} §7(${percent}%)`,
     );
 
-    if (!player.isInCreative()) {
+    if (!DoriosLib.player.isCreative(player)) {
       FluidStorage.replaceHeldFluidItem(player, mainHand.typeId, insert || undefined);
     }
   }
@@ -666,7 +667,7 @@ export class FluidStorage {
     this.scores.fluid.setScore(this.scoreId, value);
     this.scores.fluidExp.setScore(this.scoreId, exp);
     if (this.entity?.typeId?.startsWith("utilitycraft:fluid_tank")) {
-      this.entity.setHealth(amount);
+      DoriosLib.entity.setHealth(this.entity, amount);
     }
   }
 
@@ -723,7 +724,7 @@ export class FluidStorage {
       const amountCurrent = this.get();
       if (amountCurrent > 0) {
         system.run(() => {
-          this.entity.setHealth(amountCurrent);
+          DoriosLib.entity.setHealth(this.entity, amountCurrent);
         });
       } else {
         this.entity.remove();
@@ -737,9 +738,12 @@ export class FluidStorage {
    * Consumes a specific amount of fluid if available.
    *
    * @param {number} amount The amount to consume.
+   * Infinite and legacy creative storages report success without changing their amount.
+   *
    * @returns {number} The amount actually consumed (0 if insufficient).
    */
   consume(amount) {
+    if (this.entity.hasTag(Constants.INFINITE_STORAGE_TAG)) return amount;
     if (this.entity.hasTag(Constants.CREATIVE_TAG)) return amount;
     const current = this.get();
     if (current < amount) return 0;
@@ -825,7 +829,7 @@ export class FluidStorage {
    *
    * @param {number} speed Total transfer speed limit (mB/tick).
    * @param {"nearest"|"farthest"|"round"} [mode="nearest"] Transfer mode.
-   * @param {Array<{x:number, y:number, z:number}>} nodes Precomputed network node positions.
+   * @param {Array<{x:number, y:number, z:number}>} [nodes] Precomputed network node positions.
    * @returns {number} Total amount of fluid transferred (in mB).
    */
   transferToNetwork(speed, mode = "nearest", nodes) {
@@ -1018,7 +1022,7 @@ export class FluidStorage {
     const frameName = frame.toString().padStart(2, "0");
 
     const item = new ItemStack(`utilitycraft:${type}_${frameName}`, 1);
-    item.nameTag = `§r${DoriosAPI.utils.formatIdToText(type)}
+    item.nameTag = `§r${DoriosLib.text.formatIdentifier(type)}
 §r§7  Stored: ${FluidStorage.formatFluid(fluid)} / ${FluidStorage.formatFluid(cap)}
 §r§7  Percentage: ${((fluid / cap) * 100).toFixed(2)}%`;
 
@@ -1037,7 +1041,7 @@ export class FluidStorage {
    * @param {Block} block The block representing the tank.
    * @param {string} type The type of fluid to insert.
    * @param {number} amount Amount of fluid to insert in mB.
-   * @returns {Entity | undefined} The tank entity if insertion was successful.
+   * @returns {Entity | undefined | false} The tank entity if insertion was successful.
   */
   static addfluidToTank(block, type, amount) {
     const dim = block.dimension;

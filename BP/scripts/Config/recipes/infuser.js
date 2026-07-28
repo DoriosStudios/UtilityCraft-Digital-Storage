@@ -1,4 +1,4 @@
-import { system, world } from "@minecraft/server";
+import * as DoriosLib from "DoriosLib/index.js";
 
 const infuserRecipes = {
     "utilitycraft:diamond_dust|minecraft:amethyst_shard": {
@@ -8,6 +8,4 @@ const infuserRecipes = {
     }
 };
 
-world.afterEvents.worldLoad.subscribe(() => {
-    system.sendScriptEvent("utilitycraft:register_infuser_recipe", JSON.stringify(infuserRecipes));
-});
+DoriosLib.registry.registerInfuserRecipe(infuserRecipes);

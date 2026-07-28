@@ -18,14 +18,12 @@
 		"components": {
 			"utilitycraft:storage_cell_drive": {
 				"entity": {
-					"id": "utilitycraft:storage_cell_drive",
-					"type": "machine",
-					"skip_machine_event": false,
-					"skip_inventory_event": false,
-					"input_type": "none",
-					"output_type": "none"
+					"identifier": "utilitycraft:storage_cell_drive",
+					"inventory_size": 16,
+					"name": "storage_cell_drive"
 				},
 				"machine": {
+					"energy_cap": 0,
 					"rate_speed_base": 0
 				}
 			},
