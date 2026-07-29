@@ -1,5 +1,5 @@
 {
-  "namespace": "sh",
+  "namespace": "ds",
   "count_column_label": {
     "type": "panel",
     "$text_scale|default": 0.55,
@@ -9,7 +9,7 @@
     "size": [ 18, 378 ],
     "controls": [
       {
-        "label_v1@sh._count_column_label_v1": {
+        "label_v1@ds._count_column_label_v1": {
           "anchor_from": "top_left",
           "anchor_to": "top_left",
           "offset": [ 0, 0 ],
@@ -18,7 +18,7 @@
         }
       },
       {
-        "label_v2@sh._count_column_label_v2": {
+        "label_v2@ds._count_column_label_v2": {
           "anchor_from": "top_left",
           "anchor_to": "top_left",
           "offset": [ 0, 0 ],
@@ -95,15 +95,15 @@
     "$text_scale|default": 0.55,
     "$line_padding|default": 22.725,
     "controls": [
-      { "column_001@sh.count_column_label": { "collection_index": "$collection_index_1", "offset": [ 0, -2 ] } },
-      { "column_002@sh.count_column_label": { "collection_index": "$collection_index_2", "offset": [ 18, -2 ] } },
-      { "column_003@sh.count_column_label": { "collection_index": "$collection_index_3", "offset": [ 36, -2 ] } },
-      { "column_004@sh.count_column_label": { "collection_index": "$collection_index_4", "offset": [ 54, -2 ] } },
-      { "column_005@sh.count_column_label": { "collection_index": "$collection_index_5", "offset": [ 72, -2 ] } },
-      { "column_006@sh.count_column_label": { "collection_index": "$collection_index_6", "offset": [ 90, -2 ] } },
-      { "column_007@sh.count_column_label": { "collection_index": "$collection_index_7", "offset": [ 108, -2 ] } },
-      { "column_008@sh.count_column_label": { "collection_index": "$collection_index_8", "offset": [ 126, -2 ] } },
-      { "column_009@sh.count_column_label": { "collection_index": "$collection_index_9", "offset": [ 144, -2 ] } }
+      { "column_001@ds.count_column_label": { "collection_index": "$collection_index_1", "offset": [ 0, -2 ] } },
+      { "column_002@ds.count_column_label": { "collection_index": "$collection_index_2", "offset": [ 18, -2 ] } },
+      { "column_003@ds.count_column_label": { "collection_index": "$collection_index_3", "offset": [ 36, -2 ] } },
+      { "column_004@ds.count_column_label": { "collection_index": "$collection_index_4", "offset": [ 54, -2 ] } },
+      { "column_005@ds.count_column_label": { "collection_index": "$collection_index_5", "offset": [ 72, -2 ] } },
+      { "column_006@ds.count_column_label": { "collection_index": "$collection_index_6", "offset": [ 90, -2 ] } },
+      { "column_007@ds.count_column_label": { "collection_index": "$collection_index_7", "offset": [ 108, -2 ] } },
+      { "column_008@ds.count_column_label": { "collection_index": "$collection_index_8", "offset": [ 126, -2 ] } },
+      { "column_009@ds.count_column_label": { "collection_index": "$collection_index_9", "offset": [ 144, -2 ] } }
     ],
     "$collection_index_1|default": 169,
     "$collection_index_2|default": 170,

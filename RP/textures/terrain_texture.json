@@ -19,6 +19,9 @@
 		"utilitycraft_storage_cell_drive_front": {
 			"textures": "textures/blocks/storage_cell_drive_front"
 		},
+		"utilitycraft_storage_transfer_station_front": {
+			"textures": "textures/blocks/storage_transfer_station_front"
+		},
 		"utilitycraft_network_cable": {
 			"textures": "textures/blocks/network_cable"
 		},

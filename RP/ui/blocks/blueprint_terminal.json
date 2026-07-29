@@ -36,7 +36,7 @@
             },
             // Terminal Core
             {
-                "terminal_core@sh.terminal_core": {
+                "terminal_core@ds.terminal_core": {
                     "anchor_from": "center",
                     "anchor_to": "center",
                     "offset": [ 0, 57 ]
@@ -44,7 +44,7 @@
             },
             // Next Button
             {
-                "next_button@sh.button": {
+                "next_button@ds.button": {
                     "layer": 10,
                     "$index": 228,
                     "$button_size": [22, 22],
@@ -58,7 +58,7 @@
             },
             // Previous Button
             {
-                "previous_button@sh.button": {
+                "previous_button@ds.button": {
                     "layer": 10,
                     "$index": 229,
                     "$button_size": [22, 22],
@@ -87,7 +87,7 @@
             },
             // Sort Button
             {
-                "sort_button@sh.button": {
+                "sort_button@ds.button": {
                     "layer": 10,
                     "$index": 231,
                     "$default_texture": "textures/ui/buttons/sort/button",
@@ -100,7 +100,7 @@
                 }
             },
             {
-                "blueprint_toggle@sh.toggle_button": {
+                "blueprint_toggle@ds.toggle_button": {
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
                     "offset": [ -90, -33 ],
@@ -118,7 +118,7 @@
                 }
             },
             {
-                "blueprint_state_panel@sh.toggle_button_panel": {
+                "blueprint_state_panel@ds.toggle_button_panel": {
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
                     "offset": [ 0, 0 ],
@@ -137,7 +137,7 @@
                             }
                         },
                         {
-                            "blueprint_panel@sh.blueprint_panel": {
+                            "blueprint_panel@ds.blueprint_panel": {
                                 "offset": [ -114, -32 ],
                                 "$blueprint_index": 232,
                                 "$output_index": 233,

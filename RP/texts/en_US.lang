@@ -8,6 +8,7 @@ tile.utilitycraft:storage_terminal.name=Storage Terminal\n§7- Access items in a
 tile.utilitycraft:blueprint_terminal.name=Blueprint Terminal\n§7- Access network items and manage crafting blueprints\n§o§9@UC: Digital Storage
 tile.utilitycraft:crafting_terminal.name=Crafting Terminal\n§7- Access network items and craft from storage\n§o§9@UC: Digital Storage
 tile.utilitycraft:storage_cell_drive.name=Storage Cell Drive\n§7- Holds storage cells for the digital network\n§o§9@UC: Digital Storage
+tile.utilitycraft:storage_transfer_station.name=Storage Transfer Station\n§7- Transfers stored items between storage cells\n§o§9@UC: Digital Storage
 tile.utilitycraft:network_cable.name=Network Cable\n§7- Links digital storage blocks into a network\n§o§9@UC: Digital Storage
 tile.utilitycraft:import_buffer.name=Import Buffer\n§7- Sends items into connected digital storage\n§o§9@UC: Digital Storage
 tile.utilitycraft:export_buffer.name=Export Buffer\n§7- Pulls filtered items out of connected digital storage\n§7- Accepted upgrades:\n   §a§7\n§o§9@UC: Digital Storage
@@ -20,6 +21,7 @@ tile.utilitycraft:silicon_block.name=Block of Silicon\n§7- Crafting material\n�
 #######################
 
 entity.utilitycraft:storage_cell_drive.name=Storage Cell Drive
+entity.utilitycraft:storage_transfer_station.name=Storage Transfer Station
 entity.utilitycraft:crafting_terminal.name=§fCrafting Terminal
 entity.utilitycraft:blueprint_terminal.name=§fBlueprint Terminal
 entity.utilitycraft:storage_terminal.name=§fStorage Terminal
@@ -66,3 +68,8 @@ dorios:itemGroup.name.wireless=Wireless
 
 ui.utilitycraft:blueprint_label=Crafting
 ui.utilitycraft:crafting_label=Crafting
+ui.utilitycraft:info.storage_transfer_station=§8Transfers stored items from the §9left slot§8 to the §cright slot§8 every 10 ticks. Each operation moves up to §q500 items§8, plus 500 for each installed §qSpeed Upgrade§8 level, without exceeding the destination cell capacity.\n\n§8Slots:\n- Left: source storage cell.\n- Right: destination storage cell.\n\n§8Accepted upgrade:\n- Speed Upgrade (maximum level: 8)
+ui.utilitycraft:info.storage_center=§8Creates, powers, and controls a digital storage network connected through §qNetwork Cables§8. It links Storage Cell Drives, terminals, Import Buffers, and Export Buffers into one network.\n\n§8The network requires exactly one §qStorage Center§8 and at least one §qStorage Cell Drive§8 containing a storage cell. Its energy cost depends on the connected topology, with a minimum consumption of §q10 DE/t§8. If the center runs out of energy, the network is turned off.
+ui.utilitycraft:info.storage_cell_drive=§8Holds up to §q16 storage cells§8 and contributes their combined capacity to the connected digital storage network. The §qStorage Center§8 reads the installed cells when it creates the network.\n\n§8Changing a cell while the drive is linked turns the §cnetwork off§8 so the Storage Center can rebuild it safely.
+ui.utilitycraft:info.import_buffer=§8Moves items from its §918 input slots§8 into the connected digital storage network every §q10 ticks§8. It processes one occupied stack per operation, plus one additional stack for each §qSpeed Upgrade§8 level.\n\n§8Accepted upgrade:\n- §qSpeed Upgrade§8 (maximum level: 8)\n\n§8Automation can only insert items into the input slots.
+ui.utilitycraft:info.export_buffer=§8Uses its §q9 filter slots§8 to pull matching items from the connected digital storage network into §c27 output slots§8 every 10 ticks. It exports one stack per operation, plus one additional stack for each §qSpeed Upgrade§8 level.\n\n§8Accepted upgrade:\n- §qSpeed Upgrade§8 (maximum level: 8)\n\n§8Automation can only extract items from the output slots.

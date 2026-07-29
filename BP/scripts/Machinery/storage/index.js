@@ -10,6 +10,7 @@ import "./machines/export_buffer.js";
 import "./machines/import_buffer.js";
 import "./machines/crafting_terminal.js";
 import "./machines/storage_cell_drive.js";
+import "./machines/storage_transfer_station.js";
 import "./machines/storage_center.js";
 import "./machines/storage_terminal.js";
 

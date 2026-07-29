@@ -1,4 +1,5 @@
 import { system, world } from "@minecraft/server";
+import * as DoriosLib from "DoriosLib/index.js";
 import { createItemFromKey, getItemKey } from "../storage/item_registry.js";
 import { addItem, removeItem } from "../storage/network_runtime.js";
 
@@ -141,16 +142,17 @@ function isUiElementItem(item) {
  * Queues a UI filler slot to be restored by its owning terminal tick.
  *
  * @param {{terminalId:string, slot:number}|undefined} token UI slot token.
+ * @param {import("@minecraft/server").Player} [player] Player that moved the filler.
  */
-function queueUiSlotRestore(token) {
+function queueUiSlotRestore(token, player) {
   if (!token?.terminalId || token.slot < 0) return;
 
   let slots = pendingUiSlotRestores.get(token.terminalId);
   if (!slots) {
-    slots = new Set();
+    slots = new Map();
     pendingUiSlotRestores.set(token.terminalId, slots);
   }
-  slots.add(token.slot);
+  slots.set(token.slot, player);
 }
 
 /**
@@ -171,9 +173,10 @@ function getRequestedAmount(item) {
  *
  * @param {object} claim Runtime output claim.
  * @param {number} requestedAmount Amount requested by the visible stack.
+ * @param {import("@minecraft/server").Player} [player] Player taking the output.
  * @returns {number} Total amount reserved for the request.
  */
-function reserveClaimAmount(claim, requestedAmount) {
+function reserveClaimAmount(claim, requestedAmount, player) {
   const requested = Math.max(0, Math.floor(Number(requestedAmount) || 0));
   if (requested <= 0) return 0;
 
@@ -187,7 +190,7 @@ function reserveClaimAmount(claim, requestedAmount) {
   const removed = Math.max(0, Math.floor(Number(result.removed) || 0));
   claim.reserved += removed;
   claim.updatedTick = system.currentTick;
-  if (removed > 0) rescueSwappedTerminalSlotItem(claim);
+  if (removed > 0) rescueSwappedTerminalSlotItem(claim, player);
 
   return Math.min(requested, outstanding + removed);
 }
@@ -200,8 +203,11 @@ function reserveClaimAmount(claim, requestedAmount) {
  * terminal renderer owns that.
  *
  * @param {object} claim Runtime output claim.
+ * @param {import("@minecraft/server").Player} [player] Player that performed the swap.
  */
-function rescueSwappedTerminalSlotItem(claim) {
+function rescueSwappedTerminalSlotItem(claim, player) {
+  if (claim?.swapRescued === true) return;
+
   const entity = claim?.entity;
   const slot = Math.max(0, Math.floor(Number(claim?.slot) || 0));
   const networkId = Math.floor(Number(claim?.networkId) || 0);
@@ -214,14 +220,28 @@ function rescueSwappedTerminalSlotItem(claim) {
   const outputToken = readOutputToken(item);
   if (outputToken?.terminalId === claim.terminalId && outputToken.claimId === claim.claimId) return;
 
-  const materialized = materializeOutputItem(item);
+  const materialized = materializeOutputItem(item, player);
   const rescuedItem = materialized.item ?? (!materialized.handled ? item : undefined);
   if (!rescuedItem) return;
 
   const itemKey = getItemKey(rescuedItem);
   if (!itemKey) return;
 
-  addItem(networkId, itemKey, rescuedItem.amount, "terminal_swap_rescue");
+  claim.swapRescued = true;
+  const result = addItem(networkId, itemKey, rescuedItem.amount, "terminal_swap_rescue");
+  if (result.remaining <= 0) return;
+
+  rescuedItem.amount = result.remaining;
+  if (player?.isValid) {
+    DoriosLib.player.giveItem(player, { item: rescuedItem });
+    return;
+  }
+
+  // Dropped output tokens have no owning player. Drop the remainder at the
+  // terminal so a later UI render cannot overwrite a real item.
+  try {
+    entity.dimension.spawnItem(rescuedItem, entity.location);
+  } catch {}
 }
 
 /**
@@ -229,10 +249,11 @@ function rescueSwappedTerminalSlotItem(claim) {
  *
  * @param {object} claim Runtime output claim.
  * @param {number} requestedAmount Amount requested by the visible stack.
+ * @param {import("@minecraft/server").Player} [player] Player taking the output.
  * @returns {number} Amount delivered.
  */
-function deliverClaimAmount(claim, requestedAmount) {
-  const deliverable = reserveClaimAmount(claim, requestedAmount);
+function deliverClaimAmount(claim, requestedAmount, player) {
+  const deliverable = reserveClaimAmount(claim, requestedAmount, player);
   if (deliverable <= 0) return 0;
 
   claim.delivered += deliverable;
@@ -245,14 +266,15 @@ function deliverClaimAmount(claim, requestedAmount) {
  *
  * @param {{terminalId:string, claimId:string, slot:number}} token Output token.
  * @param {number} requestedAmount Amount requested by the visible stack.
+ * @param {import("@minecraft/server").Player} [player] Player taking the output.
  * @returns {{handled:boolean, item?:import("@minecraft/server").ItemStack, claim?:object}|undefined} Resolution result.
  */
-function resolveClaim(token, requestedAmount) {
+function resolveClaim(token, requestedAmount, player) {
   const claim = outputClaims.get(token.claimId);
   if (!claim) return undefined;
   if (claim.terminalId !== token.terminalId) return undefined;
 
-  const delivered = deliverClaimAmount(claim, requestedAmount);
+  const delivered = deliverClaimAmount(claim, requestedAmount, player);
   if (delivered <= 0) return { handled: true, item: undefined, claim };
 
   const item = createItemFromKey(claim.itemKey, delivered);
@@ -278,6 +300,7 @@ export function attachOutputToken(item, context) {
     displayAmount: Math.max(1, Math.floor(Number(context.amount) || 1)),
     reserved: 0,
     delivered: 0,
+    swapRescued: false,
     createdTick: system.currentTick,
     updatedTick: system.currentTick,
   });
@@ -395,7 +418,7 @@ export function stripUiSlotTokenLore(lore = []) {
  * Consumes pending UI filler slot restores for one terminal.
  *
  * @param {string} terminalId Terminal runtime id.
- * @returns {number[]} Slots that should be restored.
+ * @returns {Array<{slot:number, player?:import("@minecraft/server").Player}>} Pending restores.
  */
 export function consumeUiSlotRestores(terminalId) {
   const id = String(terminalId ?? "");
@@ -403,7 +426,7 @@ export function consumeUiSlotRestores(terminalId) {
   if (!slots) return [];
 
   pendingUiSlotRestores.delete(id);
-  return [...slots];
+  return [...slots.entries()].map(([slot, player]) => ({ slot, player }));
 }
 
 /**
@@ -411,13 +434,14 @@ export function consumeUiSlotRestores(terminalId) {
  * that amount was not already reserved while the item was on the cursor.
  *
  * @param {import("@minecraft/server").ItemStack | undefined} item
+ * @param {import("@minecraft/server").Player} [player] Player receiving the real item.
  * @returns {{handled:boolean, item?:import("@minecraft/server").ItemStack}}
  */
-export function materializeOutputItem(item) {
+export function materializeOutputItem(item, player) {
   const token = readOutputToken(item);
   if (!token) return { handled: false, item };
 
-  const resolved = resolveClaim(token, getRequestedAmount(item));
+  const resolved = resolveClaim(token, getRequestedAmount(item), player);
   if (!resolved) return { handled: true, item: undefined };
   return { handled: true, item: resolved.item };
 }
@@ -436,10 +460,10 @@ function resolveInventoryItem(player, slot, item) {
   if (isUiElementItem(item)) {
     const outputToken = readOutputToken(item);
     if (outputToken) {
-      materializeOutputItem(item);
+      materializeOutputItem(item, player);
     } else {
       const uiToken = readUiSlotToken(item);
-      queueUiSlotRestore(uiToken);
+      queueUiSlotRestore(uiToken, player);
     }
 
     const inventory = player.getComponent("minecraft:inventory")?.container;
@@ -449,7 +473,7 @@ function resolveInventoryItem(player, slot, item) {
     return;
   }
 
-  const resolved = materializeOutputItem(item);
+  const resolved = materializeOutputItem(item, player);
   if (!resolved.handled) return;
 
   const inventory = player.getComponent("minecraft:inventory")?.container;
@@ -520,10 +544,10 @@ function cleanupPlayerInventoryUiElements(player) {
 
     const outputToken = readOutputToken(item);
     if (outputToken) {
-      materializeOutputItem(item);
+      materializeOutputItem(item, player);
     } else {
       const uiToken = readUiSlotToken(item);
-      queueUiSlotRestore(uiToken);
+      queueUiSlotRestore(uiToken, player);
     }
     inventory.setItem(slot, undefined);
   }
@@ -548,10 +572,10 @@ function watchPlayerCursors() {
     if (isUiElementItem(cursorItem)) {
       const outputToken = readOutputToken(cursorItem);
       if (outputToken) {
-        materializeOutputItem(cursorItem);
+        materializeOutputItem(cursorItem, player);
       } else {
         const uiToken = readUiSlotToken(cursorItem);
-        queueUiSlotRestore(uiToken);
+        queueUiSlotRestore(uiToken, player);
       }
       try {
         player.getComponent("minecraft:cursor_inventory")?.clear();
@@ -564,7 +588,7 @@ function watchPlayerCursors() {
 
     const claim = outputClaims.get(token.claimId);
     if (!claim || claim.terminalId !== token.terminalId) continue;
-    reserveClaimAmount(claim, getRequestedAmount(cursorItem));
+    reserveClaimAmount(claim, getRequestedAmount(cursorItem), player);
   }
 }
 

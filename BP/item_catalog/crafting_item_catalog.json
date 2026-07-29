@@ -17,6 +17,7 @@
                             "utilitycraft:import_buffer",
                             "utilitycraft:export_buffer",
                             "utilitycraft:storage_cell_drive",
+                            "utilitycraft:storage_transfer_station",
                             "utilitycraft:storage_center",
                             "utilitycraft:network_cable"
                         ]

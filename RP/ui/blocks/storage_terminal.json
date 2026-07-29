@@ -36,7 +36,7 @@
             },
             // Terminal Core
             {
-                "terminal_core@sh.terminal_core": {
+                "terminal_core@ds.terminal_core": {
                     "anchor_from": "center",
                     "anchor_to": "center",
                     "offset": [ 0, 57 ]
@@ -44,7 +44,7 @@
             },
             // Buttons
             {
-                "next_button@sh.button": {
+                "next_button@ds.button": {
                     "layer": 10,
                     "$index": 168,
                     "$default_texture": "textures/ui/buttons/next/button",
@@ -57,7 +57,7 @@
                 }
             },
             {
-                "previous_button@sh.button": {
+                "previous_button@ds.button": {
                     "layer": 10,
                     "$index": 167,
                     "$default_texture": "textures/ui/buttons/previous/button",
@@ -70,14 +70,12 @@
                 }
             },
             {
-                "reload_button@sh.button": {
+                "reload_button@ds.button": {
                     "layer": 10,
                     "$index": 166,
-                    "$default_texture": "textures/ui/buttons/button",
-                    "$hover_texture": "textures/ui/buttons/button_selected",
-                    "$pressed_texture": "textures/ui/buttons/button_pressed",
-                    "$button_text": "R",
-                    "$text_scale": 0.8,
+                    "$default_texture": "textures/ui/buttons/reload",
+                    "$hover_texture": "textures/ui/buttons/reload_selected",
+                    "$pressed_texture": "textures/ui/buttons/reload_pressed",
                     "anchor_from": "top_middle",
                     "anchor_to": "top_middle",
                     "offset": [ 106, 68 ],

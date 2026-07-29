@@ -1,5 +1,5 @@
 {
-  "namespace": "sh",
+  "namespace": "ds",
 
   // -------------------------- \\
   // Custom Scrolling Panel.    \\
@@ -16,7 +16,7 @@
           "anchor_from": "top_left",
           "controls": [
             {
-              "view_control@sh.scroll_view_control": {}
+              "view_control@ds.scroll_view_control": {}
             }
           ],
           "button_mappings": []
@@ -84,7 +84,7 @@
   },
   "scroll_view_control": {
     "$scrolling_content|default": "common.black",
-    "$scrolling_background|default": "sh.fake_panel",
+    "$scrolling_background|default": "ds.fake_panel",
     "type": "scroll_view",
     "anchor_from": "left_middle",
     "anchor_to": "left_middle",

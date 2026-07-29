@@ -106,6 +106,21 @@ function syncCellDurability(item, cell) {
   return changed;
 }
 
+/**
+ * Synchronizes one physical storage-cell ItemStack with its persistent record.
+ *
+ * @param {import("@minecraft/server").ItemStack | undefined} item Storage cell item.
+ * @param {object | undefined} cell Persistent cell record.
+ * @returns {boolean} True when lore or durability changed.
+ */
+export function syncCellItem(item, cell) {
+  if (!isStorageCell(item) || !cell) return false;
+
+  const loreChanged = syncCellLore(item, cell);
+  const durabilityChanged = syncCellDurability(item, cell);
+  return loreChanged || durabilityChanged;
+}
+
 function parseDriveKey(driveKey) {
   const raw = String(driveKey ?? "");
   const splitIndex = raw.lastIndexOf(":");
@@ -167,9 +182,7 @@ function syncDriveCellItems(driveKey, cellsById) {
     const cell = cellsById.get(cellId);
     if (!cell) continue;
 
-    const loreChanged = syncCellLore(item, cell);
-    const durabilityChanged = syncCellDurability(item, cell);
-    const changed = loreChanged || durabilityChanged;
+    const changed = syncCellItem(item, cell);
     if (!changed) continue;
 
     container.setItem(slot, item);

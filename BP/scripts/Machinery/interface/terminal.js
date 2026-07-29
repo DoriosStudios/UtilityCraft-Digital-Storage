@@ -1,5 +1,6 @@
 import { ItemStack, system, world } from "@minecraft/server";
 import { ButtonManager, TickScheduler } from "DoriosCore/index.js";
+import * as DoriosLib from "DoriosLib/index.js";
 import { spawnStorageMachine } from "../../DigitalStorageCore/entities.js";
 import {
   attachOutputToken,
@@ -37,6 +38,25 @@ const COUNT_LABEL_BASE_SLOT = 169;
 const COUNT_LABEL_COLUMNS = GRID_COLUMNS;
 const COUNT_LABEL_ROWS = GRID_ROWS;
 const UI_OPEN_STATE = "utilitycraft:ui_open";
+
+/**
+ * Returns an unstored swap remainder to its player, dropping it at the terminal
+ * only when the originating player is no longer available.
+ *
+ * @param {import("@minecraft/server").Player|undefined} player Swap owner.
+ * @param {import("@minecraft/server").ItemStack} item Item remainder.
+ * @param {import("@minecraft/server").Entity} entity Terminal entity.
+ */
+function returnSwapRemainder(player, item, entity) {
+  if (player?.isValid) {
+    DoriosLib.player.giveItem(player, { item });
+    return;
+  }
+
+  try {
+    entity.dimension.spawnItem(item, entity.location);
+  } catch {}
+}
 
 /** @param {number[]|undefined} range */
 function expandSlotRange(range) {
@@ -745,12 +765,12 @@ export class StorageTerminalInterface {
    * @param {import("@minecraft/server").Container} inv Terminal inventory.
    */
   restorePendingUiSlots(entity, inv) {
-    const slots = consumeUiSlotRestores(this.getTerminalId(entity));
-    if (slots.length === 0) return;
+    const restores = consumeUiSlotRestores(this.getTerminalId(entity));
+    if (restores.length === 0) return;
 
     const networkId = this.getLinkedNetworkId(entity);
 
-    for (const slot of slots) {
+    for (const { slot, player } of restores) {
       if (slot < GRID_START || slot > GRID_END) continue;
 
       const current = inv.getItem(slot);
@@ -764,9 +784,7 @@ export class StorageTerminalInterface {
         continue;
       }
 
-      if (!networkId) continue;
-
-      const materialized = materializeOutputItem(current);
+      const materialized = materializeOutputItem(current, player);
       if (materialized.handled && !materialized.item) {
         this.setFiller(inv, slot, entity);
         continue;
@@ -774,14 +792,17 @@ export class StorageTerminalInterface {
 
       const inputItem = materialized.item ?? current;
       const itemKey = getItemKey(inputItem);
-      if (!itemKey) continue;
+      if (!networkId || !itemKey) {
+        returnSwapRemainder(player, inputItem, entity);
+        this.setFiller(inv, slot, entity);
+        continue;
+      }
 
       const result = addItem(networkId, itemKey, inputItem.amount, "terminal_empty_slot_swap");
-      if (result.inserted <= 0) continue;
-
       if (result.remaining > 0) {
         inputItem.amount = result.remaining;
-        inv.setItem(slot, inputItem);
+        returnSwapRemainder(player, inputItem, entity);
+        this.setFiller(inv, slot, entity);
         continue;
       }
 

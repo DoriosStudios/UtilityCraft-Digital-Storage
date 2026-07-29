@@ -1,0 +1,38 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "utilitycraft:storage_transfer_station"
+    },
+    "tags": [
+      "utilitycraft_workbench"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "F": {
+        "item": "utilitycraft:fluxite"
+      },
+      "C": {
+        "item": "utilitycraft:storage_core"
+      },
+      "D": {
+        "item": "utilitycraft:storage_cell_drive"
+      }
+    },
+    "pattern": [
+      "IFI",
+      "CDC",
+      "IFI"
+    ],
+    "result": {
+      "item": "utilitycraft:storage_transfer_station"
+    },
+    "unlock": [
+      {
+        "item": "utilitycraft:storage_cell_drive"
+      }
+    ]
+  }
+}

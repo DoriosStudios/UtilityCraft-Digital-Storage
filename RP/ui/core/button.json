@@ -1,5 +1,5 @@
 {
-  "namespace": "sh",
+  "namespace": "ds",
   "button": {
     "type": "collection_panel",
     "collection_name": "container_items",

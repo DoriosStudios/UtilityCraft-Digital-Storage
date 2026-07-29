@@ -1,5 +1,5 @@
 {
-    "namespace": "sh",
+    "namespace": "ds",
     "highlight_slot_panel": {
         "type": "panel",
         "controls": [
@@ -128,7 +128,7 @@
     },
 
     "virtual_slot_button_prototype@common.container_slot_button_prototype": {
-        "$highlight_control": "sh.virtual_highlight_slot_panel",
+        "$highlight_control": "ds.virtual_highlight_slot_panel",
         "button_mappings": [
             {
                 "from_button_id": "button.menu_select",
@@ -149,7 +149,7 @@
     },
 
     "slot_button_prototype@common.container_slot_button_prototype": {
-        "$highlight_control": "sh.highlight_slot_panel",
+        "$highlight_control": "ds.highlight_slot_panel",
         "button_mappings": [
             {
                 "from_button_id": "button.menu_select",

@@ -4,6 +4,7 @@
     "ui/blocks/crafting_terminal.json",
     "ui/blocks/blueprint_terminal.json",
     "ui/blocks/storage_cell_drive.json",
+    "ui/blocks/storage_transfer_station.json",
     "ui/blocks/storage_center.json",
     "ui/blocks/import_buffer.json",
     "ui/blocks/export_buffer.json",

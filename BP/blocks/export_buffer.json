@@ -16,9 +16,18 @@
 				},
 				"machine": {
 					"energy_cap": 0,
-					"rate_speed_base": 0
+					"rate_speed_base": 0,
+					"upgrades": [
+						36
+					]
 				}
 			},
+			"utilitycraft:machine_upgrades": [
+				{
+					"type": "speed",
+					"slot": 36
+				}
+			],
 			"minecraft:geometry": "minecraft:geometry.full_block",
 			"minecraft:material_instances": {
 				"*": {

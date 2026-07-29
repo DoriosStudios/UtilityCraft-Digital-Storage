@@ -25,7 +25,18 @@
       { "slot_14@common.container_item": { "collection_index": 14, "offset": [ 90, 18 ] } },
       { "slot_15@common.container_item": { "collection_index": 15, "offset": [ 108, 18 ] } },
       { "slot_16@common.container_item": { "collection_index": 16, "offset": [ 126, 18 ] } },
-      { "slot_17@common.container_item": { "collection_index": 17, "offset": [ 144, 18 ] } }
+      { "slot_17@common.container_item": { "collection_index": 17, "offset": [ 144, 18 ] } },
+      {
+        "input_outline": {
+          "type": "image",
+          "texture": "textures/ui/slots/input_slot",
+          "size": [ 164, 38 ],
+          "anchor_from": "center",
+          "anchor_to": "center",
+          "offset": [ 72, 9 ],
+          "layer": 4
+        }
+      }
     ]
   },
   "import_buffer_top": {
@@ -50,13 +61,17 @@
         }
       },
       {
-        "upgrades@uc.slot_stack_vertical": {
-          "$has_bg": true,
-          "$has_second": false,
-          "$has_third": false,
-          "$collection_index_first": 18,
-          "offset": [ 102, 9 ],
-          "layer": 2
+        "single_upgrade_slot@uc.single_upgrade_slot": {
+          "$single_upgrade_index": 18,
+          "$single_upgrade_outline_texture": "textures/ui/slots/item_resource_slot",
+          "$single_upgrade_overlay": "textures/items/machinery/speed_upgrade"
+        }
+      },
+      {
+        "info_tab@uc.info_tab": {
+          "offset": [ 0, -26 ],
+          "$info_panel_size": [ 80, 134 ],
+          "$info_description": "ui.utilitycraft:info.import_buffer"
         }
       }
     ]
@@ -69,7 +84,7 @@
       },
       {
         "flying_item_renderer@common.flying_item_renderer": {
-          "layer": 14
+          "layer": 40
         }
       },
       {

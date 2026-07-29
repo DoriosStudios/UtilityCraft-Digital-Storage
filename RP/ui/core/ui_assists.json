@@ -1,5 +1,5 @@
 {
-  "namespace": "sh",
+  "namespace": "ds",
 
   "container_slot_button_prototype@common.container_slot_button_prototype": {
     "button_mappings": [
@@ -113,7 +113,7 @@
         "item@common.container_item": {
           "size": [ 18, 18 ],
           "$cell_image_size": "$cell_image_size",
-          "$button_ref": "sh.slot_button_prototype"
+          "$button_ref": "ds.slot_button_prototype"
         }
       }
     ]
@@ -132,7 +132,7 @@
         "item@common.container_item": {
           "size": [ 22, 22 ],
           "$cell_image_size": "$cell_image_size",
-          "$button_ref": "sh.slot_button_prototype"
+          "$button_ref": "ds.slot_button_prototype"
         }
       }
     ]
@@ -151,7 +151,7 @@
         "item@common.container_item": {
           "size": [ 26, 26 ],
           "$cell_image_size": "$cell_image_size",
-          "$button_ref": "sh.slot_button_prototype"
+          "$button_ref": "ds.slot_button_prototype"
         }
       }
     ]

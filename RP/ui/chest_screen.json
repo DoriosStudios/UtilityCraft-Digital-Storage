@@ -28,6 +28,11 @@
             "$screen_bg_content": "common.screen_background"
           },
           {
+            "requires": "($temp_container_title = 'entity.utilitycraft:storage_transfer_station.name')",
+            "$screen_content": "storage_transfer_station.utility_panel",
+            "$screen_bg_content": "common.screen_background"
+          },
+          {
             "requires": "($temp_container_title = 'entity.utilitycraft:storage_center.name')",
             "$screen_content": "storage_center.utility_panel",
             "$screen_bg_content": "common.screen_background"
@@ -71,6 +76,11 @@
           {
             "requires": "($temp_container_title = 'entity.utilitycraft:storage_cell_drive.name')",
             "$screen_content": "storage_cell_drive.utility_panel",
+            "$screen_bg_content": "common.screen_background"
+          },
+          {
+            "requires": "($temp_container_title = 'entity.utilitycraft:storage_transfer_station.name')",
+            "$screen_content": "storage_transfer_station.utility_panel",
             "$screen_bg_content": "common.screen_background"
           },
           {

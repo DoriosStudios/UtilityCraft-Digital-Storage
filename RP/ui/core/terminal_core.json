@@ -1,5 +1,5 @@
 {
-  "namespace": "sh",
+  "namespace": "ds",
   "empty_cell": {
     "type": "image",
     "texture": "textures/ui/empty_cell"
@@ -13,7 +13,7 @@
     ]
   },
   "invisible_slot_button_prototype@common.container_slot_button_prototype": {
-    "$highlight_control": "sh.invisible_panel",
+    "$highlight_control": "ds.invisible_panel",
     "button_mappings": [
       {
         "from_button_id": "button.menu_select",
@@ -98,7 +98,7 @@
             18
           ],
           "$cell_overlay_ref|default": "common.cell_overlay",
-          "$background_images": "sh.empty_cell",
+          "$background_images": "ds.empty_cell",
           "$stack_count_required|default": false,
           "$durability_bar_required|default": true,
           "$storage_bar_required|default": true,
@@ -184,7 +184,7 @@
           ],
           "controls": [
             {
-              "slot_000@sh.grid_item_template": {
+              "slot_000@ds.grid_item_template": {
                 "collection_index": 4,
                 "offset": [
                   0,
@@ -193,7 +193,7 @@
               }
             },
             {
-              "slot_001@sh.grid_item_template": {
+              "slot_001@ds.grid_item_template": {
                 "collection_index": 5,
                 "offset": [
                   18,
@@ -202,7 +202,7 @@
               }
             },
             {
-              "slot_002@sh.grid_item_template": {
+              "slot_002@ds.grid_item_template": {
                 "collection_index": 6,
                 "offset": [
                   36,
@@ -211,7 +211,7 @@
               }
             },
             {
-              "slot_003@sh.grid_item_template": {
+              "slot_003@ds.grid_item_template": {
                 "collection_index": 7,
                 "offset": [
                   54,
@@ -220,7 +220,7 @@
               }
             },
             {
-              "slot_004@sh.grid_item_template": {
+              "slot_004@ds.grid_item_template": {
                 "collection_index": 8,
                 "offset": [
                   72,
@@ -229,7 +229,7 @@
               }
             },
             {
-              "slot_005@sh.grid_item_template": {
+              "slot_005@ds.grid_item_template": {
                 "collection_index": 9,
                 "offset": [
                   90,
@@ -238,7 +238,7 @@
               }
             },
             {
-              "slot_006@sh.grid_item_template": {
+              "slot_006@ds.grid_item_template": {
                 "collection_index": 10,
                 "offset": [
                   108,
@@ -247,7 +247,7 @@
               }
             },
             {
-              "slot_007@sh.grid_item_template": {
+              "slot_007@ds.grid_item_template": {
                 "collection_index": 11,
                 "offset": [
                   126,
@@ -256,7 +256,7 @@
               }
             },
             {
-              "slot_008@sh.grid_item_template": {
+              "slot_008@ds.grid_item_template": {
                 "collection_index": 12,
                 "offset": [
                   144,
@@ -265,7 +265,7 @@
               }
             },
             {
-              "slot_009@sh.grid_item_template": {
+              "slot_009@ds.grid_item_template": {
                 "collection_index": 13,
                 "offset": [
                   0,
@@ -274,7 +274,7 @@
               }
             },
             {
-              "slot_010@sh.grid_item_template": {
+              "slot_010@ds.grid_item_template": {
                 "collection_index": 14,
                 "offset": [
                   18,
@@ -283,7 +283,7 @@
               }
             },
             {
-              "slot_011@sh.grid_item_template": {
+              "slot_011@ds.grid_item_template": {
                 "collection_index": 15,
                 "offset": [
                   36,
@@ -292,7 +292,7 @@
               }
             },
             {
-              "slot_012@sh.grid_item_template": {
+              "slot_012@ds.grid_item_template": {
                 "collection_index": 16,
                 "offset": [
                   54,
@@ -301,7 +301,7 @@
               }
             },
             {
-              "slot_013@sh.grid_item_template": {
+              "slot_013@ds.grid_item_template": {
                 "collection_index": 17,
                 "offset": [
                   72,
@@ -310,7 +310,7 @@
               }
             },
             {
-              "slot_014@sh.grid_item_template": {
+              "slot_014@ds.grid_item_template": {
                 "collection_index": 18,
                 "offset": [
                   90,
@@ -319,7 +319,7 @@
               }
             },
             {
-              "slot_015@sh.grid_item_template": {
+              "slot_015@ds.grid_item_template": {
                 "collection_index": 19,
                 "offset": [
                   108,
@@ -328,7 +328,7 @@
               }
             },
             {
-              "slot_016@sh.grid_item_template": {
+              "slot_016@ds.grid_item_template": {
                 "collection_index": 20,
                 "offset": [
                   126,
@@ -337,7 +337,7 @@
               }
             },
             {
-              "slot_017@sh.grid_item_template": {
+              "slot_017@ds.grid_item_template": {
                 "collection_index": 21,
                 "offset": [
                   144,
@@ -346,7 +346,7 @@
               }
             },
             {
-              "slot_018@sh.grid_item_template": {
+              "slot_018@ds.grid_item_template": {
                 "collection_index": 22,
                 "offset": [
                   0,
@@ -355,7 +355,7 @@
               }
             },
             {
-              "slot_019@sh.grid_item_template": {
+              "slot_019@ds.grid_item_template": {
                 "collection_index": 23,
                 "offset": [
                   18,
@@ -364,7 +364,7 @@
               }
             },
             {
-              "slot_020@sh.grid_item_template": {
+              "slot_020@ds.grid_item_template": {
                 "collection_index": 24,
                 "offset": [
                   36,
@@ -373,7 +373,7 @@
               }
             },
             {
-              "slot_021@sh.grid_item_template": {
+              "slot_021@ds.grid_item_template": {
                 "collection_index": 25,
                 "offset": [
                   54,
@@ -382,7 +382,7 @@
               }
             },
             {
-              "slot_022@sh.grid_item_template": {
+              "slot_022@ds.grid_item_template": {
                 "collection_index": 26,
                 "offset": [
                   72,
@@ -391,7 +391,7 @@
               }
             },
             {
-              "slot_023@sh.grid_item_template": {
+              "slot_023@ds.grid_item_template": {
                 "collection_index": 27,
                 "offset": [
                   90,
@@ -400,7 +400,7 @@
               }
             },
             {
-              "slot_024@sh.grid_item_template": {
+              "slot_024@ds.grid_item_template": {
                 "collection_index": 28,
                 "offset": [
                   108,
@@ -409,7 +409,7 @@
               }
             },
             {
-              "slot_025@sh.grid_item_template": {
+              "slot_025@ds.grid_item_template": {
                 "collection_index": 29,
                 "offset": [
                   126,
@@ -418,7 +418,7 @@
               }
             },
             {
-              "slot_026@sh.grid_item_template": {
+              "slot_026@ds.grid_item_template": {
                 "collection_index": 30,
                 "offset": [
                   144,
@@ -427,7 +427,7 @@
               }
             },
             {
-              "slot_027@sh.grid_item_template": {
+              "slot_027@ds.grid_item_template": {
                 "collection_index": 31,
                 "offset": [
                   0,
@@ -436,7 +436,7 @@
               }
             },
             {
-              "slot_028@sh.grid_item_template": {
+              "slot_028@ds.grid_item_template": {
                 "collection_index": 32,
                 "offset": [
                   18,
@@ -445,7 +445,7 @@
               }
             },
             {
-              "slot_029@sh.grid_item_template": {
+              "slot_029@ds.grid_item_template": {
                 "collection_index": 33,
                 "offset": [
                   36,
@@ -454,7 +454,7 @@
               }
             },
             {
-              "slot_030@sh.grid_item_template": {
+              "slot_030@ds.grid_item_template": {
                 "collection_index": 34,
                 "offset": [
                   54,
@@ -463,7 +463,7 @@
               }
             },
             {
-              "slot_031@sh.grid_item_template": {
+              "slot_031@ds.grid_item_template": {
                 "collection_index": 35,
                 "offset": [
                   72,
@@ -472,7 +472,7 @@
               }
             },
             {
-              "slot_032@sh.grid_item_template": {
+              "slot_032@ds.grid_item_template": {
                 "collection_index": 36,
                 "offset": [
                   90,
@@ -481,7 +481,7 @@
               }
             },
             {
-              "slot_033@sh.grid_item_template": {
+              "slot_033@ds.grid_item_template": {
                 "collection_index": 37,
                 "offset": [
                   108,
@@ -490,7 +490,7 @@
               }
             },
             {
-              "slot_034@sh.grid_item_template": {
+              "slot_034@ds.grid_item_template": {
                 "collection_index": 38,
                 "offset": [
                   126,
@@ -499,7 +499,7 @@
               }
             },
             {
-              "slot_035@sh.grid_item_template": {
+              "slot_035@ds.grid_item_template": {
                 "collection_index": 39,
                 "offset": [
                   144,
@@ -508,7 +508,7 @@
               }
             },
             {
-              "slot_036@sh.grid_item_template": {
+              "slot_036@ds.grid_item_template": {
                 "collection_index": 40,
                 "offset": [
                   0,
@@ -517,7 +517,7 @@
               }
             },
             {
-              "slot_037@sh.grid_item_template": {
+              "slot_037@ds.grid_item_template": {
                 "collection_index": 41,
                 "offset": [
                   18,
@@ -526,7 +526,7 @@
               }
             },
             {
-              "slot_038@sh.grid_item_template": {
+              "slot_038@ds.grid_item_template": {
                 "collection_index": 42,
                 "offset": [
                   36,
@@ -535,7 +535,7 @@
               }
             },
             {
-              "slot_039@sh.grid_item_template": {
+              "slot_039@ds.grid_item_template": {
                 "collection_index": 43,
                 "offset": [
                   54,
@@ -544,7 +544,7 @@
               }
             },
             {
-              "slot_040@sh.grid_item_template": {
+              "slot_040@ds.grid_item_template": {
                 "collection_index": 44,
                 "offset": [
                   72,
@@ -553,7 +553,7 @@
               }
             },
             {
-              "slot_041@sh.grid_item_template": {
+              "slot_041@ds.grid_item_template": {
                 "collection_index": 45,
                 "offset": [
                   90,
@@ -562,7 +562,7 @@
               }
             },
             {
-              "slot_042@sh.grid_item_template": {
+              "slot_042@ds.grid_item_template": {
                 "collection_index": 46,
                 "offset": [
                   108,
@@ -571,7 +571,7 @@
               }
             },
             {
-              "slot_043@sh.grid_item_template": {
+              "slot_043@ds.grid_item_template": {
                 "collection_index": 47,
                 "offset": [
                   126,
@@ -580,7 +580,7 @@
               }
             },
             {
-              "slot_044@sh.grid_item_template": {
+              "slot_044@ds.grid_item_template": {
                 "collection_index": 48,
                 "offset": [
                   144,
@@ -589,7 +589,7 @@
               }
             },
             {
-              "slot_045@sh.grid_item_template": {
+              "slot_045@ds.grid_item_template": {
                 "collection_index": 49,
                 "offset": [
                   0,
@@ -598,7 +598,7 @@
               }
             },
             {
-              "slot_046@sh.grid_item_template": {
+              "slot_046@ds.grid_item_template": {
                 "collection_index": 50,
                 "offset": [
                   18,
@@ -607,7 +607,7 @@
               }
             },
             {
-              "slot_047@sh.grid_item_template": {
+              "slot_047@ds.grid_item_template": {
                 "collection_index": 51,
                 "offset": [
                   36,
@@ -616,7 +616,7 @@
               }
             },
             {
-              "slot_048@sh.grid_item_template": {
+              "slot_048@ds.grid_item_template": {
                 "collection_index": 52,
                 "offset": [
                   54,
@@ -625,7 +625,7 @@
               }
             },
             {
-              "slot_049@sh.grid_item_template": {
+              "slot_049@ds.grid_item_template": {
                 "collection_index": 53,
                 "offset": [
                   72,
@@ -634,7 +634,7 @@
               }
             },
             {
-              "slot_050@sh.grid_item_template": {
+              "slot_050@ds.grid_item_template": {
                 "collection_index": 54,
                 "offset": [
                   90,
@@ -643,7 +643,7 @@
               }
             },
             {
-              "slot_051@sh.grid_item_template": {
+              "slot_051@ds.grid_item_template": {
                 "collection_index": 55,
                 "offset": [
                   108,
@@ -652,7 +652,7 @@
               }
             },
             {
-              "slot_052@sh.grid_item_template": {
+              "slot_052@ds.grid_item_template": {
                 "collection_index": 56,
                 "offset": [
                   126,
@@ -661,7 +661,7 @@
               }
             },
             {
-              "slot_053@sh.grid_item_template": {
+              "slot_053@ds.grid_item_template": {
                 "collection_index": 57,
                 "offset": [
                   144,
@@ -670,7 +670,7 @@
               }
             },
             {
-              "slot_054@sh.grid_item_template": {
+              "slot_054@ds.grid_item_template": {
                 "collection_index": 58,
                 "offset": [
                   0,
@@ -679,7 +679,7 @@
               }
             },
             {
-              "slot_055@sh.grid_item_template": {
+              "slot_055@ds.grid_item_template": {
                 "collection_index": 59,
                 "offset": [
                   18,
@@ -688,7 +688,7 @@
               }
             },
             {
-              "slot_056@sh.grid_item_template": {
+              "slot_056@ds.grid_item_template": {
                 "collection_index": 60,
                 "offset": [
                   36,
@@ -697,7 +697,7 @@
               }
             },
             {
-              "slot_057@sh.grid_item_template": {
+              "slot_057@ds.grid_item_template": {
                 "collection_index": 61,
                 "offset": [
                   54,
@@ -706,7 +706,7 @@
               }
             },
             {
-              "slot_058@sh.grid_item_template": {
+              "slot_058@ds.grid_item_template": {
                 "collection_index": 62,
                 "offset": [
                   72,
@@ -715,7 +715,7 @@
               }
             },
             {
-              "slot_059@sh.grid_item_template": {
+              "slot_059@ds.grid_item_template": {
                 "collection_index": 63,
                 "offset": [
                   90,
@@ -724,7 +724,7 @@
               }
             },
             {
-              "slot_060@sh.grid_item_template": {
+              "slot_060@ds.grid_item_template": {
                 "collection_index": 64,
                 "offset": [
                   108,
@@ -733,7 +733,7 @@
               }
             },
             {
-              "slot_061@sh.grid_item_template": {
+              "slot_061@ds.grid_item_template": {
                 "collection_index": 65,
                 "offset": [
                   126,
@@ -742,7 +742,7 @@
               }
             },
             {
-              "slot_062@sh.grid_item_template": {
+              "slot_062@ds.grid_item_template": {
                 "collection_index": 66,
                 "offset": [
                   144,
@@ -751,7 +751,7 @@
               }
             },
             {
-              "slot_063@sh.grid_item_template": {
+              "slot_063@ds.grid_item_template": {
                 "collection_index": 67,
                 "offset": [
                   0,
@@ -760,7 +760,7 @@
               }
             },
             {
-              "slot_064@sh.grid_item_template": {
+              "slot_064@ds.grid_item_template": {
                 "collection_index": 68,
                 "offset": [
                   18,
@@ -769,7 +769,7 @@
               }
             },
             {
-              "slot_065@sh.grid_item_template": {
+              "slot_065@ds.grid_item_template": {
                 "collection_index": 69,
                 "offset": [
                   36,
@@ -778,7 +778,7 @@
               }
             },
             {
-              "slot_066@sh.grid_item_template": {
+              "slot_066@ds.grid_item_template": {
                 "collection_index": 70,
                 "offset": [
                   54,
@@ -787,7 +787,7 @@
               }
             },
             {
-              "slot_067@sh.grid_item_template": {
+              "slot_067@ds.grid_item_template": {
                 "collection_index": 71,
                 "offset": [
                   72,
@@ -796,7 +796,7 @@
               }
             },
             {
-              "slot_068@sh.grid_item_template": {
+              "slot_068@ds.grid_item_template": {
                 "collection_index": 72,
                 "offset": [
                   90,
@@ -805,7 +805,7 @@
               }
             },
             {
-              "slot_069@sh.grid_item_template": {
+              "slot_069@ds.grid_item_template": {
                 "collection_index": 73,
                 "offset": [
                   108,
@@ -814,7 +814,7 @@
               }
             },
             {
-              "slot_070@sh.grid_item_template": {
+              "slot_070@ds.grid_item_template": {
                 "collection_index": 74,
                 "offset": [
                   126,
@@ -823,7 +823,7 @@
               }
             },
             {
-              "slot_071@sh.grid_item_template": {
+              "slot_071@ds.grid_item_template": {
                 "collection_index": 75,
                 "offset": [
                   144,
@@ -832,7 +832,7 @@
               }
             },
             {
-              "slot_072@sh.grid_item_template": {
+              "slot_072@ds.grid_item_template": {
                 "collection_index": 76,
                 "offset": [
                   0,
@@ -841,7 +841,7 @@
               }
             },
             {
-              "slot_073@sh.grid_item_template": {
+              "slot_073@ds.grid_item_template": {
                 "collection_index": 77,
                 "offset": [
                   18,
@@ -850,7 +850,7 @@
               }
             },
             {
-              "slot_074@sh.grid_item_template": {
+              "slot_074@ds.grid_item_template": {
                 "collection_index": 78,
                 "offset": [
                   36,
@@ -859,7 +859,7 @@
               }
             },
             {
-              "slot_075@sh.grid_item_template": {
+              "slot_075@ds.grid_item_template": {
                 "collection_index": 79,
                 "offset": [
                   54,
@@ -868,7 +868,7 @@
               }
             },
             {
-              "slot_076@sh.grid_item_template": {
+              "slot_076@ds.grid_item_template": {
                 "collection_index": 80,
                 "offset": [
                   72,
@@ -877,7 +877,7 @@
               }
             },
             {
-              "slot_077@sh.grid_item_template": {
+              "slot_077@ds.grid_item_template": {
                 "collection_index": 81,
                 "offset": [
                   90,
@@ -886,7 +886,7 @@
               }
             },
             {
-              "slot_078@sh.grid_item_template": {
+              "slot_078@ds.grid_item_template": {
                 "collection_index": 82,
                 "offset": [
                   108,
@@ -895,7 +895,7 @@
               }
             },
             {
-              "slot_079@sh.grid_item_template": {
+              "slot_079@ds.grid_item_template": {
                 "collection_index": 83,
                 "offset": [
                   126,
@@ -904,7 +904,7 @@
               }
             },
             {
-              "slot_080@sh.grid_item_template": {
+              "slot_080@ds.grid_item_template": {
                 "collection_index": 84,
                 "offset": [
                   144,
@@ -913,7 +913,7 @@
               }
             },
             {
-              "slot_081@sh.grid_item_template": {
+              "slot_081@ds.grid_item_template": {
                 "collection_index": 85,
                 "offset": [
                   0,
@@ -922,7 +922,7 @@
               }
             },
             {
-              "slot_082@sh.grid_item_template": {
+              "slot_082@ds.grid_item_template": {
                 "collection_index": 86,
                 "offset": [
                   18,
@@ -931,7 +931,7 @@
               }
             },
             {
-              "slot_083@sh.grid_item_template": {
+              "slot_083@ds.grid_item_template": {
                 "collection_index": 87,
                 "offset": [
                   36,
@@ -940,7 +940,7 @@
               }
             },
             {
-              "slot_084@sh.grid_item_template": {
+              "slot_084@ds.grid_item_template": {
                 "collection_index": 88,
                 "offset": [
                   54,
@@ -949,7 +949,7 @@
               }
             },
             {
-              "slot_085@sh.grid_item_template": {
+              "slot_085@ds.grid_item_template": {
                 "collection_index": 89,
                 "offset": [
                   72,
@@ -958,7 +958,7 @@
               }
             },
             {
-              "slot_086@sh.grid_item_template": {
+              "slot_086@ds.grid_item_template": {
                 "collection_index": 90,
                 "offset": [
                   90,
@@ -967,7 +967,7 @@
               }
             },
             {
-              "slot_087@sh.grid_item_template": {
+              "slot_087@ds.grid_item_template": {
                 "collection_index": 91,
                 "offset": [
                   108,
@@ -976,7 +976,7 @@
               }
             },
             {
-              "slot_088@sh.grid_item_template": {
+              "slot_088@ds.grid_item_template": {
                 "collection_index": 92,
                 "offset": [
                   126,
@@ -985,7 +985,7 @@
               }
             },
             {
-              "slot_089@sh.grid_item_template": {
+              "slot_089@ds.grid_item_template": {
                 "collection_index": 93,
                 "offset": [
                   144,
@@ -994,7 +994,7 @@
               }
             },
             {
-              "slot_090@sh.grid_item_template": {
+              "slot_090@ds.grid_item_template": {
                 "collection_index": 94,
                 "offset": [
                   0,
@@ -1003,7 +1003,7 @@
               }
             },
             {
-              "slot_091@sh.grid_item_template": {
+              "slot_091@ds.grid_item_template": {
                 "collection_index": 95,
                 "offset": [
                   18,
@@ -1012,7 +1012,7 @@
               }
             },
             {
-              "slot_092@sh.grid_item_template": {
+              "slot_092@ds.grid_item_template": {
                 "collection_index": 96,
                 "offset": [
                   36,
@@ -1021,7 +1021,7 @@
               }
             },
             {
-              "slot_093@sh.grid_item_template": {
+              "slot_093@ds.grid_item_template": {
                 "collection_index": 97,
                 "offset": [
                   54,
@@ -1030,7 +1030,7 @@
               }
             },
             {
-              "slot_094@sh.grid_item_template": {
+              "slot_094@ds.grid_item_template": {
                 "collection_index": 98,
                 "offset": [
                   72,
@@ -1039,7 +1039,7 @@
               }
             },
             {
-              "slot_095@sh.grid_item_template": {
+              "slot_095@ds.grid_item_template": {
                 "collection_index": 99,
                 "offset": [
                   90,
@@ -1048,7 +1048,7 @@
               }
             },
             {
-              "slot_096@sh.grid_item_template": {
+              "slot_096@ds.grid_item_template": {
                 "collection_index": 100,
                 "offset": [
                   108,
@@ -1057,7 +1057,7 @@
               }
             },
             {
-              "slot_097@sh.grid_item_template": {
+              "slot_097@ds.grid_item_template": {
                 "collection_index": 101,
                 "offset": [
                   126,
@@ -1066,7 +1066,7 @@
               }
             },
             {
-              "slot_098@sh.grid_item_template": {
+              "slot_098@ds.grid_item_template": {
                 "collection_index": 102,
                 "offset": [
                   144,
@@ -1075,7 +1075,7 @@
               }
             },
             {
-              "slot_099@sh.grid_item_template": {
+              "slot_099@ds.grid_item_template": {
                 "collection_index": 103,
                 "offset": [
                   0,
@@ -1084,7 +1084,7 @@
               }
             },
             {
-              "slot_100@sh.grid_item_template": {
+              "slot_100@ds.grid_item_template": {
                 "collection_index": 104,
                 "offset": [
                   18,
@@ -1093,7 +1093,7 @@
               }
             },
             {
-              "slot_101@sh.grid_item_template": {
+              "slot_101@ds.grid_item_template": {
                 "collection_index": 105,
                 "offset": [
                   36,
@@ -1102,7 +1102,7 @@
               }
             },
             {
-              "slot_102@sh.grid_item_template": {
+              "slot_102@ds.grid_item_template": {
                 "collection_index": 106,
                 "offset": [
                   54,
@@ -1111,7 +1111,7 @@
               }
             },
             {
-              "slot_103@sh.grid_item_template": {
+              "slot_103@ds.grid_item_template": {
                 "collection_index": 107,
                 "offset": [
                   72,
@@ -1120,7 +1120,7 @@
               }
             },
             {
-              "slot_104@sh.grid_item_template": {
+              "slot_104@ds.grid_item_template": {
                 "collection_index": 108,
                 "offset": [
                   90,
@@ -1129,7 +1129,7 @@
               }
             },
             {
-              "slot_105@sh.grid_item_template": {
+              "slot_105@ds.grid_item_template": {
                 "collection_index": 109,
                 "offset": [
                   108,
@@ -1138,7 +1138,7 @@
               }
             },
             {
-              "slot_106@sh.grid_item_template": {
+              "slot_106@ds.grid_item_template": {
                 "collection_index": 110,
                 "offset": [
                   126,
@@ -1147,7 +1147,7 @@
               }
             },
             {
-              "slot_107@sh.grid_item_template": {
+              "slot_107@ds.grid_item_template": {
                 "collection_index": 111,
                 "offset": [
                   144,
@@ -1156,7 +1156,7 @@
               }
             },
             {
-              "slot_108@sh.grid_item_template": {
+              "slot_108@ds.grid_item_template": {
                 "collection_index": 112,
                 "offset": [
                   0,
@@ -1165,7 +1165,7 @@
               }
             },
             {
-              "slot_109@sh.grid_item_template": {
+              "slot_109@ds.grid_item_template": {
                 "collection_index": 113,
                 "offset": [
                   18,
@@ -1174,7 +1174,7 @@
               }
             },
             {
-              "slot_110@sh.grid_item_template": {
+              "slot_110@ds.grid_item_template": {
                 "collection_index": 114,
                 "offset": [
                   36,
@@ -1183,7 +1183,7 @@
               }
             },
             {
-              "slot_111@sh.grid_item_template": {
+              "slot_111@ds.grid_item_template": {
                 "collection_index": 115,
                 "offset": [
                   54,
@@ -1192,7 +1192,7 @@
               }
             },
             {
-              "slot_112@sh.grid_item_template": {
+              "slot_112@ds.grid_item_template": {
                 "collection_index": 116,
                 "offset": [
                   72,
@@ -1201,7 +1201,7 @@
               }
             },
             {
-              "slot_113@sh.grid_item_template": {
+              "slot_113@ds.grid_item_template": {
                 "collection_index": 117,
                 "offset": [
                   90,
@@ -1210,7 +1210,7 @@
               }
             },
             {
-              "slot_114@sh.grid_item_template": {
+              "slot_114@ds.grid_item_template": {
                 "collection_index": 118,
                 "offset": [
                   108,
@@ -1219,7 +1219,7 @@
               }
             },
             {
-              "slot_115@sh.grid_item_template": {
+              "slot_115@ds.grid_item_template": {
                 "collection_index": 119,
                 "offset": [
                   126,
@@ -1228,7 +1228,7 @@
               }
             },
             {
-              "slot_116@sh.grid_item_template": {
+              "slot_116@ds.grid_item_template": {
                 "collection_index": 120,
                 "offset": [
                   144,
@@ -1237,7 +1237,7 @@
               }
             },
             {
-              "slot_117@sh.grid_item_template": {
+              "slot_117@ds.grid_item_template": {
                 "collection_index": 121,
                 "offset": [
                   0,
@@ -1246,7 +1246,7 @@
               }
             },
             {
-              "slot_118@sh.grid_item_template": {
+              "slot_118@ds.grid_item_template": {
                 "collection_index": 122,
                 "offset": [
                   18,
@@ -1255,7 +1255,7 @@
               }
             },
             {
-              "slot_119@sh.grid_item_template": {
+              "slot_119@ds.grid_item_template": {
                 "collection_index": 123,
                 "offset": [
                   36,
@@ -1264,7 +1264,7 @@
               }
             },
             {
-              "slot_120@sh.grid_item_template": {
+              "slot_120@ds.grid_item_template": {
                 "collection_index": 124,
                 "offset": [
                   54,
@@ -1273,7 +1273,7 @@
               }
             },
             {
-              "slot_121@sh.grid_item_template": {
+              "slot_121@ds.grid_item_template": {
                 "collection_index": 125,
                 "offset": [
                   72,
@@ -1282,7 +1282,7 @@
               }
             },
             {
-              "slot_122@sh.grid_item_template": {
+              "slot_122@ds.grid_item_template": {
                 "collection_index": 126,
                 "offset": [
                   90,
@@ -1291,7 +1291,7 @@
               }
             },
             {
-              "slot_123@sh.grid_item_template": {
+              "slot_123@ds.grid_item_template": {
                 "collection_index": 127,
                 "offset": [
                   108,
@@ -1300,7 +1300,7 @@
               }
             },
             {
-              "slot_124@sh.grid_item_template": {
+              "slot_124@ds.grid_item_template": {
                 "collection_index": 128,
                 "offset": [
                   126,
@@ -1309,7 +1309,7 @@
               }
             },
             {
-              "slot_125@sh.grid_item_template": {
+              "slot_125@ds.grid_item_template": {
                 "collection_index": 129,
                 "offset": [
                   144,
@@ -1318,7 +1318,7 @@
               }
             },
             {
-              "slot_126@sh.grid_item_template": {
+              "slot_126@ds.grid_item_template": {
                 "collection_index": 130,
                 "offset": [
                   0,
@@ -1327,7 +1327,7 @@
               }
             },
             {
-              "slot_127@sh.grid_item_template": {
+              "slot_127@ds.grid_item_template": {
                 "collection_index": 131,
                 "offset": [
                   18,
@@ -1336,7 +1336,7 @@
               }
             },
             {
-              "slot_128@sh.grid_item_template": {
+              "slot_128@ds.grid_item_template": {
                 "collection_index": 132,
                 "offset": [
                   36,
@@ -1345,7 +1345,7 @@
               }
             },
             {
-              "slot_129@sh.grid_item_template": {
+              "slot_129@ds.grid_item_template": {
                 "collection_index": 133,
                 "offset": [
                   54,
@@ -1354,7 +1354,7 @@
               }
             },
             {
-              "slot_130@sh.grid_item_template": {
+              "slot_130@ds.grid_item_template": {
                 "collection_index": 134,
                 "offset": [
                   72,
@@ -1363,7 +1363,7 @@
               }
             },
             {
-              "slot_131@sh.grid_item_template": {
+              "slot_131@ds.grid_item_template": {
                 "collection_index": 135,
                 "offset": [
                   90,
@@ -1372,7 +1372,7 @@
               }
             },
             {
-              "slot_132@sh.grid_item_template": {
+              "slot_132@ds.grid_item_template": {
                 "collection_index": 136,
                 "offset": [
                   108,
@@ -1381,7 +1381,7 @@
               }
             },
             {
-              "slot_133@sh.grid_item_template": {
+              "slot_133@ds.grid_item_template": {
                 "collection_index": 137,
                 "offset": [
                   126,
@@ -1390,7 +1390,7 @@
               }
             },
             {
-              "slot_134@sh.grid_item_template": {
+              "slot_134@ds.grid_item_template": {
                 "collection_index": 138,
                 "offset": [
                   144,
@@ -1399,7 +1399,7 @@
               }
             },
             {
-              "slot_135@sh.grid_item_template": {
+              "slot_135@ds.grid_item_template": {
                 "collection_index": 139,
                 "offset": [
                   0,
@@ -1408,7 +1408,7 @@
               }
             },
             {
-              "slot_136@sh.grid_item_template": {
+              "slot_136@ds.grid_item_template": {
                 "collection_index": 140,
                 "offset": [
                   18,
@@ -1417,7 +1417,7 @@
               }
             },
             {
-              "slot_137@sh.grid_item_template": {
+              "slot_137@ds.grid_item_template": {
                 "collection_index": 141,
                 "offset": [
                   36,
@@ -1426,7 +1426,7 @@
               }
             },
             {
-              "slot_138@sh.grid_item_template": {
+              "slot_138@ds.grid_item_template": {
                 "collection_index": 142,
                 "offset": [
                   54,
@@ -1435,7 +1435,7 @@
               }
             },
             {
-              "slot_139@sh.grid_item_template": {
+              "slot_139@ds.grid_item_template": {
                 "collection_index": 143,
                 "offset": [
                   72,
@@ -1444,7 +1444,7 @@
               }
             },
             {
-              "slot_140@sh.grid_item_template": {
+              "slot_140@ds.grid_item_template": {
                 "collection_index": 144,
                 "offset": [
                   90,
@@ -1453,7 +1453,7 @@
               }
             },
             {
-              "slot_141@sh.grid_item_template": {
+              "slot_141@ds.grid_item_template": {
                 "collection_index": 145,
                 "offset": [
                   108,
@@ -1462,7 +1462,7 @@
               }
             },
             {
-              "slot_142@sh.grid_item_template": {
+              "slot_142@ds.grid_item_template": {
                 "collection_index": 146,
                 "offset": [
                   126,
@@ -1471,7 +1471,7 @@
               }
             },
             {
-              "slot_143@sh.grid_item_template": {
+              "slot_143@ds.grid_item_template": {
                 "collection_index": 147,
                 "offset": [
                   144,
@@ -1480,7 +1480,7 @@
               }
             },
             {
-              "slot_144@sh.grid_item_template": {
+              "slot_144@ds.grid_item_template": {
                 "collection_index": 148,
                 "offset": [
                   0,
@@ -1489,7 +1489,7 @@
               }
             },
             {
-              "slot_145@sh.grid_item_template": {
+              "slot_145@ds.grid_item_template": {
                 "collection_index": 149,
                 "offset": [
                   18,
@@ -1498,7 +1498,7 @@
               }
             },
             {
-              "slot_146@sh.grid_item_template": {
+              "slot_146@ds.grid_item_template": {
                 "collection_index": 150,
                 "offset": [
                   36,
@@ -1507,7 +1507,7 @@
               }
             },
             {
-              "slot_147@sh.grid_item_template": {
+              "slot_147@ds.grid_item_template": {
                 "collection_index": 151,
                 "offset": [
                   54,
@@ -1516,7 +1516,7 @@
               }
             },
             {
-              "slot_148@sh.grid_item_template": {
+              "slot_148@ds.grid_item_template": {
                 "collection_index": 152,
                 "offset": [
                   72,
@@ -1525,7 +1525,7 @@
               }
             },
             {
-              "slot_149@sh.grid_item_template": {
+              "slot_149@ds.grid_item_template": {
                 "collection_index": 153,
                 "offset": [
                   90,
@@ -1534,7 +1534,7 @@
               }
             },
             {
-              "slot_150@sh.grid_item_template": {
+              "slot_150@ds.grid_item_template": {
                 "collection_index": 154,
                 "offset": [
                   108,
@@ -1543,7 +1543,7 @@
               }
             },
             {
-              "slot_151@sh.grid_item_template": {
+              "slot_151@ds.grid_item_template": {
                 "collection_index": 155,
                 "offset": [
                   126,
@@ -1552,7 +1552,7 @@
               }
             },
             {
-              "slot_152@sh.grid_item_template": {
+              "slot_152@ds.grid_item_template": {
                 "collection_index": 156,
                 "offset": [
                   144,
@@ -1561,7 +1561,7 @@
               }
             },
             {
-              "slot_153@sh.grid_item_template": {
+              "slot_153@ds.grid_item_template": {
                 "collection_index": 157,
                 "offset": [
                   0,
@@ -1570,7 +1570,7 @@
               }
             },
             {
-              "slot_154@sh.grid_item_template": {
+              "slot_154@ds.grid_item_template": {
                 "collection_index": 158,
                 "offset": [
                   18,
@@ -1579,7 +1579,7 @@
               }
             },
             {
-              "slot_155@sh.grid_item_template": {
+              "slot_155@ds.grid_item_template": {
                 "collection_index": 159,
                 "offset": [
                   36,
@@ -1588,7 +1588,7 @@
               }
             },
             {
-              "slot_156@sh.grid_item_template": {
+              "slot_156@ds.grid_item_template": {
                 "collection_index": 160,
                 "offset": [
                   54,
@@ -1597,7 +1597,7 @@
               }
             },
             {
-              "slot_157@sh.grid_item_template": {
+              "slot_157@ds.grid_item_template": {
                 "collection_index": 161,
                 "offset": [
                   72,
@@ -1606,7 +1606,7 @@
               }
             },
             {
-              "slot_158@sh.grid_item_template": {
+              "slot_158@ds.grid_item_template": {
                 "collection_index": 162,
                 "offset": [
                   90,
@@ -1615,7 +1615,7 @@
               }
             },
             {
-              "slot_159@sh.grid_item_template": {
+              "slot_159@ds.grid_item_template": {
                 "collection_index": 163,
                 "offset": [
                   108,
@@ -1624,7 +1624,7 @@
               }
             },
             {
-              "slot_160@sh.grid_item_template": {
+              "slot_160@ds.grid_item_template": {
                 "collection_index": 164,
                 "offset": [
                   126,
@@ -1633,7 +1633,7 @@
               }
             },
             {
-              "slot_161@sh.grid_item_template": {
+              "slot_161@ds.grid_item_template": {
                 "collection_index": 165,
                 "offset": [
                   144,
@@ -1646,7 +1646,7 @@
         }
       },
       {
-        "count_label_grid@sh.count_label_grid": {
+        "count_label_grid@ds.count_label_grid": {
           "anchor_from": "top_left",
           "anchor_to": "top_left",
           "layer": 20,
@@ -1716,7 +1716,7 @@
         }
       },
       {
-        "burn_slot@sh.small_slot": {
+        "burn_slot@ds.small_slot": {
           "$item_collection_name": "$item_collection_name",
           "anchor_from": "top_middle",
           "anchor_to": "top_middle",
@@ -1759,7 +1759,7 @@
           ],
           "controls": [
             {
-              "scrolling_panel@sh.scrolling_panel": {
+              "scrolling_panel@ds.scrolling_panel": {
                 "size": [
                   162,
                   72
@@ -1768,7 +1768,7 @@
                   162,
                   72
                 ],
-                "$scrolling_content": "sh.storage_grid_scroll_content"
+                "$scrolling_content": "ds.storage_grid_scroll_content"
               }
             }
           ]

@@ -1,5 +1,5 @@
 {
-  "namespace": "sh",
+  "namespace": "ds",
   "toggle_button": {
     "type": "panel",
     "$toggle_layer|default": 0,
