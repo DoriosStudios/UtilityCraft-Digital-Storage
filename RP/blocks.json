@@ -6,9 +6,5 @@
 	"utilitycraft:fluxite_block": {
 		"sound": "metal",
 		"textures": "utilitycraft_fluxite_block"
-	},
-	"utilitycraft:silicon_block": {
-		"sound": "stone",
-		"textures": "utilitycraft_silicon_block"
 	}
 }

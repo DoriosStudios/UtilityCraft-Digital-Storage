@@ -8,23 +8,29 @@
       "utilitycraft_workbench"
     ],
     "key": {
-      "Q": {
-        "item": "utilitycraft:quartz_dust"
+      "D": {
+        "item": "utilitycraft:gold_dust"
+      },
+      "P": {
+        "item": "utilitycraft:steel_plate"
       },
       "S": {
-        "item": "utilitycraft:steel_plate"
+        "item": "utilitycraft:silicon"
       },
       "R": {
         "item": "minecraft:redstone"
       },
       "F": {
         "item": "utilitycraft:fluxite"
+      },
+      "I": {
+        "item": "minecraft:iron_ingot"
       }
     },
     "pattern": [
-      "QSQ",
-      "RFR",
-      "QSQ"
+      "DSD",
+      "FPF",
+      "RIR"
     ],
     "result": {
       "item": "utilitycraft:storage_core"
@@ -34,7 +40,7 @@
         "item": "utilitycraft:fluxite"
       },
       {
-        "item": "utilitycraft:quartz_dust"
+        "item": "utilitycraft:gold_dust"
       }
     ]
   }

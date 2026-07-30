@@ -71,15 +71,13 @@
               "catalyst@uc.infuser_recipe_catalyst": {
                 "$slot_item_texture": "textures/items/dusts/diamond_dust",
                 "$slot_hover_text": "item.utilitycraft:diamond_dust",
-                "$has_slot_hover": true,
-                "$slot_count_text": "2",
-                "$has_slot_count": true
+                "$has_slot_hover": true
               }
             },
             {
               "input@uc.infuser_recipe_input": {
-                "$slot_item_texture": "textures/items/amethyst_shard",
-                "$slot_hover_text": "item.amethyst_shard.name",
+                "$slot_item_texture": "textures/items/quartz",
+                "$slot_hover_text": "item.quartz.name",
                 "$has_slot_hover": true
               }
             },

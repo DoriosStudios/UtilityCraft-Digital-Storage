@@ -14,20 +14,20 @@
       "F": {
         "item": "utilitycraft:fluxite"
       },
-      "Q": {
-        "item": "minecraft:quartz"
-      },
       "C": {
         "item": "utilitycraft:storage_core"
       },
       "H": {
         "item": "minecraft:chest"
+      },
+      "R": {
+        "item": "minecraft:redstone"
       }
     },
     "pattern": [
-      "IFI",
-      "QCQ",
-      "IHI"
+      "ICI",
+      "FHF",
+      "IRI"
     ],
     "result": {
       "item": "utilitycraft:storage_cell_drive"

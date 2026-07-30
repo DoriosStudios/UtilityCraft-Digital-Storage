@@ -60,9 +60,7 @@
                         },
                         "items": [
                             "utilitycraft:fluxite",
-                            "utilitycraft:silicon",
-                            "utilitycraft:fluxite_block",
-                            "utilitycraft:silicon_block"
+                            "utilitycraft:fluxite_block"
                         ]
                     }
                 ]

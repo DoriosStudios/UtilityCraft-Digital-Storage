@@ -1,40 +1,29 @@
 {
   "format_version": "1.20.80",
-  "minecraft:recipe_shaped": {
+  "minecraft:recipe_shapeless": {
     "description": {
       "identifier": "utilitycraft:advanced_storage_cell"
     },
     "tags": [
       "utilitycraft_workbench"
     ],
-    "key": {
-      "S": {
-        "item": "utilitycraft:steel_ingot"
+    "ingredients": [
+      {
+        "item": "utilitycraft:cell_casing"
       },
-      "G": {
-        "item": "minecraft:tinted_glass"
-      },
-      "P": {
+      {
         "item": "utilitycraft:advanced_storage_part"
-      },
-      "F": {
-        "item": "utilitycraft:fluxite"
       }
-    },
-    "pattern": [
-      "SGS",
-      "GPG",
-      "SFS"
     ],
     "result": {
       "item": "utilitycraft:advanced_storage_cell"
     },
     "unlock": [
       {
-        "item": "utilitycraft:advanced_storage_part"
+        "item": "utilitycraft:cell_casing"
       },
       {
-        "item": "utilitycraft:fluxite"
+        "item": "utilitycraft:advanced_storage_part"
       }
     ]
   }

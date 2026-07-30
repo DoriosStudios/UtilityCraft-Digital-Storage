@@ -14,7 +14,6 @@ tile.utilitycraft:import_buffer.name=Import Buffer\n§7- Sends items into connec
 tile.utilitycraft:export_buffer.name=Export Buffer\n§7- Pulls filtered items out of connected digital storage\n§7- Accepted upgrades:\n   §a§7\n§o§9@UC: Digital Storage
 tile.utilitycraft:storage_center.name=Storage Center\n§7- Powers and controls a digital storage network\n§o§9@UC: Digital Storage
 tile.utilitycraft:fluxite_block.name=Block of Fluxite\n§7- Crafting material\n§o§9@UC: Digital Storage
-tile.utilitycraft:silicon_block.name=Block of Silicon\n§7- Crafting material\n§o§9@UC: Digital Storage
 
 #######################
 ####    Entities   ####
@@ -33,6 +32,7 @@ entity.utilitycraft:storage_center.name=Storage Center
 ####    ITEMS    ####
 #####################
 
+item.utilitycraft:cell_casing=Cell Casing\n§7- Empty casing for storage cells\n§o§9@UC: Digital Storage
 item.utilitycraft:storage_cell=Storage Cell\n§7- Max Capacity: §f1k\n§o§9@UC: Digital Storage
 item.utilitycraft:basic_storage_cell=§eBasic Storage Cell\n§7- Max Capacity: §f4.1k\n§o§9@UC: Digital Storage
 item.utilitycraft:advanced_storage_cell=§cAdvanced Storage Cell\n§7- Max Capacity: §f16.4k\n§o§9@UC: Digital Storage
@@ -44,8 +44,7 @@ item.utilitycraft:advanced_storage_part=§cAdvanced Storage Part\n§7- Used to c
 item.utilitycraft:expert_storage_part=§bExpert Storage Part\n§7- Used to craft expert storage cells\n§o§9@UC: Digital Storage
 item.utilitycraft:ultimate_storage_part=§8Ultimate Storage Part\n§7- Used to craft ultimate storage cells\n§o§9@UC: Digital Storage
 item.utilitycraft:storage_core=Storage Core\n§7- An important component for storage machines and cells\n§o§9@UC: Digital Storage
-item.utilitycraft:fluxite=Fluxite\n§7- Obtained by infusing amethyst with diamond dust\n§o§9@UC: Digital Storage
-item.utilitycraft:silicon=Silicon\n§7- Crafting material\n§o§9@UC: Digital Storage
+item.utilitycraft:fluxite=Fluxite\n§7- Obtained by infusing quartz with diamond dust\n§o§9@UC: Digital Storage
 item.utilitycraft:storage_filler=Storage Filler\n§o§9@UC: Digital Storage
 item.utilitycraft:wireless_panel_off=Wireless Panel-Off\n§o§9@UC: Digital Storage
 item.utilitycraft:wireless_panel_on=Wireless Panel-On\n§7- Link with a terminal to use\n§o§9@UC: Digital Storage

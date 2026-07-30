@@ -8,23 +8,26 @@
       "utilitycraft_workbench"
     ],
     "key": {
-      "T": {
-        "item": "minecraft:crafting_table"
+      "C": {
+        "item": "minecraft:crafter"
       },
-      "E": {
-        "item": "utilitycraft:expert_chip"
+      "G": {
+        "item": "utilitycraft:gold_dust"
       },
       "S": {
         "item": "utilitycraft:storage_terminal"
       },
       "R": {
         "item": "minecraft:redstone"
+      },
+      "F": {
+        "item": "utilitycraft:fluxite"
       }
     },
     "pattern": [
-      " T ",
-      "ESE",
-      " R "
+      "RCR",
+      "GSG",
+      "RFR"
     ],
     "result": {
       "item": "utilitycraft:crafting_terminal"
@@ -34,7 +37,7 @@
         "item": "utilitycraft:storage_terminal"
       },
       {
-        "item": "minecraft:crafting_table"
+        "item": "minecraft:crafter"
       }
     ]
   }

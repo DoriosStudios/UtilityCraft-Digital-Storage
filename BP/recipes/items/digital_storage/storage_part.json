@@ -8,11 +8,11 @@
       "utilitycraft_workbench"
     ],
     "key": {
-      "S": {
-        "item": "utilitycraft:steel_ingot"
+      "G": {
+        "item": "minecraft:tinted_glass"
       },
-      "R": {
-        "item": "minecraft:redstone"
+      "P": {
+        "item": "utilitycraft:silicon"
       },
       "C": {
         "item": "utilitycraft:chip"
@@ -20,14 +20,14 @@
       "O": {
         "item": "utilitycraft:storage_core"
       },
-      "F": {
-        "item": "utilitycraft:fluxite"
+      "L": {
+        "item": "minecraft:glowstone_dust"
       }
     },
     "pattern": [
-      "SRS",
-      "COC",
-      "SFS"
+      "GPG",
+      "POP",
+      "LCL"
     ],
     "result": {
       "item": "utilitycraft:storage_part"
@@ -37,7 +37,7 @@
         "item": "utilitycraft:storage_core"
       },
       {
-        "item": "utilitycraft:fluxite"
+        "item": "utilitycraft:silicon"
       }
     ]
   }

@@ -12,19 +12,22 @@
         "item": "minecraft:iron_ingot"
       },
       "F": {
-        "item": "utilitycraft:fluxite"
+        "item": "utilitycraft:fluxite_block"
       },
       "C": {
         "item": "utilitycraft:storage_core"
       },
-      "E": {
-        "item": "utilitycraft:expert_chip"
+      "S": {
+        "item": "utilitycraft:silicon"
+      },
+      "R": {
+        "item": "minecraft:redstone_block"
       }
     },
     "pattern": [
-      "IFI",
-      "FCF",
-      "IEI"
+      "ICI",
+      "SFS",
+      "IRI"
     ],
     "result": {
       "item": "utilitycraft:storage_center"
@@ -34,7 +37,7 @@
         "item": "utilitycraft:storage_core"
       },
       {
-        "item": "utilitycraft:expert_chip"
+        "item": "utilitycraft:fluxite_block"
       }
     ]
   }

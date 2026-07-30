@@ -2,6 +2,9 @@
   "resource_pack_name": "Digital Storage",
   "texture_name": "atlas.items",
   "texture_data": {
+     "utilitycraft_cell_casing": {
+      "textures": "textures/items/cells/cell_casing"
+    },
      "utilitycraft_storage_cell": {
       "textures": "textures/items/cells/storage_cell"
     },
@@ -37,9 +40,6 @@
     },
      "utilitycraft_fluxite": {
       "textures": "textures/items/fluxite"
-    },
-     "utilitycraft_silicon": {
-      "textures": "textures/items/silicon"
     },
      "utilitycraft_wireless_panel_off": {
       "textures": "textures/items/wireless/wireless_panel_off"

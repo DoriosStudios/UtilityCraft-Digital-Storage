@@ -14,16 +14,19 @@
       "F": {
         "item": "utilitycraft:fluxite"
       },
-      "C": {
-        "item": "utilitycraft:storage_core"
+      "B": {
+        "item": "minecraft:redstone_block"
+      },
+      "G": {
+        "item": "utilitycraft:gold_dust"
       },
       "D": {
         "item": "utilitycraft:storage_cell_drive"
       }
     },
     "pattern": [
-      "IFI",
-      "CDC",
+      "IBI",
+      "GDG",
       "IFI"
     ],
     "result": {

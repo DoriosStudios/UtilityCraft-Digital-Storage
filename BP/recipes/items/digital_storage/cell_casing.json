@@ -1,0 +1,35 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "utilitycraft:cell_casing"
+    },
+    "tags": [
+      "utilitycraft_workbench"
+    ],
+    "key": {
+      "S": {
+        "item": "utilitycraft:steel_ingot"
+      },
+      "G": {
+        "item": "minecraft:tinted_glass"
+      },
+      "F": {
+        "item": "utilitycraft:fluxite"
+      }
+    },
+    "pattern": [
+      "SGS",
+      "G G",
+      "SFS"
+    ],
+    "result": {
+      "item": "utilitycraft:cell_casing"
+    },
+    "unlock": [
+      {
+        "item": "utilitycraft:fluxite"
+      }
+    ]
+  }
+}

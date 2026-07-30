@@ -14,8 +14,8 @@
       "F": {
         "item": "utilitycraft:fluxite"
       },
-      "R": {
-        "item": "minecraft:redstone_block"
+      "S": {
+        "item": "utilitycraft:silicon"
       },
       "C": {
         "item": "utilitycraft:storage_core"
@@ -26,7 +26,7 @@
     },
     "pattern": [
       "IFI",
-      "RCR",
+      "SCS",
       "IEI"
     ],
     "result": {

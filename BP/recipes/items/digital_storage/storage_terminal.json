@@ -17,17 +17,17 @@
       "R": {
         "item": "minecraft:redstone"
       },
-      "B": {
-        "item": "minecraft:redstone_block"
-      },
       "C": {
         "item": "utilitycraft:storage_core"
+      },
+      "F": {
+        "item": "utilitycraft:fluxite"
       }
     },
     "pattern": [
-      "IGI",
-      "BCB",
-      "IRI"
+      "ICI",
+      "RGR",
+      "IFI"
     ],
     "result": {
       "item": "utilitycraft:storage_terminal"

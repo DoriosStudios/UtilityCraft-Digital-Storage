@@ -1,0 +1,26 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "utilitycraft:fluxite_to_block"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "ingredients": [
+      {
+        "item": "utilitycraft:fluxite",
+        "count": 9
+      }
+    ],
+    "result": {
+      "item": "utilitycraft:fluxite_block",
+      "count": 1
+    },
+    "unlock": [
+      {
+        "item": "utilitycraft:fluxite"
+      }
+    ]
+  }
+}

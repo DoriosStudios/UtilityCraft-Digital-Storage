@@ -17,14 +17,17 @@
       "O": {
         "item": "utilitycraft:storage_core"
       },
-      "F": {
-        "item": "utilitycraft:fluxite"
+      "G": {
+        "item": "minecraft:tinted_glass"
+      },
+      "L": {
+        "item": "minecraft:glowstone_dust"
       }
     },
     "pattern": [
-      "CPC",
+      "GPG",
       "POP",
-      "CFC"
+      "LCL"
     ],
     "result": {
       "item": "utilitycraft:expert_storage_part"

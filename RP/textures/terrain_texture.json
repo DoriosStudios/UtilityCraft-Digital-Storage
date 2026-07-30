@@ -36,9 +36,6 @@
 		},
 		"utilitycraft_fluxite_block": {
 			"textures": "textures/blocks/fluxite_block"
-		},
-		"utilitycraft_silicon_block": {
-			"textures": "textures/blocks/silicon_block"
 		}
 	}
 }
