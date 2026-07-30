@@ -9,13 +9,13 @@
 	},
 	"header": {
 		"name": "§bDigital Storage",
-		"description": "1.0.02 - Requires UtilityCraft 3.5.1+ §6Dorios Studios",
+		"description": "1.0.0.07 - Requires UtilityCraft 3.5.1+ §6Dorios Studios",
 		"min_engine_version": [
 			1,
 			21,
 			120
 		],
-		"uuid": "3e925e65-b723-4a41-a226-47937568ba59",
+		"uuid": "7518e90e-69b4-4f9b-8cc1-65d231e67ea5",
 		"version": [
 			1,
 			0,
@@ -25,7 +25,7 @@
 	"modules": [
 		{
 			"type": "resources",
-			"uuid": "0473012a-9a7c-4f46-8374-ad296a78addd",
+			"uuid": "012299a3-eeab-4782-9022-5206f6436682",
 			"version": [
 				1,
 				0,
@@ -35,7 +35,7 @@
 	],
 	"dependencies": [
 		{
-			"uuid": "093134e3-1163-4cf5-a3a2-0ef53c77dc87",
+			"uuid": "b5fc2b04-6ae6-4a6c-abef-4e1ebe4d6dae",
 			"version": [
 				1,
 				0,
