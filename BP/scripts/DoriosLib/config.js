@@ -17,7 +17,7 @@ export const ADDON_METADATA = {
   dependencies: {
     utilitycraft: {
       name: "UtilityCraft",
-      version: "3.5.0",
+      version: "3.5.1",
       warning: "Digital Storage requires UtilityCraft 3.5.0 or newer.",
     },
   },
