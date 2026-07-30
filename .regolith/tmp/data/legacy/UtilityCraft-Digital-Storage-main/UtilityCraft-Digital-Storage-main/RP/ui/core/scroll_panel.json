@@ -1,0 +1,159 @@
+{
+  "namespace": "sh",
+
+  // -------------------------- \\
+  // Custom Scrolling Panel.    \\
+  // -------------------------- \\
+
+  "scrolling_panel": {
+    "size": [ 162, 72 ],
+    "type": "panel",
+    "controls": [
+      {
+        "scrolling_panel_base": {
+          "type": "input_panel",
+          "anchor_to": "top_left",
+          "anchor_from": "top_left",
+          "controls": [
+            {
+              "view_control@sh.scroll_view_control": {}
+            }
+          ],
+          "button_mappings": []
+        }
+      }
+    ]
+  },
+  "box": {
+    "type": "panel",
+    "controls": [
+      {
+        "actual_box": {
+          "type": "scrollbar_box",
+          "anchor_to": "top_left",
+          "anchor_from": "top_left",
+          "layer": 5,
+          "contained": true,
+          "draggable": "vertical",
+          "button_mappings": [
+            {
+              "from_button_id": "button.menu_select",
+              "to_button_id": "button.menu_select",
+              "mapping_type": "pressed",
+              "button_up_right_of_first_refusal": true
+            }
+          ],
+          "controls": [
+            {
+              "mouse_box": {
+                "type": "image",
+                "texture": "textures/ui/scroll_panel/scroller",
+                "controls": [
+                  {
+                    "lines": {
+                      "type": "image",
+                      "size": ["100%", "100%-3px"],
+                      "offset": [0, 2],
+                      "anchor_from": "top_middle",
+                      "anchor_to": "top_middle",
+                      "tiled": true,
+                      "texture": "textures/ui/scroll_panel/scroller_line"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "scrollbar_track": {
+    "type": "scroll_track",
+    "button_mappings": [
+      {
+        "from_button_id": "button.menu_select",
+        "to_button_id": "button.scrollbar_skip_track",
+        "mapping_type": "pressed"
+      }
+    ]
+  },
+  "fake_panel": {
+    "type": "panel",
+    "size": [ "100%", "100%" ]
+  },
+  "scroll_view_control": {
+    "$scrolling_content|default": "common.black",
+    "$scrolling_background|default": "sh.fake_panel",
+    "type": "scroll_view",
+    "anchor_from": "left_middle",
+    "anchor_to": "left_middle",
+    "size": [ "100% + 20px", "100%" ],
+    "scroll_speed": 5,
+    "scrollbar_track_button": "button.scrollbar_skip_track",
+    "scrollbar_touch_button": "button.scrollbar_touch",
+    "always_listen_to_input": true,
+    "always_handle_pointer": true,
+    "scrollbar_track": "track",
+    "scrollbar_box": "actual_box",
+    "always_handle_scrolling": false,
+    "scroll_view_port": "viewport",
+    "scroll_box_and_track_panel": "bar_and_track",
+    "scroll_content": "scrolling_content",
+    "jump_to_bottom_on_update": false,
+    "button_mappings": [
+      {
+        "from_button_id": "button.menu_select",
+        "to_button_id": "button.scrollbar_touch",
+        "mapping_type": "pressed",
+        "button_up_right_of_first_refusal": true
+      }
+    ],
+    "controls": [
+      {
+        "viewport": {
+          "anchor_from": "top_left",
+          "anchor_to": "top_left",
+          "type": "panel",
+          "size": [ "100%-20px", "100%+0.4px" ],
+          "clips_children": true,
+          "layer": -4,
+          "controls": [
+            {
+              "scrolling_content@$scrolling_content": {}
+            }
+          ]
+        }
+      },
+      {
+        "background@$scrolling_background": {}
+      },
+      {
+        "bar_and_track": {
+          "type": "panel",
+          "size": [ 14, "100%-2px" ],
+          "offset": [ 0, 0 ],
+          "anchor_from": "right_middle",
+          "anchor_to": "right_middle",
+          "layer": 5,
+          "controls": [
+            {
+              "track@scrollbar_track": {
+                "layer": 2,
+                "anchor_from": "center",
+                "anchor_to": "center"
+              }
+            },
+            {
+              "scroll_box@box": {
+                "layer": 5,
+                "anchor_from": "center",
+                "anchor_to": "center"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

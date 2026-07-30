@@ -1,0 +1,270 @@
+{
+    "namespace": "storage_cell_drive",
+    "storage_cell_drive_top": {
+        "type": "collection_panel",
+        "anchor_from": "center",
+        "anchor_to": "center",
+        "size": [
+            162,
+            72
+        ],
+        "offset": [
+            -10,
+            -40
+        ],
+        "collection_name": "container_items",
+        "$item_collection_name": "container_items",
+        "controls": [
+            {
+                "chest_label@chest.chest_label": {
+                    "offset": [
+                        10,
+                        0
+                    ]
+                }
+            },
+            {
+                "machine_description@uc.text_label": {
+                    "collection_index": 0,
+                    "anchor_from": "top_left",
+                    "anchor_to": "top_left",
+                    "$text_scale": 0.55,
+                    "offset": [
+                        14,
+                        12
+                    ]
+                }
+            },
+            {
+                "machine_screen@uc.big_machine_screen": {}
+            },
+            {
+                "input_grid@uc.slot_grid_3x3": {
+                    "anchor_from": "top_middle",
+                    "anchor_to": "top_middle",
+                    "offset": [
+                        64,
+                        13
+                    ],
+                    "$collection_index_1": 1,
+                    "$collection_index_2": 2,
+                    "$collection_index_3": 3,
+                    "$collection_index_4": 4,
+                    "$collection_index_5": 5,
+                    "$collection_index_6": 6,
+                    "$collection_index_7": 7,
+                    "$collection_index_8": 8,
+                    "$collection_index_9": 9
+                }
+            },
+            {
+                "storage_cell_drive_overlay": {
+                    "type": "image",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
+                    "anchor_from": "top_left",
+                    "anchor_to": "top_left",
+                    "size": [
+                        16,
+                        16
+                    ],
+                    "offset": [
+                        119,
+                        14
+                    ],
+                    "layer": 4
+                }
+            },
+            {
+                "storage_cell_drive_overlay": {
+                    "type": "image",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
+                    "anchor_from": "top_left",
+                    "anchor_to": "top_left",
+                    "size": [
+                        16,
+                        16
+                    ],
+                    "offset": [
+                        137,
+                        14
+                    ],
+                    "layer": 4
+                }
+            },
+            {
+                "storage_cell_drive_overlay": {
+                    "type": "image",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
+                    "anchor_from": "top_left",
+                    "anchor_to": "top_left",
+                    "size": [
+                        16,
+                        16
+                    ],
+                    "offset": [
+                        155,
+                        14
+                    ],
+                    "layer": 4
+                }
+            },
+            {
+                "storage_cell_drive_overlay": {
+                    "type": "image",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
+                    "anchor_from": "top_left",
+                    "anchor_to": "top_left",
+                    "size": [
+                        16,
+                        16
+                    ],
+                    "offset": [
+                        119,
+                        32
+                    ],
+                    "layer": 4
+                }
+            },
+            {
+                "storage_cell_drive_overlay": {
+                    "type": "image",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
+                    "anchor_from": "top_left",
+                    "anchor_to": "top_left",
+                    "size": [
+                        16,
+                        16
+                    ],
+                    "offset": [
+                        137,
+                        32
+                    ],
+                    "layer": 4
+                }
+            },
+            {
+                "storage_cell_drive_overlay": {
+                    "type": "image",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
+                    "anchor_from": "top_left",
+                    "anchor_to": "top_left",
+                    "size": [
+                        16,
+                        16
+                    ],
+                    "offset": [
+                        155,
+                        32
+                    ],
+                    "layer": 4
+                }
+            },
+            {
+                "storage_cell_drive_overlay": {
+                    "type": "image",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
+                    "anchor_from": "top_left",
+                    "anchor_to": "top_left",
+                    "size": [
+                        16,
+                        16
+                    ],
+                    "offset": [
+                        119,
+                        50
+                    ],
+                    "layer": 4
+                }
+            },
+            {
+                "storage_cell_drive_overlay": {
+                    "type": "image",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
+                    "anchor_from": "top_left",
+                    "anchor_to": "top_left",
+                    "size": [
+                        16,
+                        16
+                    ],
+                    "offset": [
+                        137,
+                        50
+                    ],
+                    "layer": 4
+                }
+            },
+            {
+                "storage_cell_drive_overlay": {
+                    "type": "image",
+                    "texture": "textures/ui/overlay/storage_cell_drive_overlay",
+                    "anchor_from": "top_left",
+                    "anchor_to": "top_left",
+                    "size": [
+                        16,
+                        16
+                    ],
+                    "offset": [
+                        155,
+                        50
+                    ],
+                    "layer": 4
+                }
+            }
+        ]
+    },
+    "utility_panel": {
+        "type": "panel",
+        "controls": [
+            {
+                "container_gamepad_helpers@common.container_gamepad_helpers": {}
+            },
+            {
+                "flying_item_renderer@common.flying_item_renderer": {
+                    "layer": 14
+                }
+            },
+            {
+                "selected_item_details_factory@common.selected_item_details_factory": {}
+            },
+            {
+                "item_lock_notification_factory@common.item_lock_notification_factory": {}
+            },
+            {
+                "root_panel@common.root_panel": {
+                    "layer": 1,
+                    "controls": [
+                        {
+                            "common_panel@common.common_panel": {}
+                        },
+                        {
+                            "chest_panel": {
+                                "type": "panel",
+                                "layer": 5,
+                                "controls": [
+                                    {
+                                        "storage_cell_drive_top@storage_cell_drive.storage_cell_drive_top": {}
+                                    },
+                                    {
+                                        "inventory_panel_bottom_half_with_label@common.inventory_panel_bottom_half_with_label": {}
+                                    },
+                                    {
+                                        "hotbar_grid@common.hotbar_grid_template": {}
+                                    },
+                                    {
+                                        "inventory_take_progress_icon_button@common.inventory_take_progress_icon_button": {}
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "inventory_selected_icon_button@common.inventory_selected_icon_button": {}
+                        },
+                        {
+                            "gamepad_cursor@common.gamepad_cursor_button": {}
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

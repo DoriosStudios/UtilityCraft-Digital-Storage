@@ -1,0 +1,41 @@
+{
+	"num_mip_levels": 4,
+	"padding": 8,
+	"resource_pack_name": "Digital Storage",
+	"texture_name": "atlas.terrain",
+	"texture_data": {
+		"utilitycraft_storage_port": {
+			"textures": "textures/blocks/storage_port"
+		},
+		"utilitycraft_storage_terminal_front": {
+			"textures": "textures/blocks/storage_terminal_front"
+		},
+		"utilitycraft_crafting_terminal_front": {
+			"textures": "textures/blocks/crafting_terminal_front"
+		},
+		"utilitycraft_blueprint_terminal_front": {
+			"textures": "textures/blocks/blueprint_terminal_front"
+		},
+		"utilitycraft_storage_cell_drive_front": {
+			"textures": "textures/blocks/storage_cell_drive_front"
+		},
+		"utilitycraft_network_cable": {
+			"textures": "textures/blocks/network_cable"
+		},
+		"utilitycraft_import_buffer_front": {
+			"textures": "textures/blocks/import_buffer_front"
+		},
+		"utilitycraft_export_buffer_front": {
+			"textures": "textures/blocks/export_buffer_front"
+		},
+		"utilitycraft_storage_center_front": {
+			"textures": "textures/blocks/storage_center_front"
+		},
+		"utilitycraft_fluxite_block": {
+			"textures": "textures/blocks/fluxite_block"
+		},
+		"utilitycraft_silicon_block": {
+			"textures": "textures/blocks/silicon_block"
+		}
+	}
+}

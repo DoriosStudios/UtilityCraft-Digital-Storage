@@ -1,0 +1,41 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "utilitycraft:advanced_storage_part"
+    },
+    "tags": [
+      "utilitycraft_workbench"
+    ],
+    "key": {
+      "C": {
+        "item": "utilitycraft:advanced_chip"
+      },
+      "P": {
+        "item": "utilitycraft:basic_storage_part"
+      },
+      "O": {
+        "item": "utilitycraft:storage_core"
+      },
+      "F": {
+        "item": "utilitycraft:fluxite"
+      }
+    },
+    "pattern": [
+      "CPC",
+      "POP",
+      "CFC"
+    ],
+    "result": {
+      "item": "utilitycraft:advanced_storage_part"
+    },
+    "unlock": [
+      {
+        "item": "utilitycraft:basic_storage_part"
+      },
+      {
+        "item": "utilitycraft:advanced_chip"
+      }
+    ]
+  }
+}

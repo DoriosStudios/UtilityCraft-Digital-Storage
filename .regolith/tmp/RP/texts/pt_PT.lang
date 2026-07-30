@@ -1,0 +1,66 @@
+pack.name=Armazenamento Digital
+pack.description=Criado por: SHADOW1GO1
+
+######################
+####    BLOCOS    ####
+######################
+
+tile.utilitycraft:storage_terminal.name=Terminal de Armazenamento\n§7- Acede a itens numa rede de armazenamento digital\n§o§9@UC: Digital Storage
+tile.utilitycraft:blueprint_terminal.name=Terminal de Esquemas\n§7- Acede a itens da rede e gere esquemas de criação\n§o§9@UC: Digital Storage
+tile.utilitycraft:crafting_terminal.name=Terminal de Criação\n§7- Acede a itens da rede e cria a partir do armazenamento\n§o§9@UC: Digital Storage
+tile.utilitycraft:storage_cell_drive.name=Unidade de Células de Armazenamento\n§7- Guarda células de armazenamento para a rede digital\n§o§9@UC: Digital Storage
+tile.utilitycraft:network_cable.name=Cabo de Rede\n§7- Liga blocos de armazenamento digital numa rede\n§o§9@UC: Digital Storage
+tile.utilitycraft:import_buffer.name=Buffer de Importação\n§7- Envia itens para o armazenamento digital ligado\n§o§9@UC: Digital Storage
+tile.utilitycraft:export_buffer.name=Buffer de Exportação\n§7- Retira itens filtrados do armazenamento digital ligado\n§7- Melhorias aceites:\n   §a§7\n§o§9@UC: Digital Storage
+tile.utilitycraft:storage_center.name=Centro de Armazenamento\n§7- Alimenta e controla uma rede de armazenamento digital\n§o§9@UC: Digital Storage
+
+#######################
+####   ENTIDADES   ####
+#######################
+
+entity.utilitycraft:storage_cell_drive.name=Unidade de Células de Armazenamento
+entity.utilitycraft:crafting_terminal.name=§fTerminal de Criação
+entity.utilitycraft:blueprint_terminal.name=§fTerminal de Esquemas
+entity.utilitycraft:storage_terminal.name=§fTerminal de Armazenamento
+entity.utilitycraft:import_buffer.name=Buffer de Importação
+entity.utilitycraft:export_buffer.name=Buffer de Exportação
+entity.utilitycraft:storage_center.name=Centro de Armazenamento
+
+#####################
+####    ITENS    ####
+#####################
+
+item.utilitycraft:storage_cell=Célula de Armazenamento\n§7- Capacidade máxima: §f1k\n§o§9@UC: Digital Storage
+item.utilitycraft:basic_storage_cell=§eCélula de Armazenamento Básica\n§7- Capacidade máxima: §f4.1k\n§o§9@UC: Digital Storage
+item.utilitycraft:advanced_storage_cell=§cCélula de Armazenamento Avançada\n§7- Capacidade máxima: §f16.4k\n§o§9@UC: Digital Storage
+item.utilitycraft:expert_storage_cell=§bCélula de Armazenamento Especialista\n§7- Capacidade máxima: §f65.5k\n§o§9@UC: Digital Storage
+item.utilitycraft:ultimate_storage_cell=§8Célula de Armazenamento Suprema\n§7- Capacidade máxima: §f409.6k\n§o§9@UC: Digital Storage
+item.utilitycraft:storage_part=Parte de Armazenamento\n§7- Usada para criar células de armazenamento\n§o§9@UC: Digital Storage
+item.utilitycraft:basic_storage_part=§eParte de Armazenamento Básica\n§7- Usada para criar células de armazenamento básicas\n§o§9@UC: Digital Storage
+item.utilitycraft:advanced_storage_part=§cParte de Armazenamento Avançada\n§7- Usada para criar células de armazenamento avançadas\n§o§9@UC: Digital Storage
+item.utilitycraft:expert_storage_part=§bParte de Armazenamento Especialista\n§7- Usada para criar células de armazenamento especialistas\n§o§9@UC: Digital Storage
+item.utilitycraft:ultimate_storage_part=§8Parte de Armazenamento Suprema\n§7- Usada para criar células de armazenamento supremas\n§o§9@UC: Digital Storage
+item.utilitycraft:storage_core=Núcleo de Armazenamento\n§7- Um componente importante para máquinas e células de armazenamento\n§o§9@UC: Digital Storage
+item.utilitycraft:fluxite=Fluxite\n§7- Obtida ao infundir ametista com pó de diamante\n§o§9@UC: Digital Storage
+item.utilitycraft:storage_filler=Preenchedor de Armazenamento\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_panel_off=Painel Sem Fios - Desligado\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_panel_on=Painel Sem Fios - Ligado\n§7- Associa-o a um terminal para usar\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_crafting_panel_off=Painel de Criação Sem Fios - Desligado\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_crafting_panel_on=Painel de Criação Sem Fios - Ligado\n§7- Associa-o a um terminal para usar\n§o§9@UC: Digital Storage
+
+####################
+####   GRUPOS   ####
+####################
+
+dorios:itemGroup.name.storage=Armazenamento
+dorios:itemGroup.name.cells=Células
+dorios:itemGroup.name.parts=Partes
+dorios:itemGroup.name.materials=Materiais
+dorios:itemGroup.name.wireless=Sem Fios
+
+#################
+####    UI   ####
+#################
+
+ui.utilitycraft:blueprint_label=Criação
+ui.utilitycraft:crafting_label=Criação

@@ -1,0 +1,98 @@
+﻿{
+  "namespace": "uc",
+  "infuser_recipes_buttons/addon_recipe_rows": {
+    "modifications": [
+      {
+        "array_name": "controls",
+        "operation": "insert_back",
+        "value": [
+          {
+            "digital_storage_recipe_rows@uc.ds_infuser_recipe_rows": {}
+          }
+        ]
+      }
+    ]
+  },
+  "infuser_recipes_panel/recipes_panel/addon_recipe_panels": {
+    "modifications": [
+      {
+        "array_name": "controls",
+        "operation": "insert_back",
+        "value": [
+          {
+            "digital_storage_recipe_panels@uc.ds_infuser_recipe_panels": {}
+          }
+        ]
+      }
+    ]
+  },
+  "ds_infuser_recipe_rows": {
+    "type": "stack_panel",
+    "size": [126, "100%c"],
+    "orientation": "vertical",
+    "controls": [
+      {
+        "digital_storage_separator@uc.addon_recipe_separator": {
+          "$separator_label": "Digital Storage"
+        }
+      },
+      {
+        "digital_storage_recipe_row_0": {
+          "type": "panel",
+          "size": [126, 18],
+          "controls": [
+            {
+              "ds_fluxite_toggle@uc.infuser_recipe_toggle": {
+                "anchor_from": "top_left",
+                "anchor_to": "top_left",
+                "$toggle_index": 1000,
+                "$toggle_hover_text": "item.utilitycraft:fluxite",
+                "$toggle_control_name": "ds_fluxite_recipe",
+                "$recipe_icon": "textures/items/fluxite",
+                "offset": [0, 0]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "ds_infuser_recipe_panels": {
+    "type": "panel",
+    "anchor_from": "center",
+    "anchor_to": "center",
+    "size": [80, 108],
+    "controls": [
+      {
+        "ds_fluxite_panel@uc.recipe_panel": {
+          "$recipe_control_name": "ds_fluxite_recipe",
+          "controls": [
+            {
+              "catalyst@uc.infuser_recipe_catalyst": {
+                "$slot_item_texture": "textures/items/dusts/diamond_dust",
+                "$slot_hover_text": "item.utilitycraft:diamond_dust",
+                "$has_slot_hover": true,
+                "$slot_count_text": "2",
+                "$has_slot_count": true
+              }
+            },
+            {
+              "input@uc.infuser_recipe_input": {
+                "$slot_item_texture": "textures/items/amethyst_shard",
+                "$slot_hover_text": "item.amethyst_shard.name",
+                "$has_slot_hover": true
+              }
+            },
+            {
+              "output@uc.infuser_recipe_output": {
+                "$slot_item_texture": "textures/items/fluxite",
+                "$slot_hover_text": "item.utilitycraft:fluxite",
+                "$has_slot_hover": true
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

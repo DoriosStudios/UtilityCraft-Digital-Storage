@@ -1,0 +1,64 @@
+{
+	"format_version": "1.20.80",
+	"minecraft:block": {
+		"description": {
+			"identifier": "utilitycraft:import_buffer",
+			"menu_category": {
+				"category": "construction"
+			}
+		},
+		"components": {
+			"utilitycraft:import_buffer": {
+				"entity": {
+					"id": "utilitycraft:import_buffer",
+					"type": "machine",
+					"skip_machine_event": false,
+					"skip_inventory_event": false,
+					"input_type": "none",
+					"output_type": "none"
+				},
+				"machine": {
+					"rate_speed_base": 0
+				}
+			},
+			"minecraft:geometry": "minecraft:geometry.full_block",
+			"minecraft:material_instances": {
+				"*": {
+					"texture": "utilitycraft_storage_port",
+					"render_method": "alpha_test"
+				},
+				"north": {
+					"texture": "utilitycraft_import_buffer_front",
+					"render_method": "alpha_test"
+				},
+				"south": {
+					"texture": "utilitycraft_import_buffer_front",
+					"render_method": "alpha_test"
+				},
+				"east": {
+					"texture": "utilitycraft_import_buffer_front",
+					"render_method": "alpha_test"
+				},
+				"west": {
+					"texture": "utilitycraft_import_buffer_front",
+					"render_method": "alpha_test"
+				}
+			},
+			"minecraft:tick": {
+				"interval_range": [
+					10,
+					10
+				]
+			},
+			"minecraft:destructible_by_mining": {
+				"seconds_to_destroy": 4
+			},
+			"minecraft:destructible_by_explosion": false,
+			"tag:dorios:machine": {},
+			"tag:dorios:item": {},
+			"tag:ucds:network": {},
+			"tag:ucds:network_machine": {},
+			"tag:minecraft:is_pickaxe_item_destructible": {}
+		}
+	}
+}

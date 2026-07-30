@@ -1,0 +1,46 @@
+{
+	"format_version": "1.20.80",
+	"minecraft:block": {
+		"description": {
+			"identifier": "utilitycraft:import_buffer",
+			"menu_category": {
+				"category": "construction"
+			}
+		},
+		"components": {
+			// "utilitycraft:import_buffer": {
+			// 	"entity": {
+			// 		"inventory_size": 27,
+			// 		"input_range": [
+			// 			0,
+			// 			26
+			// 		]
+			// 	},
+			// 	"machine": {
+			// 		"rate_speed_base": 0
+			// 	}
+			// },
+			"minecraft:geometry": "geometry.utilitycraft_block_2",
+			"minecraft:material_instances": {
+				"*": {
+					"texture": "utilitycraft_import_buffer",
+					"render_method": "alpha_test"
+				}
+			},
+			"minecraft:tick": {
+				"interval_range": [
+					20,
+					20
+				]
+			},
+			"minecraft:destructible_by_mining": {
+				"seconds_to_destroy": 4
+			},
+			"minecraft:destructible_by_explosion": false,
+			"tag:dorios:machine": {},
+			"tag:dorios:item": {},
+			"tag:ucds:item_network": {},
+			"tag:minecraft:is_pickaxe_item_destructible": {}
+		}
+	}
+}

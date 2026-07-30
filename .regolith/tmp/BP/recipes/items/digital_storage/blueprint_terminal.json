@@ -1,0 +1,41 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "utilitycraft:blueprint_terminal"
+    },
+    "tags": [
+      "utilitycraft_workbench"
+    ],
+    "key": {
+      "B": {
+        "item": "utilitycraft:blueprint"
+      },
+      "E": {
+        "item": "utilitycraft:expert_chip"
+      },
+      "S": {
+        "item": "utilitycraft:storage_terminal"
+      },
+      "R": {
+        "item": "minecraft:redstone"
+      }
+    },
+    "pattern": [
+      " B ",
+      "ESE",
+      " R "
+    ],
+    "result": {
+      "item": "utilitycraft:blueprint_terminal"
+    },
+    "unlock": [
+      {
+        "item": "utilitycraft:storage_terminal"
+      },
+      {
+        "item": "utilitycraft:blueprint"
+      }
+    ]
+  }
+}

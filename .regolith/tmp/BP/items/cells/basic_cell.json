@@ -1,0 +1,22 @@
+{
+	"format_version": "1.26.0",
+	"minecraft:item": {
+		"description": {
+			"identifier": "utilitycraft:basic_storage_cell",
+			"menu_category": {
+				"category": "items"
+			}
+		},
+		"components": {
+			"minecraft:icon": "utilitycraft_basic_storage_cell",
+         "minecraft:max_stack_size": 1,
+			"minecraft:durability": {
+				"max_durability": 1000,
+				"damage_chance": {
+					"min": 0,
+					"max": 0
+				}
+			}
+		}
+	}
+}

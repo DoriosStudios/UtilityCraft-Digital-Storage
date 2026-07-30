@@ -1,0 +1,66 @@
+pack.name=Almacenamiento Digital
+pack.description=Creado por: SHADOW1GO1
+
+######################
+####    BLOQUES   ####
+######################
+
+tile.utilitycraft:storage_terminal.name=Terminal de Almacenamiento\n§7- Accede a objetos en una red de almacenamiento digital\n§o§9@UC: Digital Storage
+tile.utilitycraft:blueprint_terminal.name=Terminal de Planos\n§7- Accede a objetos de la red y gestiona planos de fabricación\n§o§9@UC: Digital Storage
+tile.utilitycraft:crafting_terminal.name=Terminal de Fabricación\n§7- Accede a objetos de la red y fabrica desde el almacenamiento\n§o§9@UC: Digital Storage
+tile.utilitycraft:storage_cell_drive.name=Unidad de Celdas de Almacenamiento\n§7- Guarda celdas de almacenamiento para la red digital\n§o§9@UC: Digital Storage
+tile.utilitycraft:network_cable.name=Cable de Red\n§7- Conecta bloques de almacenamiento digital en una red\n§o§9@UC: Digital Storage
+tile.utilitycraft:import_buffer.name=Búfer de Importación\n§7- Envía objetos al almacenamiento digital conectado\n§o§9@UC: Digital Storage
+tile.utilitycraft:export_buffer.name=Búfer de Exportación\n§7- Extrae objetos filtrados del almacenamiento digital conectado\n§7- Mejoras aceptadas:\n   §a§7\n§o§9@UC: Digital Storage
+tile.utilitycraft:storage_center.name=Centro de Almacenamiento\n§7- Alimenta y controla una red de almacenamiento digital\n§o§9@UC: Digital Storage
+
+#######################
+####   ENTIDADES   ####
+#######################
+
+entity.utilitycraft:storage_cell_drive.name=Unidad de Celdas de Almacenamiento
+entity.utilitycraft:crafting_terminal.name=§fTerminal de Fabricación
+entity.utilitycraft:blueprint_terminal.name=§fTerminal de Planos
+entity.utilitycraft:storage_terminal.name=§fTerminal de Almacenamiento
+entity.utilitycraft:import_buffer.name=Búfer de Importación
+entity.utilitycraft:export_buffer.name=Búfer de Exportación
+entity.utilitycraft:storage_center.name=Centro de Almacenamiento
+
+#####################
+####    OBJETOS  ####
+#####################
+
+item.utilitycraft:storage_cell=Celda de Almacenamiento\n§7- Capacidad máxima: §f1k\n§o§9@UC: Digital Storage
+item.utilitycraft:basic_storage_cell=§eCelda de Almacenamiento Básica\n§7- Capacidad máxima: §f4.1k\n§o§9@UC: Digital Storage
+item.utilitycraft:advanced_storage_cell=§cCelda de Almacenamiento Avanzada\n§7- Capacidad máxima: §f16.4k\n§o§9@UC: Digital Storage
+item.utilitycraft:expert_storage_cell=§bCelda de Almacenamiento Experta\n§7- Capacidad máxima: §f65.5k\n§o§9@UC: Digital Storage
+item.utilitycraft:ultimate_storage_cell=§8Celda de Almacenamiento Definitiva\n§7- Capacidad máxima: §f409.6k\n§o§9@UC: Digital Storage
+item.utilitycraft:storage_part=Parte de Almacenamiento\n§7- Se usa para fabricar celdas de almacenamiento\n§o§9@UC: Digital Storage
+item.utilitycraft:basic_storage_part=§eParte de Almacenamiento Básica\n§7- Se usa para fabricar celdas de almacenamiento básicas\n§o§9@UC: Digital Storage
+item.utilitycraft:advanced_storage_part=§cParte de Almacenamiento Avanzada\n§7- Se usa para fabricar celdas de almacenamiento avanzadas\n§o§9@UC: Digital Storage
+item.utilitycraft:expert_storage_part=§bParte de Almacenamiento Experta\n§7- Se usa para fabricar celdas de almacenamiento expertas\n§o§9@UC: Digital Storage
+item.utilitycraft:ultimate_storage_part=§8Parte de Almacenamiento Definitiva\n§7- Se usa para fabricar celdas de almacenamiento definitivas\n§o§9@UC: Digital Storage
+item.utilitycraft:storage_core=Núcleo de Almacenamiento\n§7- Un componente importante para máquinas y celdas de almacenamiento\n§o§9@UC: Digital Storage
+item.utilitycraft:fluxite=Fluxite\n§7- Se obtiene infundiendo amatista con polvo de diamante\n§o§9@UC: Digital Storage
+item.utilitycraft:storage_filler=Relleno de Almacenamiento\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_panel_off=Panel Inalámbrico - Apagado\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_panel_on=Panel Inalámbrico - Encendido\n§7- Vincúlalo con un terminal para usarlo\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_crafting_panel_off=Panel de Fabricación Inalámbrico - Apagado\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_crafting_panel_on=Panel de Fabricación Inalámbrico - Encendido\n§7- Vincúlalo con un terminal para usarlo\n§o§9@UC: Digital Storage
+
+####################
+####   GRUPOS   ####
+####################
+
+dorios:itemGroup.name.storage=Almacenamiento
+dorios:itemGroup.name.cells=Celdas
+dorios:itemGroup.name.parts=Partes
+dorios:itemGroup.name.materials=Materiales
+dorios:itemGroup.name.wireless=Inalámbrico
+
+#################
+####    UI   ####
+#################
+
+ui.utilitycraft:blueprint_label=Fabricación
+ui.utilitycraft:crafting_label=Fabricación
