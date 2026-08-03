@@ -1,5 +1,6 @@
 {
   "ui_defs": [
+    "ui/how_to_play_screen.json",
     "ui/blocks/storage_terminal.json",
     "ui/blocks/crafting_terminal.json",
     "ui/blocks/blueprint_terminal.json",

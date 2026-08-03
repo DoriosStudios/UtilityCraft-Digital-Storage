@@ -1,0 +1,375 @@
+{
+  "namespace": "how_to_play",
+  "how_to_play_selector_stack_panel/how_to_play_selector_pane": {
+    "modifications": [
+      {
+        "array_name": "controls",
+        "operation": "insert_front",
+        "value": [
+          {
+            "digital_storage_padding": {
+              "type": "panel",
+              "size": [0, 6]
+            }
+          },
+          {
+            "digital_storage_category@how_to_play_common.topic_category": {
+              "$category": "digital_storage"
+            }
+          },
+          {
+            "ds:overview_button@how_to_play.ds:overview_button": {
+              "$toggle_group_forced_index": 451
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "how_to_play_section_content_panels/general_tips_sections": {
+    "modifications": [
+      {
+        "array_name": "controls",
+        "operation": "insert_front",
+        "value": [
+          {
+            "ds:overview_section@how_to_play.ds:overview_section": {}
+          }
+        ]
+      }
+    ]
+  },
+  "ds_square_render": {
+    "type": "panel",
+    "anchor_from": "top_middle",
+    "anchor_to": "top_middle",
+    "size": ["90%", "95px"],
+    "controls": [
+      {
+        "image@how_to_play_common.image": {
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "texture": "$setup_texture",
+          "size": ["95px", "95px"]
+        }
+      }
+    ]
+  },
+  "ds_large_render": {
+    "type": "panel",
+    "anchor_from": "top_middle",
+    "anchor_to": "top_middle",
+    "size": ["90%", "110px"],
+    "controls": [
+      {
+        "image@how_to_play_common.image": {
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "texture": "$setup_texture",
+          "size": ["110px", "110px"]
+        }
+      }
+    ]
+  },
+  "ds_machine_render": {
+    "type": "panel",
+    "anchor_from": "top_middle",
+    "anchor_to": "top_middle",
+    "size": ["90%", "80px"],
+    "controls": [
+      {
+        "image@how_to_play_common.image": {
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "texture": "$machine_texture",
+          "size": ["80px", "80px"]
+        }
+      }
+    ]
+  },
+  "ds_silicon_process_row": {
+    "type": "stack_panel",
+    "orientation": "horizontal",
+    "anchor_from": "top_middle",
+    "anchor_to": "top_middle",
+    "size": ["152px", "40px"],
+    "controls": [
+      {
+        "quartz": {
+          "type": "image",
+          "texture": "textures/items/quartz",
+          "size": ["40px", "40px"]
+        }
+      },
+      {
+        "process_gap_1": {
+          "type": "panel",
+          "size": ["16px", "40px"]
+        }
+      },
+      {
+        "quartz_dust": {
+          "type": "image",
+          "texture": "textures/items/dusts/quartz_dust",
+          "size": ["40px", "40px"]
+        }
+      },
+      {
+        "process_gap_2": {
+          "type": "panel",
+          "size": ["16px", "40px"]
+        }
+      },
+      {
+        "silicon": {
+          "type": "image",
+          "texture": "textures/items/misc/silicon",
+          "size": ["40px", "40px"]
+        }
+      }
+    ]
+  },
+  "ds_silicon_process": {
+    "type": "panel",
+    "anchor_from": "top_middle",
+    "anchor_to": "top_middle",
+    "size": ["90%", "40px"],
+    "controls": [
+      {
+        "items@how_to_play.ds_silicon_process_row": {}
+      }
+    ]
+  },
+  "ds_cell_tiers_row": {
+    "type": "stack_panel",
+    "orientation": "horizontal",
+    "anchor_from": "top_middle",
+    "anchor_to": "top_middle",
+    "size": ["232px", "40px"],
+    "controls": [
+      {
+        "storage_cell": {
+          "type": "image",
+          "texture": "textures/items/cells/storage_cell",
+          "size": ["40px", "40px"]
+        }
+      },
+      {
+        "cell_gap_1": {
+          "type": "panel",
+          "size": ["8px", "40px"]
+        }
+      },
+      {
+        "basic_storage_cell": {
+          "type": "image",
+          "texture": "textures/items/cells/basic_storage_cell",
+          "size": ["40px", "40px"]
+        }
+      },
+      {
+        "cell_gap_2": {
+          "type": "panel",
+          "size": ["8px", "40px"]
+        }
+      },
+      {
+        "advanced_storage_cell": {
+          "type": "image",
+          "texture": "textures/items/cells/advanced_storage_cell",
+          "size": ["40px", "40px"]
+        }
+      },
+      {
+        "cell_gap_3": {
+          "type": "panel",
+          "size": ["8px", "40px"]
+        }
+      },
+      {
+        "expert_storage_cell": {
+          "type": "image",
+          "texture": "textures/items/cells/expert_storage_cell",
+          "size": ["40px", "40px"]
+        }
+      },
+      {
+        "cell_gap_4": {
+          "type": "panel",
+          "size": ["8px", "40px"]
+        }
+      },
+      {
+        "ultimate_storage_cell": {
+          "type": "image",
+          "texture": "textures/items/cells/ultimate_storage_cell",
+          "size": ["40px", "40px"]
+        }
+      }
+    ]
+  },
+  "ds_cell_tiers": {
+    "type": "panel",
+    "anchor_from": "top_middle",
+    "anchor_to": "top_middle",
+    "size": ["90%", "40px"],
+    "controls": [
+      {
+        "items@how_to_play.ds_cell_tiers_row": {}
+      }
+    ]
+  },
+  "ds_wide_paragraph": {
+    "type": "panel",
+    "$text|default": "",
+    "$line_padding|default": 4,
+    "size": ["100%", "100%cm"],
+    "controls": [
+      {
+        "label": {
+          "type": "label",
+          "color": "$body_text_color",
+          "anchor_from": "left_middle",
+          "anchor_to": "left_middle",
+          "size": ["90%", "default"],
+          "line_padding": "$line_padding",
+          "text": "$text",
+          "text_tts": "$text"
+        }
+      },
+      {
+        "focus_border@how_to_play_common.paragraph_tts_focus_border": {
+          "anchor_from": "top_left",
+          "anchor_to": "top_left",
+          "size": ["90% + 4px", "100%sm + 3px"],
+          "offset": [-2, -1]
+        }
+      }
+    ]
+  },
+  "ds_header_background@how_to_play_common.header_background": {
+    "size": ["90%", "20px"],
+    "anchor_from": "left_middle",
+    "anchor_to": "left_middle"
+  },
+  "ds_header": {
+    "type": "panel",
+    "size": ["100%", "28px"],
+    "controls": [
+      {
+        "header@how_to_play.ds_header_background": {}
+      }
+    ]
+  },
+  "ds:overview_button@how_to_play_common.section_toggle_button": {
+    "$section_topic": "ds:overview"
+  },
+  "ds:overview_section@how_to_play_common.main_sections": {
+    "bindings": [
+      {
+        "binding_type": "view",
+        "source_control_name": "ds:overview_button_toggle",
+        "source_property_name": "#toggle_state",
+        "target_property_name": "#visible"
+      }
+    ],
+    "controls": [
+      {
+        "overview_intro@how_to_play.ds_wide_paragraph": {
+          "$text": "howtoplay.digital_storage.overview.p1"
+        }
+      },
+      {
+        "overview_description@how_to_play.ds_wide_paragraph": {
+          "$text": "howtoplay.digital_storage.overview.p2"
+        }
+      },
+      {
+        "overview_network@how_to_play.ds_large_render": {
+          "$setup_texture": "textures/ui/wiki/digital_storage/guide/advanced_network"
+        }
+      },
+      {
+        "overview_padding@how_to_play_common.small_padding": {}
+      },
+      {
+        "overview_footer@how_to_play.ds_wide_paragraph": {
+          "$text": "howtoplay.digital_storage.overview.p3"
+        }
+      },
+      {
+        "getting_started_padding@how_to_play_common.padding": {}
+      },
+      {
+        "getting_started_header@how_to_play.ds_header": {
+          "$text": "howtoplay.digital_storage.getting_started.h1"
+        }
+      },
+      {
+        "silicon_text@how_to_play.ds_wide_paragraph": {
+          "$text": "howtoplay.digital_storage.getting_started.silicon.p1"
+        }
+      },
+      {
+        "silicon_items@how_to_play.ds_silicon_process": {}
+      },
+      {
+        "setup_padding@how_to_play_common.padding": {}
+      },
+      {
+        "setup_header@how_to_play.ds_header": {
+          "$text": "howtoplay.digital_storage.getting_started.setup.h1"
+        }
+      },
+      {
+        "setup_steps@how_to_play.ds_wide_paragraph": {
+          "$text": "howtoplay.digital_storage.getting_started.setup.p1"
+        }
+      },
+      {
+        "basic_network@how_to_play.ds_square_render": {
+          "$setup_texture": "textures/ui/wiki/digital_storage/guide/basic_network"
+        }
+      },
+      {
+        "cells_padding@how_to_play_common.padding": {}
+      },
+      {
+        "cells_header@how_to_play.ds_header": {
+          "$text": "howtoplay.digital_storage.getting_started.cells.h1"
+        }
+      },
+      {
+        "cells_text@how_to_play.ds_wide_paragraph": {
+          "$text": "howtoplay.digital_storage.getting_started.cells.p1"
+        }
+      },
+      {
+        "cell_items@how_to_play.ds_cell_tiers": {}
+      },
+      {
+        "transfer_padding@how_to_play_common.padding": {}
+      },
+      {
+        "transfer_header@how_to_play.ds_header": {
+          "$text": "howtoplay.digital_storage.getting_started.expansion.h1"
+        }
+      },
+      {
+        "transfer_text@how_to_play.ds_wide_paragraph": {
+          "$text": "howtoplay.digital_storage.getting_started.expansion.p1"
+        }
+      },
+      {
+        "transfer_station@how_to_play.ds_machine_render": {
+          "$machine_texture": "textures/ui/wiki/digital_storage/guide/storage_transfer_station"
+        }
+      },
+      {
+        "buffers_text@how_to_play.ds_wide_paragraph": {
+          "$text": "howtoplay.digital_storage.getting_started.expansion.p2"
+        }
+      }
+    ]
+  }
+}

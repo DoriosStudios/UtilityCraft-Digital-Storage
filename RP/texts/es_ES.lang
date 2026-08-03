@@ -1,6 +1,22 @@
 pack.name=Almacenamiento Digital
 pack.description=Creado por: SHADOW1GO1
 
+howtoplay.category.digital_storage=Digital Storage
+howtoplay.ds:overview=Resumen
+howtoplay.ds:overview.title=Digital Storage - Resumen
+howtoplay.digital_storage.overview.p1=§bDigital Storage§r fue creado por §eMilo504§r y §eSH.Pro§r, con §dJR.ice§r como artista.
+howtoplay.digital_storage.overview.p2=Añade un §balmacén digital§r compacto que combina §acells§r en un único §einventario con buscador§r. Una red grande puede guardar §dmillones de objetos§r.
+howtoplay.digital_storage.overview.p3=Empieza con un §bmontaje pequeño§r y extiende la misma red donde necesites §aalmacenar§r, §eacceder§r, §9importar§r o §cexportar§r objetos.
+howtoplay.digital_storage.getting_started.h1=Primeros pasos
+howtoplay.digital_storage.getting_started.silicon.p1=§bSilicon§r es uno de los materiales más importantes de Digital Storage. Tritura §fNether Quartz§r en un §bCrusher§r para obtener §7Quartz Dust§r. Después funde el polvo en un §eFurnace§r para crear Silicon.
+howtoplay.digital_storage.getting_started.setup.h1=Red básica
+howtoplay.digital_storage.getting_started.setup.p1=Hay §edos terminales§r: el §bStorage Terminal§r normal para acceder a los objetos y el §bCrafting Terminal§r para acceder a ellos y utilizarlos al fabricar.\n\n§b1.§r Coloca un §bStorage Center§r y suminístrale §eenergía DE§r.\n§b2.§r Coloca un §bStorage Cell Drive§r e introduce al menos §auna cell§r.\n§b3.§r Añade cualquiera de los dos terminales.\n§b4.§r Junta los bloques o conéctalos con §9Network Cables§r. La red §ase configura automáticamente§r.
+howtoplay.digital_storage.getting_started.cells.h1=Storage Cells
+howtoplay.digital_storage.getting_started.cells.p1=Capacidades:\n§7Storage: 1.024§r · §aBasic: 4.096§r · §bAdvanced: 16.384§r · §dExpert: 65.536§r · §6Ultimate: 409.600§r.\n\nCada §bDrive§r admite hasta §e16 cells§r, así que varios drives pueden guardar §dmillones de objetos§r.
+howtoplay.digital_storage.getting_started.expansion.h1=Transferencia y expansión
+howtoplay.digital_storage.getting_started.expansion.p1=La §bStorage Transfer Station§r mueve los objetos guardados entre cells: coloca el §9origen a la izquierda§r y el §cdestino a la derecha§r.
+howtoplay.digital_storage.getting_started.expansion.p2=Extiende la red con §9Network Cables§r. Los buffers están diseñados para mover §egrandes cantidades de objetos§r: los §9Import Buffers§r los introducen en la red y los §cExport Buffers§r filtrados los extraen donde los necesites. Usa exactamente §eun Storage Center§r por red conectada.
+
 ######################
 ####    BLOQUES   ####
 ######################

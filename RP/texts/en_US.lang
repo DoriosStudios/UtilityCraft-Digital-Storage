@@ -1,5 +1,21 @@
 pack.name=Digital Storage
 
+howtoplay.category.digital_storage=Digital Storage
+howtoplay.ds:overview=Overview
+howtoplay.ds:overview.title=Digital Storage - Overview
+howtoplay.digital_storage.overview.p1=§bDigital Storage§r was created by §eMilo504§r and §eSH.Pro§r, with §dJR.ice§r as the artist.
+howtoplay.digital_storage.overview.p2=It adds a compact §bdigital warehouse§r that combines §astorage cells§r into one §esearchable inventory§r. A large network can hold §dmillions of items§r.
+howtoplay.digital_storage.overview.p3=Start with one §bsmall setup§r, then extend the same network wherever you need §astorage§r, §eaccess§r, §9importing§r, or §cexporting§r.
+howtoplay.digital_storage.getting_started.h1=Getting Started
+howtoplay.digital_storage.getting_started.silicon.p1=§bSilicon§r is one of the most important materials for Digital Storage. Crush §fNether Quartz§r in a §bCrusher§r to obtain §7Quartz Dust§r, then smelt the dust in a §eFurnace§r to make Silicon.
+howtoplay.digital_storage.getting_started.setup.h1=Basic Network
+howtoplay.digital_storage.getting_started.setup.p1=There are §etwo terminals§r: the normal §bStorage Terminal§r for accessing items, and the §bCrafting Terminal§r for accessing and crafting with them.\n\n§b1.§r Place a §bStorage Center§r and supply it with §eDE power§r.\n§b2.§r Place a §bStorage Cell Drive§r and insert at least §aone cell§r.\n§b3.§r Add either terminal.\n§b4.§r Let the blocks touch, or join them with §9Network Cables§r. The network §aconfigures itself automatically§r.
+howtoplay.digital_storage.getting_started.cells.h1=Storage Cells
+howtoplay.digital_storage.getting_started.cells.p1=Cell capacities:\n§7Storage: 1,024§r · §aBasic: 4,096§r · §bAdvanced: 16,384§r · §dExpert: 65,536§r · §6Ultimate: 409,600§r.\n\nEach §bDrive§r holds up to §e16 cells§r, so multiple drives can store §dmillions of items§r.
+howtoplay.digital_storage.getting_started.expansion.h1=Transfer and Expansion
+howtoplay.digital_storage.getting_started.expansion.p1=The §bStorage Transfer Station§r moves stored items between cells: place the §9source on the left§r and the §cdestination on the right§r.
+howtoplay.digital_storage.getting_started.expansion.p2=Extend the network with §9Network Cables§r. Buffers are designed to move §elarge quantities of items§r: §9Import Buffers§r feed items into the network, while filtered §cExport Buffers§r pull them out wherever you need them. Use exactly §eone Storage Center§r per connected network.
+
 ######################
 ####    BLOCKS    ####
 ######################
