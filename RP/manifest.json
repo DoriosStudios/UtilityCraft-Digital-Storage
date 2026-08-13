@@ -9,7 +9,7 @@
 	},
 	"header": {
 		"name": "§bDigital Storage",
-		"description": "1.0.0.07 - Requires UtilityCraft 3.5.1+ §6Dorios Studios",
+		"description": "1.0.0 - Requires UtilityCraft 3.5.1+ §6Dorios Studios",
 		"min_engine_version": [
 			1,
 			21,
@@ -19,7 +19,7 @@
 		"version": [
 			1,
 			0,
-			107
+			0
 		]
 	},
 	"modules": [
@@ -39,7 +39,7 @@
 			"version": [
 				1,
 				0,
-				107
+				0
 			]
 		}
 	]

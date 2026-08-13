@@ -28,7 +28,9 @@ export function spawnStorageMachine(event, settings, options, callback) {
   const placement = /** @type {import("DoriosCore/index.js").PlacementEventLike} */ (event);
   const config = /** @type {import("DoriosCore/index.js").MachineSettings} */ (settings);
   Machine.spawnEntity(placement, config, (entity) => {
-    configureFixedItemSlots(entity, options.inputSlots ?? [], options.outputSlots ?? []);
+    if (DoriosLib.container.isCompatible(entity)) {
+      configureFixedItemSlots(entity, options.inputSlots ?? [], options.outputSlots ?? []);
+    }
     callback?.(entity);
   });
 }

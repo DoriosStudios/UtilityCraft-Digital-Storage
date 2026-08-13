@@ -2,6 +2,7 @@ import { ItemStack, system } from "@minecraft/server";
 import { EnergyStorage, TickScheduler } from "DoriosCore/index.js";
 import * as DoriosLib from "DoriosLib/index.js";
 import { spawnStorageMachine } from "../../../DigitalStorageCore/entities.js";
+import { releaseCellNetwork } from "../cell_store.js";
 import { getDriveEntity, getDriveKey, readDriveCells, setDriveNetworkId, setStoredDriveSignature } from "../drive_cells.js";
 import { createNetworkFromCellIds, getNetwork, getNetworkSnapshot, powerOffNetwork } from "../network_runtime.js";
 import { NETWORK_TOPOLOGY_PROPERTY } from "../network_topology.js";
@@ -221,6 +222,7 @@ function collectDriveCells(dimension, topology) {
   const cellIds = [];
   const driveEntities = [];
   const driveKeys = [];
+  const ownedNetworkIds = new Set();
 
   for (const position of drivePositions) {
     const block = getBlockAt(dimension, position);
@@ -233,13 +235,22 @@ function collectDriveCells(dimension, topology) {
     driveEntities.push({ entity, signature: snapshot.signature });
     driveKeys.push(getDriveKey(block));
     cellIds.push(...snapshot.cellIds);
+    for (const networkId of snapshot.ownedNetworkIds) ownedNetworkIds.add(networkId);
   }
 
   return {
     cellIds: [...new Set(cellIds)],
     driveEntities,
     driveKeys: [...new Set(driveKeys)],
+    ownedNetworkIds,
   };
+}
+
+function recoverOwnedCells(cellIds, networkIds) {
+  for (const networkId of networkIds) {
+    powerOffNetwork(networkId);
+    for (const cellId of cellIds) releaseCellNetwork(cellId, networkId);
+  }
 }
 
 function buildTerminalKeys(topology) {
@@ -309,12 +320,30 @@ function initializeNetwork(entity, block, energy, topology) {
     return;
   }
 
-  const { cellIds, driveEntities, driveKeys } = collectDriveCells(block.dimension, topology);
-  if (cellIds.length === 0) {
+  let driveSnapshot = collectDriveCells(block.dimension, topology);
+  if (driveSnapshot.cellIds.length === 0) {
     setStatus(entity, "Missing Storage Cells", { warn: true });
     writeStatusDisplay(entity, "Missing Storage Cells", topology, undefined, { force: true });
     return;
   }
+
+  if (driveSnapshot.ownedNetworkIds.size > 0) {
+    setStatus(entity, "Recovering Previous Network", { force: true });
+    writeStatusDisplay(entity, "Recovering Previous Network", topology, undefined, { force: true });
+
+    try {
+      recoverOwnedCells(driveSnapshot.cellIds, driveSnapshot.ownedNetworkIds);
+      driveSnapshot = collectDriveCells(block.dimension, topology);
+    } catch (error) {
+      const reason = error?.message ?? String(error);
+      const status = `Network Recovery Failed: ${reason}`;
+      setStatus(entity, status, { warn: true, force: true });
+      writeStatusDisplay(entity, status, topology, undefined, { force: true });
+      return;
+    }
+  }
+
+  const { cellIds, driveEntities, driveKeys } = driveSnapshot;
 
   setStatus(entity, "Initializing Network", { force: true });
   writeStatusDisplay(entity, "Initializing Network", topology, undefined, { force: true });
@@ -329,13 +358,17 @@ function initializeNetwork(entity, block, energy, topology) {
       terminals: buildTerminalKeys(topology),
     });
   } catch (error) {
-    setStatus(entity, `Network Init Failed: ${error?.message ?? error}`, { warn: true, force: true });
-    writeStatusDisplay(entity, "Network Init Failed", topology, undefined, { force: true });
+    const reason = error?.message ?? String(error);
+    const status = `Network Init Failed: ${reason}`;
+    setStatus(entity, status, { warn: true, force: true });
+    writeStatusDisplay(entity, status, topology, undefined, { force: true });
     return;
   }
 
   if (!network?.networkId) {
-    setStatus(entity, "Network Init Failed", { warn: true, force: true });
+    const status = "Network Init Failed: Network record could not be loaded";
+    setStatus(entity, status, { warn: true, force: true });
+    writeStatusDisplay(entity, status, topology, undefined, { force: true });
     return;
   }
 

@@ -1,3 +1,12 @@
+# UtilityCraft: Digital Storage v1.0.0
+
+## FIXES
+- Fixed Storage Centers failing to initialize when a Storage Cell retained ownership from a previous network.
+- Storage Centers now show the specific reason when network initialization or recovery fails.
+- Fixed Item Conduits visually connecting to Storage Cell Drives, whose inventory is not available to automation.
+
+---
+
 # UtilityCraft: Digital Storage v1.0.0.07 Beta
 
 This update completely reworks Digital Storage with faster interfaces, improved storage networks, safer item handling, rebalanced recipes and new ways to manage Storage Cells.
