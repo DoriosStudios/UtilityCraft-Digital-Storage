@@ -14,6 +14,8 @@ export const CELL_INDEX_KEY = "ucds:cell_index";
 export const NETWORK_INDEX_KEY = "ucds:network_index";
 export const CELL_RECORD_PREFIX = "ucds:cell:";
 export const NETWORK_RECORD_PREFIX = "ucds:network:";
+export const STORAGE_CELL_TAG = "utilitycraft:ds.is_storage_cell";
+export const STORAGE_CELL_CAPACITY_TAG_PREFIX = "utilitycraft:ds.capacity.";
 
 export const CELL_CAPACITIES = {
   "utilitycraft:storage_cell": 1024,
@@ -24,6 +26,8 @@ export const CELL_CAPACITIES = {
 };
 
 const NETWORK_CHANGE_LIMIT = 64;
+const storageCellCapacityCache = new Map(Object.entries(CELL_CAPACITIES));
+const nonStorageCellTypes = new Set();
 
 function readJson(key, fallback) {
   const raw = world.getDynamicProperty(key);
@@ -110,13 +114,71 @@ export function getNetworkKey(networkId) {
 }
 
 /**
+ * Resolves and caches the capacity declared by one storage cell item type.
+ *
+ * Built-in registrations use the preloaded capacity map. Other addons can
+ * register cells without script dependencies by applying both of these tags:
+ *
+ * - `utilitycraft:ds.is_storage_cell`
+ * - `utilitycraft:ds.capacity.<positive integer>`
+ *
+ * @param {import("@minecraft/server").ItemStack | undefined} item Item to inspect.
+ * @returns {number | undefined} Positive safe integer capacity, if registered.
+ */
+export function getStorageCellCapacity(item) {
+  const typeId = item?.typeId;
+  if (typeof typeId !== "string" || typeId.length === 0) return undefined;
+
+  const cached = storageCellCapacityCache.get(typeId);
+  if (cached !== undefined) return cached;
+  if (nonStorageCellTypes.has(typeId)) return undefined;
+
+  let tags;
+  try {
+    if (item.hasTag(STORAGE_CELL_TAG) !== true) {
+      nonStorageCellTypes.add(typeId);
+      return undefined;
+    }
+    tags = item.getTags();
+  } catch {
+    return undefined;
+  }
+
+  const capacityTags = tags.filter((tag) => tag.startsWith(STORAGE_CELL_CAPACITY_TAG_PREFIX));
+  if (capacityTags.length !== 1) {
+    nonStorageCellTypes.add(typeId);
+    console.warn(
+      `[DigitalStorage] Ignoring storage cell ${typeId}: expected exactly one ${STORAGE_CELL_CAPACITY_TAG_PREFIX}<positive integer> tag.`,
+    );
+    return undefined;
+  }
+
+  const rawCapacity = capacityTags[0].slice(STORAGE_CELL_CAPACITY_TAG_PREFIX.length);
+  if (!/^[1-9]\d*$/.test(rawCapacity)) {
+    nonStorageCellTypes.add(typeId);
+    console.warn(`[DigitalStorage] Ignoring storage cell ${typeId}: invalid capacity tag ${capacityTags[0]}.`);
+    return undefined;
+  }
+
+  const capacity = Number(rawCapacity);
+  if (!Number.isSafeInteger(capacity)) {
+    nonStorageCellTypes.add(typeId);
+    console.warn(`[DigitalStorage] Ignoring storage cell ${typeId}: capacity exceeds Number.MAX_SAFE_INTEGER.`);
+    return undefined;
+  }
+
+  storageCellCapacityCache.set(typeId, capacity);
+  return capacity;
+}
+
+/**
  * Checks whether an ItemStack is one of the supported storage cell items.
  *
  * @param {import("@minecraft/server").ItemStack | undefined} item Item to test.
  * @returns {boolean} True when the item is a storage cell.
  */
 export function isStorageCell(item) {
-  return !!item && Object.prototype.hasOwnProperty.call(CELL_CAPACITIES, item.typeId);
+  return getStorageCellCapacity(item) !== undefined;
 }
 
 /**
@@ -262,7 +324,8 @@ export function releaseCellNetwork(cellId, networkId) {
  * @returns {number | undefined} Cell id.
  */
 export function ensureCellId(item, networkId) {
-  if (!isStorageCell(item)) return undefined;
+  const capacity = getStorageCellCapacity(item);
+  if (capacity === undefined) return undefined;
 
   let cellId = getCellId(item);
   if (!cellId) {
@@ -273,7 +336,6 @@ export function ensureCellId(item, networkId) {
     addToIndex(CELL_INDEX_KEY, cellId);
   }
 
-  const capacity = CELL_CAPACITIES[item.typeId];
   const existing = readCellRecord(cellId);
   if (!existing) {
     writeCellRecord(cellId, {

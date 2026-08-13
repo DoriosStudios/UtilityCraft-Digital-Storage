@@ -1,5 +1,11 @@
 # UtilityCraft: Digital Storage v1.0.0
 
+## ADDED
+- Added tag-based Storage Cell registration so other add-ons can provide compatible cells without script component dependencies.
+
+## COMPATIBILITY
+- Registered all Digital Storage recipes tagged `utilitycraft_workbench` with UtilityCraft's Crafter through the DoriosLib registry.
+
 ## FIXES
 - Fixed Storage Centers failing to initialize when a Storage Cell retained ownership from a previous network.
 - Storage Centers now show the specific reason when network initialization or recovery fails.

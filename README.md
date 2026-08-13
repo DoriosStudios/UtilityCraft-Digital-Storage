@@ -10,6 +10,24 @@ export buffer exposes slots 9-35 only as outputs. Filter, upgrade, and UI slots
 are never available to automation; the storage center and cell drive expose no
 item slots.
 
+## Storage Cell compatibility
+
+Other add-ons can register compatible Storage Cells using only vanilla item
+tags. No custom script component is required:
+
+```json
+"minecraft:tags": {
+  "tags": [
+    "utilitycraft:ds.is_storage_cell",
+    "utilitycraft:ds.capacity.1000000000"
+  ]
+}
+```
+
+The capacity tag must appear exactly once and end in a positive safe integer.
+Digital Storage resolves it the first time that item type is inspected and
+caches the result for subsequent lookups.
+
 ## Development
 
 ```powershell
