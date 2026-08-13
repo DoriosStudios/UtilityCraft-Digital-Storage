@@ -1,6 +1,15 @@
 import * as DoriosLib from "DoriosLib/index.js";
 import { system } from "@minecraft/server";
 
+/** @typedef {{id?:string, output?:string, amount?:number}} CrafterRecipeItem */
+/**
+ * @typedef {object} CrafterRecipe
+ * @property {string} [output]
+ * @property {number} [amount]
+ * @property {CrafterRecipeItem[]} [outputs]
+ * @property {string|CrafterRecipeItem|(string|CrafterRecipeItem)[]} [leftover]
+ */
+
 /**
  * Recipes received from UtilityCraft's Crafter registry.
  *
@@ -8,7 +17,7 @@ import { system } from "@minecraft/server";
  * recipe tagged `utilitycraft_workbench` is queued through DoriosLib below and
  * arrives through the same ScriptEvent used by UtilityCraft and other addons.
  *
- * @type {Record<string, {output:string, amount?:number, leftover?:string[]}>}
+ * @type {Record<string, CrafterRecipe>}
  */
 export const crafterRecipes = {};
 
