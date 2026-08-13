@@ -5,6 +5,7 @@
 
 ## COMPATIBILITY
 - Registered all Digital Storage recipes tagged `utilitycraft_workbench` with UtilityCraft's Crafter through the DoriosLib registry.
+- Added Vibrant Visuals support to the resource pack.
 
 ## FIXES
 - Fixed Storage Centers failing to initialize when a Storage Cell retained ownership from a previous network.
