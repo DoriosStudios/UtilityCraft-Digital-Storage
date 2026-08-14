@@ -44,6 +44,5 @@ jobs:
       release_tag: ${{ inputs.release_tag }}
       release_channel: ${{ inputs.release_channel }}
       announcement_ping: ${{ inputs.announcement_ping }}
-      updates_role_id: ${{ vars.DISCORD_UPDATES_ROLE_ID }}
       config_path: .github/dorios-release.json
       preview_only: true
