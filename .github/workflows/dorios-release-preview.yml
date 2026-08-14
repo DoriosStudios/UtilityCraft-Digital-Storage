@@ -1,0 +1,49 @@
+name: Dorios Release Preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Operation to validate
+        required: true
+        type: choice
+        default: announce_only
+        options:
+          - release_announce_ping
+          - release_announce
+          - release_only
+          - announce_only
+      release_tag:
+        description: Optional tag; blank uses the active changelog or latest release
+        required: false
+        type: string
+      release_channel:
+        description: Release channel
+        required: true
+        type: choice
+        default: project_default
+        options:
+          - project_default
+          - stable
+          - beta
+          - alpha
+      announcement_ping:
+        description: Mention Updates when using announce_only
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    uses: DoriosStudios/Dorios-Workflows/.github/workflows/release-addon.yml@main
+    with:
+      operation: ${{ inputs.operation }}
+      release_tag: ${{ inputs.release_tag }}
+      release_channel: ${{ inputs.release_channel }}
+      announcement_ping: ${{ inputs.announcement_ping }}
+      updates_role_id: ${{ vars.DISCORD_UPDATES_ROLE_ID }}
+      config_path: .github/dorios-release.json
+      preview_only: true

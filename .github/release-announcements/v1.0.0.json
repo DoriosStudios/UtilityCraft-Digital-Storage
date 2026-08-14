@@ -1,0 +1,4 @@
+{
+  "description": "The first official release of UtilityCraft: Digital Storage brings scalable storage networks, centralized item access, integrated crafting and automation for millions of items.",
+  "highlights": "- Build scalable digital storage networks with searchable Storage and Crafting Terminals.\n- Expand capacity with Storage Cells up to 409,600 items each and up to 16 Cells per Drive.\n- Automate transfers with Import and Export Buffers plus the Storage Transfer Station.\n- Added third-party Storage Cell registration, UtilityCraft Crafter integration and Vibrant Visuals support.\n- Improved network recovery feedback and prevented invalid Item Conduit connections."
+}

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "UtilityCraft: Digital Storage",
+    "slug": "digital-storage"
+  },
+  "release": {
+    "defaultChannel": "stable"
+  },
+  "build": {
+    "enabled": true,
+    "type": "regolith",
+    "developmentProfile": "buildDev",
+    "releaseProfile": "buildMinify",
+    "outputDirectory": "build",
+    "packDirectories": [
+      "UtilityCraft Digital Storage BP",
+      "UtilityCraft Digital Storage RP"
+    ]
+  },
+  "distribution": {
+    "github": true,
+    "curseforge": {
+      "enabled": true,
+      "projectId": 1650570,
+      "gameVersion": "26.30"
+    }
+  },
+  "links": {
+    "website": "https://doriosstudios.com/projects/digital-storage/",
+    "curseforge": "https://www.curseforge.com/minecraft-bedrock/addons/utilitycraft-digital-storage",
+    "mcpedl": "https://mcpedl.com/utilitycraft-digital-storage/"
+  },
+  "announcement": {
+    "enabled": true,
+    "color": "0C8081",
+    "imageUrl": "https://doriosstudios.com/img/projects/digital-storage/MCPEDL.png",
+    "automaticDelayMinutes": 60
+  }
+}
