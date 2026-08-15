@@ -1,11 +1,16 @@
 {
+  "$schema": "https://raw.githubusercontent.com/DoriosStudios/Dorios-Workflows/v1.0.0/releases/schemas/project.schema.json",
   "schemaVersion": 1,
   "project": {
     "name": "UtilityCraft: Digital Storage",
     "slug": "digital-storage"
   },
   "release": {
-    "defaultChannel": "stable"
+    "defaultChannel": "stable",
+    "bedrockManifestPaths": [
+      "BP/manifest.json",
+      "RP/manifest.json"
+    ]
   },
   "build": {
     "enabled": true,
