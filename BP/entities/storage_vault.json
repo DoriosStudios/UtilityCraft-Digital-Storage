@@ -1,0 +1,52 @@
+{
+  "format_version": "1.19.20",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "utilitycraft:storage_vault",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "inanimate",
+          "utilitycraft:storage_vault"
+        ]
+      },
+      "minecraft:health": {
+        "max": 1,
+        "value": 1
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "all",
+            "deals_damage": false
+          }
+        ]
+      },
+      "minecraft:inventory": {
+        "inventory_size": 256,
+        "container_type": "container"
+      },
+      "minecraft:collision_box": {
+        "height": 0,
+        "width": 0
+      },
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:physics": {
+        "has_gravity": false,
+        "has_collision": false
+      },
+      "minecraft:knockback_resistance": {
+        "value": 1000
+      },
+      "minecraft:fire_immune": true,
+      "minecraft:persistent": {}
+    }
+  }
+}

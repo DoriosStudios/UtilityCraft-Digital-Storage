@@ -8,9 +8,9 @@ import {
   consumeUiSlotRestores,
   materializeOutputItem,
 } from "./terminal_output.js";
-import { createItemFromKey, getItemKey } from "../storage/item_registry.js";
+import { createItemFromKey } from "../storage/item_registry.js";
 import {
-  addItem,
+  addItemStack,
   consumeTerminalItemUpdates,
   getNetworkSnapshot,
   getSortedItems,
@@ -673,10 +673,7 @@ export class StorageTerminalInterface {
       }
 
       const inputItem = materialized.item ?? item;
-      const itemKey = getItemKey(inputItem);
-      if (!itemKey) continue;
-
-      const result = addItem(networkId, itemKey, inputItem.amount, "terminal_burn_slot");
+      const result = addItemStack(networkId, inputItem, "terminal_burn_slot");
       if (result.inserted <= 0) continue;
 
       if (result.remaining <= 0) {
@@ -791,14 +788,13 @@ export class StorageTerminalInterface {
       }
 
       const inputItem = materialized.item ?? current;
-      const itemKey = getItemKey(inputItem);
-      if (!networkId || !itemKey) {
+      if (!networkId) {
         returnSwapRemainder(player, inputItem, entity);
         this.setFiller(inv, slot, entity);
         continue;
       }
 
-      const result = addItem(networkId, itemKey, inputItem.amount, "terminal_empty_slot_swap");
+      const result = addItemStack(networkId, inputItem, "terminal_empty_slot_swap");
       if (result.remaining > 0) {
         inputItem.amount = result.remaining;
         returnSwapRemainder(player, inputItem, entity);

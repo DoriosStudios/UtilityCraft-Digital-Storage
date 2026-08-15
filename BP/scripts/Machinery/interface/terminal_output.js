@@ -1,7 +1,7 @@
 import { system, world } from "@minecraft/server";
 import * as DoriosLib from "DoriosLib/index.js";
-import { createItemFromKey, getItemKey } from "../storage/item_registry.js";
-import { addItem, removeItem } from "../storage/network_runtime.js";
+import { createItemFromKey } from "../storage/item_registry.js";
+import { addItemStack, removeItem } from "../storage/network_runtime.js";
 
 /**
  * Runtime output-token resolver for storage terminals.
@@ -188,6 +188,11 @@ function reserveClaimAmount(claim, requestedAmount, player) {
   const needed = requested - outstanding;
   const result = removeItem(claim.networkId, claim.itemKey, needed, "terminal_output");
   const removed = Math.max(0, Math.floor(Number(result.removed) || 0));
+  if (result.itemStack) claim.reservedItem = result.itemStack;
+  if (result.reason === "vault_missing" && player?.isValid && claim.vaultWarningSent !== true) {
+    claim.vaultWarningSent = true;
+    player.sendMessage({ translate: "message.utilitycraft:vault_missing" });
+  }
   claim.reserved += removed;
   claim.updatedTick = system.currentTick;
   if (removed > 0) rescueSwappedTerminalSlotItem(claim, player);
@@ -224,11 +229,8 @@ function rescueSwappedTerminalSlotItem(claim, player) {
   const rescuedItem = materialized.item ?? (!materialized.handled ? item : undefined);
   if (!rescuedItem) return;
 
-  const itemKey = getItemKey(rescuedItem);
-  if (!itemKey) return;
-
   claim.swapRescued = true;
-  const result = addItem(networkId, itemKey, rescuedItem.amount, "terminal_swap_rescue");
+  const result = addItemStack(networkId, rescuedItem, "terminal_swap_rescue");
   if (result.remaining <= 0) return;
 
   rescuedItem.amount = result.remaining;
@@ -277,7 +279,8 @@ function resolveClaim(token, requestedAmount, player) {
   const delivered = deliverClaimAmount(claim, requestedAmount, player);
   if (delivered <= 0) return { handled: true, item: undefined, claim };
 
-  const item = createItemFromKey(claim.itemKey, delivered);
+  const item = claim.reservedItem ?? createItemFromKey(claim.itemKey, delivered);
+  claim.reservedItem = undefined;
   return { handled: true, item, claim };
 }
 

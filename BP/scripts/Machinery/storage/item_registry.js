@@ -1,4 +1,5 @@
 import { EnchantmentTypes, ItemStack, world } from "@minecraft/server";
+import { isOpaqueItemKey, peekOpaqueItem } from "./opaque_vault.js";
 
 /**
  * Item identity registry for Digital Storage.
@@ -135,6 +136,17 @@ function getCanonicalItemData(item) {
   return data;
 }
 
+function getLogicalItemData(item) {
+  if (!item) return undefined;
+
+  const data = { typeId: item.typeId };
+  if (item.nameTag) data.nameTag = item.nameTag;
+
+  const lore = item.getLore?.() ?? [];
+  if (lore.length > 0) data.lore = lore;
+  return data;
+}
+
 function hasExtraData(data) {
   return !!data && Object.keys(data).some((key) => key !== "typeId");
 }
@@ -205,15 +217,15 @@ function createItemFromData(data, amount) {
 /**
  * Converts an ItemStack into a stable storage key.
  *
- * The key includes important item identity data: name tag, cleaned lore,
- * durability damage, enchantments, dynamic properties, canPlaceOn and
- * canDestroy. Digital Storage internal metadata is stripped before hashing.
+ * New logical keys include only the type id, custom name and exact lore.
+ * Legacy definitions keep their full reader so previously stored items can
+ * still be recreated with their old serialized data.
  *
  * @param {import("@minecraft/server").ItemStack} item Item to identify.
  * @returns {string} Type id for simple items, or `ucds:item:<id>` for special items.
  */
 export function getItemKey(item) {
-  const data = getCanonicalItemData(item);
+  const data = getLogicalItemData(item);
   if (!data) return "";
   if (!hasExtraData(data)) return data.typeId;
   return getOrCreateItemDefinitionKey(data);
@@ -228,6 +240,12 @@ export function getItemKey(item) {
  */
 export function createItemFromKey(itemKey, amount) {
   const key = String(itemKey ?? "");
+  if (isOpaqueItemKey(key)) {
+    const stored = peekOpaqueItem(key);
+    if (stored.item) return stored.item;
+    return new ItemStack("minecraft:dirt", 1);
+  }
+
   if (key.startsWith(ITEM_KEY_PREFIX)) {
     const defId = key.slice(ITEM_KEY_PREFIX.length);
     const definition = readItemDefinition(defId);
@@ -248,6 +266,10 @@ export function createItemFromKey(itemKey, amount) {
  */
 export function getItemDefinition(itemKey) {
   const key = String(itemKey ?? "");
+  if (isOpaqueItemKey(key)) {
+    const item = peekOpaqueItem(key).item;
+    return item ? getLogicalItemData(item) : undefined;
+  }
   if (!key.startsWith(ITEM_KEY_PREFIX)) return { typeId: key };
   return readItemDefinition(key.slice(ITEM_KEY_PREFIX.length));
 }

@@ -4,6 +4,7 @@ import {
   loadAllNetworksJob,
   startNetworkAutoFlush,
 } from "./network_runtime.js";
+import { initializeOpaqueVaults } from "./opaque_vault.js";
 import "./network_debug.js";
 import "./network_topology.js";
 import "./machines/export_buffer.js";
@@ -24,6 +25,7 @@ import "./machines/storage_terminal.js";
 
 world.afterEvents.worldLoad.subscribe(() => {
   // console.warn("[DigitalStorage] queued incremental storage network load.");
+  initializeOpaqueVaults();
   startNetworkAutoFlush();
   system.runJob(loadAllNetworksJob({
     recordsPerTick: 8,

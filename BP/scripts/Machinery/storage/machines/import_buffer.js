@@ -1,7 +1,6 @@
 import * as DoriosLib from "DoriosLib/index.js";
 import { spawnStorageMachine } from "../../../DigitalStorageCore/entities.js";
-import { getItemKey } from "../item_registry.js";
-import { addItem, getNetwork } from "../network_runtime.js";
+import { addItemStack, getNetwork } from "../network_runtime.js";
 
 export const IMPORT_BUFFER_ENTITY_TYPE = "utilitycraft:import_buffer";
 
@@ -81,10 +80,7 @@ function tickImportBuffer(entity) {
     const item = container.getItem(slot);
     if (!item) continue;
 
-    const itemKey = getItemKey(item);
-    if (!itemKey) continue;
-
-    const result = addItem(networkId, itemKey, item.amount, "import_buffer");
+    const result = addItemStack(networkId, item, "import_buffer");
     if (result.inserted <= 0) break;
 
     processed += 1;

@@ -4,7 +4,7 @@ import { crafterRecipes } from "Config/recipes/crafter.js";
 import { attachOutputToken, materializeOutputItem, readOutputToken } from "./terminal_output.js";
 import { StorageTerminalInterface, STORAGE_TERMINAL_CONFIG } from "./terminal.js";
 import { createItemFromKey, getItemKey } from "../storage/item_registry.js";
-import { addItem, getNetworkSnapshot, removeItem } from "../storage/network_runtime.js";
+import { addItem, addItemStack, getNetworkSnapshot, removeItem } from "../storage/network_runtime.js";
 
 const CRAFTING_TERMINAL_ENTITY_TYPE = "utilitycraft:crafting_terminal";
 const CRAFTING_TERMINAL_MACHINE_ID = "crafting_terminal";
@@ -446,8 +446,7 @@ export class CraftingTerminalInterface extends StorageTerminalInterface {
     if (!realItem) return;
 
     if (this.networkId) {
-      const itemKey = getItemKey(realItem);
-      const result = addItem(this.networkId, itemKey, realItem.amount, reason);
+      const result = addItemStack(this.networkId, realItem, reason);
       if (result.remaining <= 0) return;
       realItem.amount = result.remaining;
     }

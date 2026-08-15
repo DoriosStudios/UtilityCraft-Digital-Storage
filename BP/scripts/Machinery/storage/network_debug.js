@@ -2,6 +2,7 @@ import { system, world } from "@minecraft/server";
 import { isStorageCell, readCellRecord } from "./cell_store.js";
 import {
   addItem,
+  addItemStack,
   createNetworkFromCellIds,
   flushNetwork,
   getNetworkSnapshot,
@@ -261,7 +262,7 @@ function addFromChest(event, params) {
     return;
   }
 
-  const result = addItem(networkId, itemKey, item.amount, "debug_add_from_chest");
+  const result = addItemStack(networkId, item, "debug_add_from_chest");
   if (result.inserted <= 0) {
     const nextSnapshot = getNetworkSnapshot(networkId);
     reply(event, `could not store ${itemKey}; free=${nextSnapshot?.free ?? "unknown"}`);
@@ -297,6 +298,13 @@ function removeToChest(event, params) {
   const result = removeItem(networkId, itemKey, amount, "debug_remove_to_chest");
   if (result.removed <= 0) {
     reply(event, `No ${itemKey} available.`);
+    return;
+  }
+
+  if (result.itemStack) {
+    const overflow = container.addItem(result.itemStack);
+    if (overflow) addItemStack(networkId, overflow, "debug_remove_to_chest_overflow");
+    reply(event, "removed " + (overflow ? 0 : 1) + "x " + itemKey + " to chest, overflow restored " + (overflow ? 1 : 0));
     return;
   }
 

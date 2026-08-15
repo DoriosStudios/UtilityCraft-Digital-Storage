@@ -10,7 +10,14 @@ import {
   writeNetworkRecord,
 } from "./cell_store.js";
 import { syncNetworkDriveCellItems } from "./cell_item_sync.js";
-import { createItemFromKey } from "./item_registry.js";
+import { createItemFromKey, getItemKey } from "./item_registry.js";
+import {
+  discardOpaqueItem,
+  isOpaqueItem,
+  isOpaqueItemKey,
+  storeOpaqueItem,
+  takeOpaqueItem,
+} from "./opaque_vault.js";
 
 /**
  * Runtime network manager for Digital Storage.
@@ -31,6 +38,7 @@ let autoFlushCursor = 0;
 function isUiElementKey(itemKey) {
   const key = String(itemKey ?? "");
   if (!key) return false;
+  if (isOpaqueItemKey(key)) return false;
   if (uiElementKeyCache.has(key)) return uiElementKeyCache.get(key);
 
   let isUiElement = false;
@@ -599,6 +607,7 @@ export function setNetworkOnline(networkId, online) {
  */
 export function addItem(networkId, itemKey, amount, reason = "debug") {
   const requested = Math.max(0, Math.floor(Number(amount) || 0));
+  if (!itemKey) return { inserted: 0, remaining: requested };
   if (isUiElementKey(itemKey)) return { inserted: 0, remaining: requested };
 
   const runtime = getNetwork(networkId);
@@ -621,6 +630,52 @@ export function addItem(networkId, itemKey, amount, reason = "debug") {
 }
 
 /**
+ * Adds a real ItemStack through the correct storage path.
+ *
+ * Stackable items keep using logical keys and amounts. Items whose maximum
+ * stack size is one are first copied into a native vault slot, then their
+ * unique reference is committed to the network.
+ *
+ * @param {number} networkId Network id.
+ * @param {import("@minecraft/server").ItemStack} item ItemStack to insert.
+ * @param {string} [reason] Change reason.
+ * @returns {{inserted:number, remaining:number, before?:number, after?:number, itemKey?:string, reason?:string}}
+ */
+export function addItemStack(networkId, item, reason = "debug") {
+  const requested = Math.max(0, Math.floor(Number(item?.amount) || 0));
+  if (!item || requested <= 0) return { inserted: 0, remaining: requested };
+
+  try {
+    if (item.hasTag?.(UI_ELEMENT_TAG) || item.getTags?.().includes(UI_ELEMENT_TAG)) {
+      return { inserted: 0, remaining: requested };
+    }
+  } catch {}
+
+  if (!isOpaqueItem(item)) {
+    const itemKey = getItemKey(item);
+    return { ...addItem(networkId, itemKey, requested, reason), itemKey };
+  }
+
+  const runtime = getNetwork(networkId);
+  if (!runtime?.online || runtime.used >= runtime.capacity) {
+    return { inserted: 0, remaining: requested };
+  }
+
+  const stored = storeOpaqueItem(item);
+  if (!stored.stored || !stored.itemKey) {
+    return { inserted: 0, remaining: requested, reason: stored.reason };
+  }
+
+  const result = addItem(networkId, stored.itemKey, 1, reason);
+  if (result.inserted <= 0) discardOpaqueItem(stored.itemKey);
+  return {
+    ...result,
+    remaining: Math.max(0, requested - result.inserted),
+    itemKey: stored.itemKey,
+  };
+}
+
+/**
  * Removes items from an online network runtime.
  *
  * No world dynamic properties are written here. The caller is responsible for
@@ -630,7 +685,7 @@ export function addItem(networkId, itemKey, amount, reason = "debug") {
  * @param {string} itemKey Stable item key.
  * @param {number} amount Requested remove amount.
  * @param {string} [reason] Change reason for debug/change stream.
- * @returns {{removed:number, remaining:number, before?:number, after?:number}}
+ * @returns {{removed:number, remaining:number, before?:number, after?:number, itemStack?:import("@minecraft/server").ItemStack, reason?:string}}
  */
 export function removeItem(networkId, itemKey, amount, reason = "debug") {
   const runtime = getNetwork(networkId);
@@ -638,8 +693,24 @@ export function removeItem(networkId, itemKey, amount, reason = "debug") {
 
   const requested = Math.max(0, Math.floor(Number(amount) || 0));
   const before = Math.floor(Number(runtime.totals.get(itemKey) ?? 0));
-  const removed = Math.min(requested, before);
+  let itemStack;
+  let removed = Math.min(requested, before);
   if (removed <= 0) return { removed: 0, remaining: requested, before, after: before };
+
+  if (isOpaqueItemKey(itemKey)) {
+    const physical = takeOpaqueItem(itemKey);
+    if (!physical.taken || !physical.item) {
+      return {
+        removed: 0,
+        remaining: requested,
+        before,
+        after: before,
+        reason: physical.reason,
+      };
+    }
+    itemStack = physical.item;
+    removed = 1;
+  }
 
   const after = before - removed;
   if (after > 0) runtime.totals.set(itemKey, after);
@@ -648,7 +719,7 @@ export function removeItem(networkId, itemKey, amount, reason = "debug") {
   runtime.dirty = true;
   pushChange(runtime, itemKey, before, after, reason);
 
-  return { removed, remaining: requested - removed, before, after };
+  return { removed, remaining: requested - removed, before, after, itemStack };
 }
 
 /**
