@@ -1,0 +1,4 @@
+{
+  "description": "UtilityCraft: Digital Storage v1.0.1 adds safer native storage for unstackable items, automatic vault recovery and a more capable Export Buffer.",
+  "highlights": "- Preserve add-on data, bundle and shulker contents, durability, enchantments and other opaque data on unstackable items.\n- Recover missing vault pages from rotating backups without pausing unrelated storage operations.\n- Keep existing plain item keys and full item definitions compatible and extractable.\n- Export Buffers now map each filter to its three output slots, merge partial stacks and skip blocked columns."
+}
