@@ -10,6 +10,8 @@ const FILTER_START_SLOT = 0;
 const FILTER_END_SLOT = 8;
 const OUTPUT_START_SLOT = 9;
 const OUTPUT_END_SLOT = 35;
+const OUTPUT_COLUMNS = FILTER_END_SLOT - FILTER_START_SLOT + 1;
+const OUTPUT_ROWS = 3;
 const UPGRADE_SLOT = 36;
 const OUTPUT_SLOTS = Array.from(
   { length: OUTPUT_END_SLOT - OUTPUT_START_SLOT + 1 },
@@ -61,37 +63,62 @@ function getSpeedUpgradeLevel(container) {
 }
 
 function getStacksPerTick(container) {
-  return Math.min(OUTPUT_END_SLOT - OUTPUT_START_SLOT + 1, 1 + getSpeedUpgradeLevel(container));
+  return Math.min(OUTPUT_COLUMNS, 1 + getSpeedUpgradeLevel(container));
 }
 
-function getNextEmptyOutputSlot(container) {
-  for (let slot = OUTPUT_START_SLOT; slot <= OUTPUT_END_SLOT; slot++) {
-    if (!container.getItem(slot)) return slot;
+function getColumnOutputSlots(filterSlot) {
+  const column = filterSlot - FILTER_START_SLOT;
+  return Array.from(
+    { length: OUTPUT_ROWS },
+    (_, row) => OUTPUT_START_SLOT + column + row * OUTPUT_COLUMNS,
+  );
+}
+
+function getColumnPlan(container, filterSlot, itemKey) {
+  const probe = createItemFromKey(itemKey, 1);
+  const maxAmount = Math.max(1, Math.floor(Number(probe.maxAmount) || 64));
+  const slots = getColumnOutputSlots(filterSlot);
+  let capacity = 0;
+
+  for (const slot of slots) {
+    const current = container.getItem(slot);
+    if (!current) {
+      capacity += maxAmount;
+      continue;
+    }
+    if (current.isStackableWith(probe)) {
+      capacity += Math.max(0, maxAmount - current.amount);
+    }
   }
-  return -1;
+
+  return { maxAmount, probe, slots, capacity };
 }
 
-function getFilterKeys(container) {
-  const keys = [];
-  const seen = new Set();
+function insertIntoColumn(container, itemKey, plan, amount) {
+  let remaining = Math.max(0, Math.floor(Number(amount) || 0));
 
-  for (let slot = FILTER_START_SLOT; slot <= FILTER_END_SLOT; slot++) {
-    const item = container.getItem(slot);
-    if (!item) continue;
+  for (const slot of plan.slots) {
+    if (remaining <= 0) break;
+    const current = container.getItem(slot);
+    if (!current || !current.isStackableWith(plan.probe)) continue;
 
-    const itemKey = getItemKey(item);
-    if (!itemKey || seen.has(itemKey)) continue;
-
-    keys.push(itemKey);
-    seen.add(itemKey);
+    const moved = Math.min(remaining, Math.max(0, plan.maxAmount - current.amount));
+    if (moved <= 0) continue;
+    current.amount += moved;
+    remaining -= moved;
+    container.setItem(slot, current);
   }
 
-  return keys;
-}
+  for (const slot of plan.slots) {
+    if (remaining <= 0) break;
+    if (container.getItem(slot)) continue;
 
-function getMaxStackSize(itemKey) {
-  const item = createItemFromKey(itemKey, 1);
-  return Math.max(1, Math.floor(Number(item.maxAmount) || 64));
+    const moved = Math.min(remaining, plan.maxAmount);
+    container.setItem(slot, createItemFromKey(itemKey, moved));
+    remaining -= moved;
+  }
+
+  return remaining;
 }
 
 function tickExportBuffer(entity) {
@@ -104,42 +131,30 @@ function tickExportBuffer(entity) {
   const container = entity.getComponent("minecraft:inventory")?.container;
   if (!container) return;
 
-  const filterKeys = getFilterKeys(container);
-  if (filterKeys.length === 0) return;
-
-  let filterIndex = 0;
   let processed = 0;
   const maxProcessed = getStacksPerTick(container);
 
-  while (processed < maxProcessed) {
-    const outputSlot = getNextEmptyOutputSlot(container);
-    if (outputSlot < 0) return;
+  for (let filterSlot = FILTER_START_SLOT; filterSlot <= FILTER_END_SLOT; filterSlot++) {
+    if (processed >= maxProcessed) break;
 
-    let exported = false;
-    while (filterIndex < filterKeys.length) {
-      const itemKey = filterKeys[filterIndex];
-      const available = Math.floor(Number(runtime.totals.get(itemKey)) || 0);
-      if (available <= 0) {
-        filterIndex += 1;
-        continue;
-      }
+    const filterItem = container.getItem(filterSlot);
+    if (!filterItem) continue;
 
-      const amount = Math.min(available, getMaxStackSize(itemKey));
-      const result = removeItem(networkId, itemKey, amount, "export_buffer");
-      if (result.removed <= 0) {
-        filterIndex += 1;
-        continue;
-      }
+    const itemKey = getItemKey(filterItem);
+    if (!itemKey) continue;
 
-      container.setItem(outputSlot, createItemFromKey(itemKey, result.removed));
-      processed += 1;
-      exported = true;
+    const available = Math.floor(Number(runtime.totals.get(itemKey)) || 0);
+    if (available <= 0) continue;
 
-      if (result.after <= 0) filterIndex += 1;
-      break;
-    }
+    const plan = getColumnPlan(container, filterSlot, itemKey);
+    const amount = Math.min(available, plan.maxAmount, plan.capacity);
+    if (amount <= 0) continue;
 
-    if (!exported) return;
+    const result = removeItem(networkId, itemKey, amount, "export_buffer");
+    if (result.removed <= 0) continue;
+
+    insertIntoColumn(container, itemKey, plan, result.removed);
+    processed += 1;
   }
 }
 

@@ -3,14 +3,13 @@
 ## ADDED
 - Added lightweight native ItemStack vault pages for items whose maximum stack size is one, preserving add-on dynamic properties, bundle contents, shulker contents, durability, enchantments, and other opaque data.
 - Added two rotating global entity-only vault backups, saved every five minutes and used only when a required page is missing.
+- Added automatic recovery of missing vault pages at a temporary location without moving live vault entities or pausing unrelated storage operations.
+- Added player feedback when an item's vault page is temporarily unavailable; the visual terminal item is removed while the network count remains unchanged.
 
 ## CHANGED
 - New stackable-item keys now use only the item type, custom name, and exact lore; quantities continue using the existing cell and network system.
 - Export Buffers and Crafting Terminal recipes continue using normal logical keys; opaque vault references remain separate.
-
-## FIXED
-- Missing vault pages now recover at the temporary backup location without moving live vault entities or pausing unrelated storage operations.
-- Taking an item whose vault page is temporarily unavailable now removes the visual terminal item, warns the player, and leaves the network count unchanged.
+- Export Buffer filters now control their three slots directly below them, merge compatible partial stacks, preserve duplicate filters as separate columns, and skip blocked columns when processing the next available filter.
 
 ## COMPATIBILITY
 - Existing plain item keys and full ucds:item definitions remain readable and extractable. Reinserted legacy items use the new stackable or opaque storage path.
