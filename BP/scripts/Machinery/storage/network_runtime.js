@@ -389,6 +389,25 @@ export function getNetwork(networkId) {
 }
 
 /**
+ * Finds the active network currently owned by one Storage Center position.
+ *
+ * Center positions remain stable when a network is rebuilt and receives a new
+ * runtime id, making them suitable for wireless panel links.
+ *
+ * @param {string} centerKey Serialized center dimension and block position.
+ * @returns {object | undefined} Online runtime owned by that center.
+ */
+export function getOnlineNetworkByCenter(centerKey) {
+  const key = String(centerKey ?? "");
+  if (!key) return undefined;
+
+  for (const runtime of runtimeNetworks.values()) {
+    if (runtime?.online && runtime.center === key) return runtime;
+  }
+  return undefined;
+}
+
+/**
  * Registers one open/active terminal display against a runtime network.
  *
  * This state is intentionally runtime-only. A terminal that is not ticking does

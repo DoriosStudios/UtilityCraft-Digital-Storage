@@ -5,6 +5,7 @@
 - Added two rotating global entity-only vault backups, saved every five minutes and used only when a required page is missing.
 - Added automatic recovery of missing vault pages at a temporary location without moving live vault entities or pausing unrelated storage operations.
 - Added player feedback when an item's vault page is temporarily unavailable; the visual terminal item is removed while the network count remains unchanged.
+- Added the Wireless Panel to the Wireless creative inventory group; it links to an active Overworld Storage Center and opens a personal Storage Terminal while held.
 
 ## CHANGED
 - New stackable-item keys now use only the item type, custom name, and exact lore; quantities continue using the existing cell and network system.

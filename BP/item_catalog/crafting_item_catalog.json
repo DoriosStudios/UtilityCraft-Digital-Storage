@@ -62,6 +62,16 @@
                             "utilitycraft:fluxite",
                             "utilitycraft:fluxite_block"
                         ]
+                    },
+                    {
+                        "group_identifier": {
+                            "icon": "utilitycraft:wireless_panel_off",
+                            "name": "dorios:itemGroup.name.wireless"
+                        },
+                        "items": [
+                            "utilitycraft:wireless_panel_off",
+                            "utilitycraft:wireless_panel_on"
+                        ]
                     }
                 ]
             }

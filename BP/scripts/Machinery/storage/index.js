@@ -14,6 +14,7 @@ import "./machines/storage_cell_drive.js";
 import "./machines/storage_transfer_station.js";
 import "./machines/storage_center.js";
 import "./machines/storage_terminal.js";
+import "./machines/wireless_panel.js";
 
 /**
  * Digital Storage lifecycle bootstrap.
