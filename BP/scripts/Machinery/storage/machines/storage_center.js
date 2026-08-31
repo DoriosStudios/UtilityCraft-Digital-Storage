@@ -32,6 +32,13 @@ const CRAFTING_TERMINAL_ENTITY_TYPE = "utilitycraft:crafting_terminal";
 const STORAGE_CELL_DRIVE_TYPE = "utilitycraft:storage_cell_drive";
 const IMPORT_BUFFER_TYPE = "utilitycraft:import_buffer";
 const EXPORT_BUFFER_TYPE = "utilitycraft:export_buffer";
+const LINKED_MACHINE_ENTITY_TYPES = [
+  STORAGE_CELL_DRIVE_TYPE,
+  IMPORT_BUFFER_TYPE,
+  EXPORT_BUFFER_TYPE,
+  STORAGE_TERMINAL_ENTITY_TYPE,
+  CRAFTING_TERMINAL_ENTITY_TYPE,
+];
 const TERMINAL_TYPES = [
   { typeId: STORAGE_TERMINAL_ENTITY_TYPE, TerminalClass: StorageTerminalInterface },
   { typeId: CRAFTING_TERMINAL_ENTITY_TYPE, TerminalClass: CraftingTerminalInterface },
@@ -185,48 +192,54 @@ function consumeNetworkEnergy(entity, energy, topology, networkId) {
   if (energy.consume(required) === required) return true;
 
   setStatus(entity, "Missing Energy", { warn: true, force: true });
-  powerOffCenterNetwork(entity, topology, networkId);
+  powerOffCenterNetwork(entity, networkId);
   return false;
 }
 
-function powerOffCenterNetwork(entity, topology, networkId = getNetworkId(entity)) {
+function getEntityNetworkId(entity) {
+  try {
+    const id = Math.floor(Number(entity?.getDynamicProperty?.(CENTER_NETWORK_PROPERTY)) || 0);
+    return id > 0 ? id : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Clears a retired runtime id from every loaded physical machine that used it.
+ * Wireless panels are intentionally excluded because they bind to a stable
+ * Storage Center position and resolve the current runtime id automatically.
+ */
+function unlinkLoadedNetworkMachines(dimension, networkId) {
+  if (!dimension || !networkId) return 0;
+
+  let unlinked = 0;
+  for (const typeId of LINKED_MACHINE_ENTITY_TYPES) {
+    for (const machine of dimension.getEntities({ type: typeId })) {
+      if (!machine?.isValid || getEntityNetworkId(machine) !== networkId) continue;
+      try {
+        machine.setDynamicProperty(CENTER_NETWORK_PROPERTY, undefined);
+        unlinked += 1;
+      } catch {}
+    }
+  }
+  return unlinked;
+}
+
+function powerOffCenterNetwork(entity, networkId = getNetworkId(entity)) {
   if (!networkId) return false;
 
-  unlinkTopologyDrives(entity.dimension, topology);
-  unlinkTopologyImportBuffers(entity.dimension, topology);
-  unlinkTopologyExportBuffers(entity.dimension, topology);
   const poweredOff = powerOffNetwork(networkId);
-  if (poweredOff) setNetworkId(entity, 0);
+  if (poweredOff) {
+    unlinkLoadedNetworkMachines(entity.dimension, networkId);
+    setNetworkId(entity, 0);
+  }
   return poweredOff;
 }
 
 function getShortError(error) {
   const message = String(error?.message ?? error ?? "unknown_error");
   return message.length <= 96 ? message : `${message.slice(0, 93)}...`;
-}
-
-function unlinkTopologyDrives(dimension, topology) {
-  for (const position of getMachinePositions(topology, STORAGE_CELL_DRIVE_TYPE)) {
-    const block = getBlockAt(dimension, position);
-    const driveEntity = getDriveEntity(block);
-    if (driveEntity?.isValid) setDriveNetworkId(driveEntity, 0);
-  }
-}
-
-function unlinkTopologyImportBuffers(dimension, topology) {
-  for (const position of getMachinePositions(topology, IMPORT_BUFFER_TYPE)) {
-    const block = getBlockAt(dimension, position);
-    const bufferEntity = getImportBufferEntity(block);
-    if (bufferEntity?.isValid) setImportBufferNetworkId(bufferEntity, 0);
-  }
-}
-
-function unlinkTopologyExportBuffers(dimension, topology) {
-  for (const position of getMachinePositions(topology, EXPORT_BUFFER_TYPE)) {
-    const block = getBlockAt(dimension, position);
-    const bufferEntity = getExportBufferEntity(block);
-    if (bufferEntity?.isValid) setExportBufferNetworkId(bufferEntity, 0);
-  }
 }
 
 function collectDriveCells(dimension, topology) {
@@ -434,12 +447,13 @@ function tickCenter(entity, block) {
   if (topologyNeedsApply(topology)) {
     setStatus(entity, "Topology Changed", { warn: true, force: true });
     writeStatusDisplay(entity, "Topology Changed", topology, undefined, { force: true });
-    powerOffCenterNetwork(entity, topology, networkId);
+    powerOffCenterNetwork(entity, networkId);
     return;
   }
 
   const runtime = getNetwork(networkId);
   if (!runtime?.online) {
+    unlinkLoadedNetworkMachines(entity.dimension, networkId);
     setNetworkId(entity, 0);
     setStatus(entity, "Offline", { warn: true, force: true });
     writeStatusDisplay(entity, "Offline", topology, undefined, { force: true });
@@ -476,8 +490,7 @@ DoriosLib.registry.blockComponent("utilitycraft:storage_center", {
     const entity = getStorageCenterEntity(block);
     if (!entity?.isValid) return;
 
-    const topology = readTopology(entity);
-    powerOffCenterNetwork(entity, topology);
+    powerOffCenterNetwork(entity);
     TickScheduler.releaseTickGroup(entity);
     entity.triggerEvent("despawn");
   },

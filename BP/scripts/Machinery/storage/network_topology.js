@@ -1,5 +1,5 @@
 import { system, world } from "@minecraft/server";
-import { readPagedJson, writePagedJsonJob } from "./persistence/paged_store.js";
+import { writePagedJsonJob } from "./persistence/paged_store.js";
 
 export const NETWORK_TAG = "ucds:network";
 export const NETWORK_CABLE_TAG = "ucds:network_cable";
@@ -29,6 +29,7 @@ const DIRECTIONS = [
   { name: "north", x: 0, y: 0, z: -1 },
 ];
 const topologyWriteStates = new Map();
+const topologyRebuildStates = new Map();
 
 function locationKey(location) {
   return `${Math.floor(location.x)},${Math.floor(location.y)},${Math.floor(location.z)}`;
@@ -66,22 +67,6 @@ function getMachineEntityAt(block) {
   return block?.dimension
     ?.getEntitiesAtBlockLocation(block.location)
     ?.find((entity) => entity.typeId === block.typeId);
-}
-
-function readExistingTopology(entity) {
-  const paged = readPagedJson(entity, V2_NETWORK_TOPOLOGY_PROPERTY);
-  if (paged?.value && typeof paged.value === "object") {
-    return { ...paged.value, read: entity.getDynamicProperty(V2_NETWORK_TOPOLOGY_READ_PROPERTY) === true };
-  }
-  const raw = entity?.getDynamicProperty?.(NETWORK_TOPOLOGY_PROPERTY);
-  if (typeof raw !== "string" || raw.length === 0) return undefined;
-
-  try {
-    const topology = JSON.parse(raw);
-    return topology && typeof topology === "object" ? topology : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 function addMachineToTopology(topology, block) {
@@ -255,10 +240,9 @@ export function* scanNetworkTopologyJob(startBlock, { blocksPerTick = 256, onCom
  *
  * @param {import("@minecraft/server").Dimension} dimension Network dimension.
  * @param {object | undefined} topology Topology snapshot.
- * @param {{preserveRead?: boolean}} [options] Write behavior.
  * @returns {number} Number of centers written.
  */
-export function writeTopologyToCenters(dimension, topology, { preserveRead = false } = {}) {
+export function writeTopologyToCenters(dimension, topology) {
   const centerPositions = topology?.machinesPos?.[STORAGE_CENTER_TYPE] ?? [];
   if (!dimension || centerPositions.length === 0) return 0;
 
@@ -272,11 +256,7 @@ export function writeTopologyToCenters(dimension, topology, { preserveRead = fal
     if (!entity?.isValid) continue;
 
     try {
-      const existing = preserveRead ? readExistingTopology(entity) : undefined;
-      const nextTopology = preserveRead && existing?.read === true
-        ? { ...topology, read: true }
-        : topology;
-      queueTopologyWrite(entity, nextTopology);
+      queueTopologyWrite(entity, { ...topology, read: false });
       written += 1;
     } catch {}
   }
@@ -327,17 +307,7 @@ function* writeTopologyJob(entity, topology) {
   }
 }
 
-function rebuildTopologyFromCandidates(block, options = {}) {
-  if (!block?.dimension) return;
-
-  const positions = [
-    block.location,
-    ...DIRECTIONS.map((direction) => offsetLocation(block.location, direction)),
-  ];
-  system.runJob(rebuildTopologyJob(block.dimension, positions, options));
-}
-
-function* rebuildTopologyJob(dimension, positions, options) {
+function* rebuildTopologyJob(dimension, positions) {
   const covered = new Set();
   for (const position of positions) {
     if (covered.has(locationKey(position))) continue;
@@ -353,29 +323,70 @@ function* rebuildTopologyJob(dimension, positions, options) {
       },
     });
     for (const key of visited) covered.add(key);
-    if (result) writeTopologyToCenters(dimension, result, options);
+    if (result) writeTopologyToCenters(dimension, result);
   }
 }
 
-function scheduleNetworkTopologyUpdate(block, options = {}) {
+function* drainTopologyRebuilds(state) {
+  try {
+    while (state.pendingLocations.size > 0) {
+      const changedLocations = [...state.pendingLocations.values()];
+      state.pendingLocations.clear();
+
+      const candidatePositions = [];
+      for (const location of changedLocations) {
+        const changedBlock = state.dimension.getBlock(location);
+        if (changedBlock) updateNetworkCableVisualAround(changedBlock);
+        candidatePositions.push(
+          location,
+          ...DIRECTIONS.map((direction) => offsetLocation(location, direction)),
+        );
+      }
+
+      yield* rebuildTopologyJob(state.dimension, candidatePositions);
+    }
+  } finally {
+    topologyRebuildStates.delete(state.dimension.id);
+  }
+}
+
+function scheduleNetworkTopologyUpdate(block) {
   if (!block?.dimension) return;
 
-  system.runTimeout(() => {
-    updateNetworkCableVisualAround(block);
-    rebuildTopologyFromCandidates(block, options);
+  const dimensionId = block.dimension.id;
+  let state = topologyRebuildStates.get(dimensionId);
+  if (!state) {
+    state = {
+      dimension: block.dimension,
+      pendingLocations: new Map(),
+      timeoutId: undefined,
+      running: false,
+    };
+    topologyRebuildStates.set(dimensionId, state);
+  }
+
+  const location = {
+    x: Math.floor(block.location.x),
+    y: Math.floor(block.location.y),
+    z: Math.floor(block.location.z),
+  };
+  state.pendingLocations.set(locationKey(location), location);
+
+  if (state.running) return;
+  if (state.timeoutId !== undefined) system.clearRun(state.timeoutId);
+  state.timeoutId = system.runTimeout(() => {
+    state.timeoutId = undefined;
+    state.running = true;
+    system.runJob(drainTopologyRebuilds(state));
   }, 3);
 }
 
 world.afterEvents.playerPlaceBlock.subscribe(({ block }) => {
   if (!isNetworkBlock(block)) return;
-  scheduleNetworkTopologyUpdate(block, {
-    preserveRead: isNetworkCable(block),
-  });
+  scheduleNetworkTopologyUpdate(block);
 });
 
 world.afterEvents.playerBreakBlock.subscribe(({ block, brokenBlockPermutation }) => {
   if (brokenBlockPermutation?.hasTag?.(NETWORK_TAG) !== true) return;
-  scheduleNetworkTopologyUpdate(block, {
-    preserveRead: brokenBlockPermutation?.hasTag?.(NETWORK_CABLE_TAG) === true,
-  });
+  scheduleNetworkTopologyUpdate(block);
 });

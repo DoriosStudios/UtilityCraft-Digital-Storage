@@ -12,6 +12,7 @@
 - Large cell records, network records, item definitions and Storage Center topologies are fragmented into bounded pages.
 - Auto-flush, topology scans, topology writes, startup migration and transaction recovery now run incrementally across ticks.
 - Topology rebuilds now deduplicate connected components so one cable change does not rescan the same large network from multiple adjacent blocks.
+- Physical network edits now debounce nearby changes, rescan the affected components and rebuild the runtime only after the topology snapshot is committed.
 - Successful paged commits retain the active and fallback generations while collecting only the older unreferenced pages.
 - Storage Center and Storage Cell displays now distinguish stored items, item types and logical-byte usage in a shorter format.
 - Storage percentage lore now escapes Minecraft's percent formatting correctly, and Storage Center detail lines retain their visual indentation.
@@ -23,6 +24,7 @@
 - Fixed routine network flushes concentrating many item types into the earliest high-capacity cell.
 - Fixed failed network creation or shutdown leaving cells partially claimed or releasing a network record before every cell was safely detached.
 - Fixed machines mutating storage while startup transaction recovery was still in progress; blocking recovery faults are now shown on the Storage Center.
+- Fixed disconnected Drives, terminals and Import/Export Buffers retaining an obsolete network link after cables or machines changed the physical topology.
 
 ## COMPATIBILITY
 - Existing V1 cell and network records are read and migrated lazily to V2 without deleting or clamping stored items.

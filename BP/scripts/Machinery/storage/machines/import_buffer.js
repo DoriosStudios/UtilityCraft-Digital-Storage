@@ -66,7 +66,10 @@ function tickImportBuffer(entity) {
   if (!networkId) return;
 
   const runtime = getNetwork(networkId);
-  if (!runtime?.online) return;
+  if (!runtime?.online) {
+    setImportBufferNetworkId(entity, 0);
+    return;
+  }
 
   const container = entity.getComponent("minecraft:inventory")?.container;
   if (!container) return;

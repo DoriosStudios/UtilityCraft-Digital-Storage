@@ -62,7 +62,10 @@ function tickDrive(entity) {
   if (!networkId) return;
 
   const runtime = getNetwork(networkId);
-  if (!runtime?.online) return;
+  if (!runtime?.online) {
+    setDriveNetworkId(entity, 0);
+    return;
+  }
 
   const signature = readDriveCellSignature(entity);
   const previousSignature = getStoredDriveSignature(entity);

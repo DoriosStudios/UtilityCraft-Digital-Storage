@@ -342,7 +342,7 @@ export class StorageTerminalInterface {
 
     const terminalId = this.getTerminalId(entity);
     const snapshot = getNetworkSnapshot(networkId);
-    if (!snapshot) {
+    if (!snapshot?.online) {
       this.handleMissingNetwork(entity, inv, networkId, terminalId, hasOpenUI);
       return;
     }
