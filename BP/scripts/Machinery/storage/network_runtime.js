@@ -6,7 +6,9 @@ import {
   readNetworkIndex,
   readNetworkRecord,
   releaseCellNetwork,
+  setCellNetwork,
   writeCellRecord,
+  writeCellRecordJob,
   writeNetworkRecord,
 } from "./cell_store.js";
 import { syncNetworkDriveCellItems } from "./cell_item_sync.js";
@@ -18,6 +20,12 @@ import {
   storeOpaqueItem,
   takeOpaqueItem,
 } from "./opaque_vault.js";
+import {
+  getEntriesStorageSummary,
+  getEntryStorageDelta,
+  getMaxInsertAmount,
+} from "./storage_cost.js";
+import { hasPendingCellTransaction } from "./persistence/cell_transactions.js";
 
 /**
  * Runtime network manager for Digital Storage.
@@ -32,8 +40,24 @@ const UI_ELEMENT_TAG = "utilitycraft:ui_element";
 const AUTO_FLUSH_INTERVAL_TICKS = 100;
 const AUTO_FLUSH_COOLDOWN_TICKS = 1200;
 const uiElementKeyCache = new Map();
+const activeFlushJobs = new Map();
 let autoFlushRunId;
 let autoFlushCursor = 0;
+let storageRuntimeReady = false;
+let storageRuntimeFailure;
+
+export function isStorageRuntimeReady() {
+  return storageRuntimeReady;
+}
+
+export function getStorageRuntimeFailure() {
+  return storageRuntimeFailure;
+}
+
+export function markStorageRuntimeFailure(error) {
+  storageRuntimeReady = false;
+  storageRuntimeFailure = String(error?.message ?? error ?? "unknown_storage_error").slice(0, 96);
+}
 
 function isUiElementKey(itemKey) {
   const key = String(itemKey ?? "");
@@ -86,6 +110,57 @@ function sumMap(map) {
   let total = 0;
   for (const value of map.values()) total += Math.max(0, Math.floor(Number(value) || 0));
   return total;
+}
+
+function createRuntimeCell(cell, networkId) {
+  const items = toMap(cell.items);
+  const summary = getEntriesStorageSummary(items);
+  const capacityUnits = Math.max(0, Math.floor(Number(cell.capacityUnits ?? cell.capacity) || 0));
+  return {
+    cellId: cell.cellId,
+    networkId,
+    version: cell.version,
+    revision: cell.version,
+    persistedRevision: cell.version,
+    capacityUnits,
+    usedUnits: summary.usedUnits,
+    itemCount: summary.itemCount,
+    typeCount: summary.typeCount,
+    capacity: capacityUnits,
+    used: summary.usedUnits,
+    items,
+    dirty: false,
+  };
+}
+
+function attachRuntimeCell(runtime, cell) {
+  const runtimeCell = createRuntimeCell(cell, runtime.networkId);
+  runtime.cells.set(runtimeCell.cellId, runtimeCell);
+  runtime.capacityUnits += runtimeCell.capacityUnits;
+  runtime.usedUnits += runtimeCell.usedUnits;
+  runtime.itemCount += runtimeCell.itemCount;
+  for (const [itemKey, amount] of runtimeCell.items) {
+    runtime.totals.set(itemKey, (runtime.totals.get(itemKey) ?? 0) + amount);
+    let locations = runtime.locationsByKey.get(itemKey);
+    if (!locations) {
+      locations = new Set();
+      runtime.locationsByKey.set(itemKey, locations);
+    }
+    locations.add(runtimeCell.cellId);
+  }
+}
+
+function syncRuntimeAliases(runtime) {
+  runtime.capacity = runtime.capacityUnits;
+  runtime.used = runtime.usedUnits;
+  runtime.typeCount = runtime.totals.size;
+}
+
+function markCellMutation(runtime, cell) {
+  cell.revision += 1;
+  cell.dirty = true;
+  cell.used = cell.usedUnits;
+  runtime.dirty = true;
 }
 
 function pushChange(runtime, itemKey, before, after, reason = "runtime") {
@@ -213,34 +288,18 @@ function getNextFreeSlotAfterRenderedItems(state) {
  * @returns {object} Runtime network.
  */
 function buildRuntime(networkRecord, cellRecords) {
-  const totals = new Map();
-  let capacity = 0;
-
-  const cells = new Map();
-  for (const cell of cellRecords) {
-    if (!cell) continue;
-    cells.set(cell.cellId, {
-      cellId: cell.cellId,
-      networkId: networkRecord.networkId,
-      version: cell.version,
-      capacity: cell.capacity,
-      used: cell.used,
-      items: toMap(cell.items),
-    });
-    capacity += cell.capacity;
-    for (const [itemKey, amount] of Object.entries(cell.items ?? {})) {
-      totals.set(itemKey, (totals.get(itemKey) ?? 0) + amount);
-    }
-  }
-
-  return {
+  const runtime = {
     networkId: networkRecord.networkId,
     online: networkRecord.online === true,
+    state: networkRecord.state ?? (networkRecord.online === true ? "online" : "offline"),
     dirty: false,
-    cells,
-    totals,
-    used: sumMap(totals),
-    capacity,
+    cells: new Map(),
+    totals: new Map(),
+    locationsByKey: new Map(),
+    usedUnits: 0,
+    capacityUnits: 0,
+    itemCount: 0,
+    typeCount: 0,
     version: Math.floor(Number(networkRecord.version ?? 0)),
     changeSeq: Math.floor(Number(networkRecord.changeSeq ?? 0)),
     changes: Array.isArray(networkRecord.changes) ? [...networkRecord.changes] : [],
@@ -251,6 +310,11 @@ function buildRuntime(networkRecord, cellRecords) {
     terminalDisplays: new Map(),
     lastAutoFlushTick: system.currentTick,
   };
+  for (const cell of cellRecords) {
+    if (cell) attachRuntimeCell(runtime, cell);
+  }
+  syncRuntimeAliases(runtime);
+  return runtime;
 }
 
 /**
@@ -289,9 +353,11 @@ export function loadNetwork(networkId) {
  */
 export function loadAllNetworks() {
   runtimeNetworks.clear();
+  storageRuntimeFailure = undefined;
   for (const networkId of readNetworkIndex()) {
     loadNetwork(networkId);
   }
+  storageRuntimeReady = true;
   return runtimeNetworks.size;
 }
 
@@ -307,6 +373,8 @@ export function loadAllNetworks() {
  */
 export function* loadAllNetworksJob({ recordsPerTick = 8, onComplete } = {}) {
   runtimeNetworks.clear();
+  storageRuntimeReady = false;
+  storageRuntimeFailure = undefined;
 
   const networkIds = readNetworkIndex();
   const workLimit = Math.max(1, Math.floor(Number(recordsPerTick) || 1));
@@ -326,11 +394,15 @@ export function* loadAllNetworksJob({ recordsPerTick = 8, onComplete } = {}) {
     const runtime = {
       networkId: record.networkId,
       online: record.online === true,
+      state: record.state ?? (record.online === true ? "online" : "offline"),
       dirty: false,
       cells: new Map(),
       totals: new Map(),
-      used: 0,
-      capacity: 0,
+      locationsByKey: new Map(),
+      usedUnits: 0,
+      capacityUnits: 0,
+      itemCount: 0,
+      typeCount: 0,
       version: Math.floor(Number(record.version ?? 0)),
       changeSeq: Math.floor(Number(record.changeSeq ?? 0)),
       changes: Array.isArray(record.changes) ? [...record.changes] : [],
@@ -343,23 +415,26 @@ export function* loadAllNetworksJob({ recordsPerTick = 8, onComplete } = {}) {
     };
 
     for (const cellId of record.cells) {
-      const cell = readCellRecord(cellId);
+      let cell = readCellRecord(cellId);
       cellsRead += 1;
       workDone += 1;
 
-      if (cell && (!cell.networkId || cell.networkId === record.networkId)) {
-        runtime.cells.set(cell.cellId, {
-          cellId: cell.cellId,
-          networkId: record.networkId,
-          version: cell.version,
-          capacity: cell.capacity,
-          used: cell.used,
-          items: toMap(cell.items),
-        });
-        runtime.capacity += cell.capacity;
-        for (const [itemKey, amount] of Object.entries(cell.items ?? {})) {
-          runtime.totals.set(itemKey, (runtime.totals.get(itemKey) ?? 0) + amount);
+      if (cell?.schemaVersion === 1) {
+        try {
+          const migrated = yield* writeCellRecordJob(cell.cellId, {
+            ...cell,
+            version: cell.version,
+            capacityUnits: cell.capacityUnits,
+            items: cell.items,
+          });
+          if (migrated) cell = migrated;
+        } catch (error) {
+          console.warn(`[DigitalStorage] Unable to migrate cell ${cell.cellId}: ${error?.message ?? error}`);
         }
+      }
+
+      if (cell && (!cell.networkId || cell.networkId === record.networkId)) {
+        attachRuntimeCell(runtime, cell);
       }
 
       if (workDone >= workLimit) {
@@ -368,11 +443,12 @@ export function* loadAllNetworksJob({ recordsPerTick = 8, onComplete } = {}) {
       }
     }
 
-    runtime.used = sumMap(runtime.totals);
+    syncRuntimeAliases(runtime);
     runtimeNetworks.set(record.networkId, runtime);
     loaded += 1;
   }
 
+  storageRuntimeReady = true;
   onComplete?.({ loaded, total: networkIds.length, cells: cellsRead });
 }
 
@@ -526,10 +602,17 @@ export function getNetworkSnapshot(networkId) {
   return {
     networkId: runtime.networkId,
     online: runtime.online,
+    state: runtime.state,
     dirty: runtime.dirty,
-    used: runtime.used,
-    capacity: runtime.capacity,
-    free: Math.max(0, runtime.capacity - runtime.used),
+    itemCount: runtime.itemCount,
+    typeCount: runtime.typeCount,
+    usedUnits: runtime.usedUnits,
+    capacityUnits: runtime.capacityUnits,
+    freeUnits: Math.max(0, runtime.capacityUnits - runtime.usedUnits),
+    overCapacityUnits: Math.max(0, runtime.usedUnits - runtime.capacityUnits),
+    used: runtime.usedUnits,
+    capacity: runtime.capacityUnits,
+    free: Math.max(0, runtime.capacityUnits - runtime.usedUnits),
     version: runtime.version,
     changeSeq: runtime.changeSeq,
     cells: [...runtime.cells.keys()],
@@ -550,11 +633,17 @@ export function getNetworkSnapshot(networkId) {
  * @returns {object} Runtime network.
  */
 export function createNetworkFromCellIds(cellIds, options = {}) {
-  const networkId = Math.floor(Number(options.networkId) || 0) || allocateNetworkId();
+  if (!storageRuntimeReady) throw new Error("storage_runtime_loading");
+  const requestedNetworkId = Math.floor(Number(options.networkId) || 0);
+  const allocatedNetworkId = requestedNetworkId <= 0;
+  const networkId = requestedNetworkId || allocateNetworkId();
   const uniqueCells = [...new Set(cellIds.map((id) => Math.floor(Number(id) || 0)).filter(Boolean))];
-  const cells = [];
+  const candidates = [];
 
   for (const cellId of uniqueCells) {
+    if (hasPendingCellTransaction(cellId)) {
+      throw new Error(`Cell ${cellId} has a pending storage transaction.`);
+    }
     const cell = readCellRecord(cellId);
     if (!cell) continue;
     if (
@@ -564,32 +653,57 @@ export function createNetworkFromCellIds(cellIds, options = {}) {
     ) {
       throw new Error(`Cell ${cellId} already belongs to network ${cell.networkId}.`);
     }
-    const owned = writeCellRecord(cellId, {
-      ...cell,
-      networkId,
-      version: cell.version,
-    });
-    cells.push(owned);
+    candidates.push(cell);
   }
 
-  const capacity = cells.reduce((sum, cell) => sum + cell.capacity, 0);
-  const used = cells.reduce((sum, cell) => sum + cell.used, 0);
-  const record = writeNetworkRecord(networkId, {
-    networkId,
-    version: readNetworkRecord(networkId)?.version ?? 0,
-    online: options.online !== false,
-    center: options.center,
-    centers: options.centers ?? [],
-    drives: options.drives ?? [],
-    terminals: options.terminals ?? [],
-    cells: cells.map((cell) => cell.cellId),
-    capacity,
-    used,
-    changeSeq: 0,
-    changes: [],
-  });
+  const claimed = [];
+  try {
+    const cells = [];
+    for (const cell of candidates) {
+      const owned = setCellNetwork(cell.cellId, networkId);
+      if (!owned) throw new Error(`Unable to claim cell ${cell.cellId}.`);
+      cells.push(owned);
+      claimed.push({ cellId: cell.cellId, previousNetworkId: cell.networkId });
+    }
 
-  return loadNetwork(record.networkId);
+    const capacityUnits = cells.reduce((sum, cell) => sum + cell.capacityUnits, 0);
+    const usedUnits = cells.reduce((sum, cell) => sum + cell.usedUnits, 0);
+    const itemCount = cells.reduce((sum, cell) => sum + cell.itemCount, 0);
+    if (![capacityUnits, usedUnits, itemCount].every(Number.isSafeInteger)) {
+      throw new Error("network_totals_exceed_safe_integer");
+    }
+    const typeCount = new Set(cells.flatMap((cell) => Object.keys(cell.items ?? {}))).size;
+    const record = writeNetworkRecord(networkId, {
+      networkId,
+      version: readNetworkRecord(networkId)?.version ?? 0,
+      online: options.online !== false,
+      center: options.center,
+      centers: options.centers ?? [],
+      drives: options.drives ?? [],
+      terminals: options.terminals ?? [],
+      cells: cells.map((cell) => cell.cellId),
+      capacityUnits,
+      usedUnits,
+      itemCount,
+      typeCount,
+      changeSeq: 0,
+      changes: [],
+    });
+    if (!record) throw new Error("network_record_write_failed");
+    const runtime = loadNetwork(record.networkId);
+    if (!runtime) throw new Error("network_record_load_failed");
+    return runtime;
+  } catch (error) {
+    for (const claim of claimed.reverse()) {
+      try {
+        setCellNetwork(claim.cellId, claim.previousNetworkId);
+      } catch (rollbackError) {
+        console.warn(`[DigitalStorage] Unable to roll back cell ${claim.cellId}: ${rollbackError?.message ?? rollbackError}`);
+      }
+    }
+    if (allocatedNetworkId) deleteNetworkRecord(networkId);
+    throw error;
+  }
 }
 
 /**
@@ -608,6 +722,7 @@ export function setNetworkOnline(networkId, online) {
   const runtime = getNetwork(networkId);
   if (!runtime) return false;
   runtime.online = true;
+  runtime.state = "online";
   runtime.dirty = true;
   return true;
 }
@@ -622,30 +737,65 @@ export function setNetworkOnline(networkId, online) {
  * @param {string} itemKey Stable item key.
  * @param {number} amount Requested insert amount.
  * @param {string} [reason] Change reason for debug/change stream.
- * @returns {{inserted:number, remaining:number, before?:number, after?:number}}
+ * @returns {object}
  */
 export function addItem(networkId, itemKey, amount, reason = "debug") {
   const requested = Math.max(0, Math.floor(Number(amount) || 0));
+  if (!storageRuntimeReady) return { inserted: 0, remaining: requested, reason: "storage_loading" };
   if (!itemKey) return { inserted: 0, remaining: requested };
   if (isUiElementKey(itemKey)) return { inserted: 0, remaining: requested };
 
   const runtime = getNetwork(networkId);
-  if (!runtime || !runtime.online) {
+  if (!runtime || !runtime.online || runtime.state === "closing" || runtime.state === "faulted") {
     return { inserted: 0, remaining: requested };
   }
-
-  const free = Math.max(0, runtime.capacity - runtime.used);
-  const inserted = Math.min(requested, free);
-  if (inserted <= 0) return { inserted: 0, remaining: requested };
-
   const before = Math.floor(Number(runtime.totals.get(itemKey) ?? 0));
+  let remaining = requested;
+  let unitDelta = 0;
+  const existing = [];
+  const empty = [];
+  for (const cell of runtime.cells.values()) {
+    if (cell.items.has(itemKey)) existing.push(cell);
+    else empty.push(cell);
+  }
+  existing.sort((a, b) => b.capacityUnits - b.usedUnits - (a.capacityUnits - a.usedUnits) || a.cellId - b.cellId);
+  empty.sort((a, b) => (a.capacityUnits - a.usedUnits) - (b.capacityUnits - b.usedUnits) || a.cellId - b.cellId);
+
+  for (const cell of [...existing, ...empty]) {
+    if (remaining <= 0) break;
+    const cellBefore = Math.floor(Number(cell.items.get(itemKey) ?? 0));
+    const freeUnits = Math.max(0, cell.capacityUnits - cell.usedUnits);
+    const accepted = getMaxInsertAmount(itemKey, cellBefore, freeUnits, remaining);
+    if (accepted <= 0) continue;
+    const cellAfter = cellBefore + accepted;
+    const delta = getEntryStorageDelta(itemKey, cellBefore, cellAfter);
+    if (!Number.isSafeInteger(cellAfter) || !Number.isSafeInteger(delta) || delta > freeUnits) continue;
+
+    cell.items.set(itemKey, cellAfter);
+    cell.itemCount += accepted;
+    if (cellBefore <= 0) cell.typeCount += 1;
+    cell.usedUnits += delta;
+    markCellMutation(runtime, cell);
+    let locations = runtime.locationsByKey.get(itemKey);
+    if (!locations) {
+      locations = new Set();
+      runtime.locationsByKey.set(itemKey, locations);
+    }
+    locations.add(cell.cellId);
+    remaining -= accepted;
+    unitDelta += delta;
+  }
+
+  const inserted = requested - remaining;
+  if (inserted <= 0) return { inserted: 0, remaining: requested, reason: "no_capacity" };
   const after = before + inserted;
   runtime.totals.set(itemKey, after);
-  runtime.used += inserted;
-  runtime.dirty = true;
+  runtime.itemCount += inserted;
+  runtime.usedUnits += unitDelta;
+  syncRuntimeAliases(runtime);
   pushChange(runtime, itemKey, before, after, reason);
 
-  return { inserted, remaining: requested - inserted, before, after };
+  return { inserted, remaining, before, after, unitDelta };
 }
 
 /**
@@ -663,6 +813,7 @@ export function addItem(networkId, itemKey, amount, reason = "debug") {
 export function addItemStack(networkId, item, reason = "debug") {
   const requested = Math.max(0, Math.floor(Number(item?.amount) || 0));
   if (!item || requested <= 0) return { inserted: 0, remaining: requested };
+  if (!storageRuntimeReady) return { inserted: 0, remaining: requested, reason: "storage_loading" };
 
   try {
     if (item.hasTag?.(UI_ELEMENT_TAG) || item.getTags?.().includes(UI_ELEMENT_TAG)) {
@@ -676,7 +827,7 @@ export function addItemStack(networkId, item, reason = "debug") {
   }
 
   const runtime = getNetwork(networkId);
-  if (!runtime?.online || runtime.used >= runtime.capacity) {
+  if (!runtime?.online || runtime.state === "closing" || runtime.state === "faulted") {
     return { inserted: 0, remaining: requested };
   }
 
@@ -704,17 +855,28 @@ export function addItemStack(networkId, item, reason = "debug") {
  * @param {string} itemKey Stable item key.
  * @param {number} amount Requested remove amount.
  * @param {string} [reason] Change reason for debug/change stream.
- * @returns {{removed:number, remaining:number, before?:number, after?:number, itemStack?:import("@minecraft/server").ItemStack, reason?:string}}
+ * @returns {object}
  */
 export function removeItem(networkId, itemKey, amount, reason = "debug") {
+  if (!storageRuntimeReady) {
+    return { removed: 0, remaining: Math.max(0, Math.floor(Number(amount) || 0)), reason: "storage_loading" };
+  }
   const runtime = getNetwork(networkId);
-  if (!runtime || !runtime.online) return { removed: 0, remaining: Math.max(0, Math.floor(Number(amount) || 0)) };
+  if (!runtime || !runtime.online || runtime.state === "closing" || runtime.state === "faulted") {
+    return { removed: 0, remaining: Math.max(0, Math.floor(Number(amount) || 0)) };
+  }
 
   const requested = Math.max(0, Math.floor(Number(amount) || 0));
   const before = Math.floor(Number(runtime.totals.get(itemKey) ?? 0));
   let itemStack;
-  let removed = Math.min(requested, before);
-  if (removed <= 0) return { removed: 0, remaining: requested, before, after: before };
+  const wanted = Math.min(requested, before);
+  if (wanted <= 0) return { removed: 0, remaining: requested, before, after: before };
+
+  const cells = [...(runtime.locationsByKey.get(itemKey) ?? [])]
+    .map((cellId) => runtime.cells.get(cellId))
+    .filter(Boolean)
+    .sort((a, b) => (a.items.get(itemKey) ?? 0) - (b.items.get(itemKey) ?? 0) || a.cellId - b.cellId);
+  if (cells.length === 0) return { removed: 0, remaining: requested, before, after: before, reason: "location_missing" };
 
   if (isOpaqueItemKey(itemKey)) {
     const physical = takeOpaqueItem(itemKey);
@@ -728,17 +890,45 @@ export function removeItem(networkId, itemKey, amount, reason = "debug") {
       };
     }
     itemStack = physical.item;
-    removed = 1;
   }
 
+  let remainingToRemove = isOpaqueItemKey(itemKey) ? 1 : wanted;
+  let unitDelta = 0;
+
+  for (const cell of cells) {
+    if (remainingToRemove <= 0) break;
+    const cellBefore = Math.floor(Number(cell.items.get(itemKey) ?? 0));
+    const take = Math.min(cellBefore, remainingToRemove);
+    if (take <= 0) continue;
+    const cellAfter = cellBefore - take;
+    const delta = getEntryStorageDelta(itemKey, cellBefore, cellAfter);
+    if (cellAfter > 0) cell.items.set(itemKey, cellAfter);
+    else {
+      cell.items.delete(itemKey);
+      cell.typeCount = Math.max(0, cell.typeCount - 1);
+      runtime.locationsByKey.get(itemKey)?.delete(cell.cellId);
+    }
+    cell.itemCount -= take;
+    cell.usedUnits += delta;
+    markCellMutation(runtime, cell);
+    remainingToRemove -= take;
+    unitDelta += delta;
+  }
+
+  const removed = (isOpaqueItemKey(itemKey) ? 1 : wanted) - remainingToRemove;
+  if (removed <= 0) return { removed: 0, remaining: requested, before, after: before };
   const after = before - removed;
   if (after > 0) runtime.totals.set(itemKey, after);
-  else runtime.totals.delete(itemKey);
-  runtime.used -= removed;
-  runtime.dirty = true;
+  else {
+    runtime.totals.delete(itemKey);
+    runtime.locationsByKey.delete(itemKey);
+  }
+  runtime.itemCount -= removed;
+  runtime.usedUnits += unitDelta;
+  syncRuntimeAliases(runtime);
   pushChange(runtime, itemKey, before, after, reason);
 
-  return { removed, remaining: requested - removed, before, after, itemStack };
+  return { removed, remaining: requested - removed, before, after, itemStack, unitDelta };
 }
 
 /**
@@ -762,9 +952,7 @@ export function getSortedItems(networkId, sortMode = "count") {
 /**
  * Persists one runtime network to cell and network dynamic properties.
  *
- * Items are repartitioned across the network cells by available capacity. The
- * exact physical cell containing an item may change, because the online network
- * is treated as one storage pool.
+ * Each dirty cell is serialized with its existing physical allocation.
  *
  * @param {number} networkId Network id.
  * @param {{syncDriveItems?: boolean}} [options] Flush options.
@@ -773,55 +961,48 @@ export function getSortedItems(networkId, sortMode = "count") {
 export function flushNetwork(networkId, { syncDriveItems = true } = {}) {
   const runtime = getNetwork(networkId);
   if (!runtime) return false;
+  const activeJob = activeFlushJobs.get(runtime.networkId);
+  if (activeJob !== undefined) {
+    system.clearJob(activeJob);
+    activeFlushJobs.delete(runtime.networkId);
+  }
 
   const cellList = [...runtime.cells.values()].sort((a, b) => a.cellId - b.cellId);
-  for (const cell of cellList) {
-    cell.items = new Map();
-    cell.used = 0;
-  }
-
-  for (const [itemKey, amount] of getSortedItems(runtime.networkId, "name")) {
-    let remaining = amount;
-    for (const cell of cellList) {
-      if (remaining <= 0) break;
-      const free = Math.max(0, cell.capacity - cell.used);
-      if (free <= 0) continue;
-      const moved = Math.min(free, remaining);
-      cell.items.set(itemKey, (cell.items.get(itemKey) ?? 0) + moved);
-      cell.used += moved;
-      remaining -= moved;
-    }
-  }
-
   const savedCellsById = new Map();
   for (const cell of cellList) {
+    if (!cell.dirty) continue;
     const saved = writeCellRecord(cell.cellId, {
       networkId: runtime.networkId,
       version: cell.version,
-      capacity: cell.capacity,
-      used: cell.used,
+      capacityUnits: cell.capacityUnits,
       items: toObject(cell.items),
     });
     if (saved) {
       cell.version = saved.version;
+      cell.persistedRevision = cell.revision;
+      cell.dirty = false;
       savedCellsById.set(saved.cellId, saved);
     }
   }
 
-  writeNetworkRecord(runtime.networkId, {
+  const savedNetwork = writeNetworkRecord(runtime.networkId, {
     networkId: runtime.networkId,
     version: runtime.version,
+    state: runtime.state,
     online: runtime.online,
     center: runtime.center,
     centers: [...runtime.centers],
     drives: [...runtime.drives],
     terminals: [...runtime.terminals],
     cells: cellList.map((cell) => cell.cellId),
-    used: runtime.used,
-    capacity: runtime.capacity,
+    usedUnits: runtime.usedUnits,
+    capacityUnits: runtime.capacityUnits,
+    itemCount: runtime.itemCount,
+    typeCount: runtime.typeCount,
     changeSeq: runtime.changeSeq,
     changes: runtime.changes,
   });
+  if (savedNetwork) runtime.version = savedNetwork.version;
 
   if (syncDriveItems) {
     try {
@@ -831,8 +1012,64 @@ export function flushNetwork(networkId, { syncDriveItems = true } = {}) {
     }
   }
 
-  runtime.dirty = false;
+  runtime.dirty = [...runtime.cells.values()].some((cell) => cell.dirty);
   return true;
+}
+
+export function* flushNetworkJob(networkId, { syncDriveItems = true, pagesPerTick = 2 } = {}) {
+  const runtime = getNetwork(networkId);
+  if (!runtime) return;
+  try {
+    const snapshots = [...runtime.cells.values()]
+      .filter((cell) => cell.dirty)
+      .sort((a, b) => a.cellId - b.cellId)
+      .map((cell) => ({
+        cellId: cell.cellId,
+        version: cell.version,
+        revision: cell.revision,
+        capacityUnits: cell.capacityUnits,
+        items: toObject(cell.items),
+      }));
+    const savedCellsById = new Map();
+    for (const snapshot of snapshots) {
+      const saved = yield* writeCellRecordJob(snapshot.cellId, {
+        networkId: runtime.networkId,
+        version: snapshot.version,
+        capacityUnits: snapshot.capacityUnits,
+        items: snapshot.items,
+      }, { pagesPerTick });
+      if (!saved) continue;
+      savedCellsById.set(saved.cellId, saved);
+      const liveCell = runtime.cells.get(saved.cellId);
+      if (!liveCell) continue;
+      liveCell.version = saved.version;
+      liveCell.persistedRevision = snapshot.revision;
+      if (liveCell.revision === snapshot.revision) liveCell.dirty = false;
+    }
+
+    const savedNetwork = writeNetworkRecord(runtime.networkId, {
+      networkId: runtime.networkId,
+      version: runtime.version,
+      state: runtime.state,
+      online: runtime.online,
+      center: runtime.center,
+      centers: [...runtime.centers],
+      drives: [...runtime.drives],
+      terminals: [...runtime.terminals],
+      cells: [...runtime.cells.keys()],
+      usedUnits: runtime.usedUnits,
+      capacityUnits: runtime.capacityUnits,
+      itemCount: runtime.itemCount,
+      typeCount: runtime.typeCount,
+      changeSeq: runtime.changeSeq,
+    });
+    if (savedNetwork) runtime.version = savedNetwork.version;
+    if (syncDriveItems && savedCellsById.size > 0) syncNetworkDriveCellItems(runtime, savedCellsById);
+    runtime.dirty = [...runtime.cells.values()].some((cell) => cell.dirty);
+    return;
+  } finally {
+    activeFlushJobs.delete(runtime.networkId);
+  }
 }
 
 /**
@@ -849,6 +1086,7 @@ export function powerOffNetwork(networkId) {
   const runtime = getNetwork(networkId);
   if (!runtime) return false;
 
+  runtime.state = "closing";
   runtime.online = false;
   runtime.dirty = true;
 
@@ -857,7 +1095,9 @@ export function powerOffNetwork(networkId) {
 
   const cellIds = [...runtime.cells.keys()];
   for (const cellId of cellIds) {
-    releaseCellNetwork(cellId, runtime.networkId);
+    if (!releaseCellNetwork(cellId, runtime.networkId)) {
+      throw new Error(`Unable to release cell ${cellId} from network ${runtime.networkId}.`);
+    }
   }
 
   deleteNetworkRecord(runtime.networkId);
@@ -944,14 +1184,14 @@ export function startNetworkAutoFlush() {
     autoFlushCursor = (autoFlushCursor + 1) % Math.max(1, runtimes.length);
 
     if (!runtime?.online || !runtime.dirty) return;
+    if (activeFlushJobs.has(runtime.networkId)) return;
 
     const lastFlushTick = Math.floor(Number(runtime.lastAutoFlushTick) || 0);
     if (system.currentTick - lastFlushTick < AUTO_FLUSH_COOLDOWN_TICKS) return;
 
     runtime.lastAutoFlushTick = system.currentTick;
-    if (flushNetwork(runtime.networkId)) {
-      // console.warn(`[DigitalStorage] auto-flushed network ${runtime.networkId}.`);
-    }
+    const jobId = system.runJob(flushNetworkJob(runtime.networkId));
+    activeFlushJobs.set(runtime.networkId, jobId);
   }, AUTO_FLUSH_INTERVAL_TICKS);
 
   return autoFlushRunId;

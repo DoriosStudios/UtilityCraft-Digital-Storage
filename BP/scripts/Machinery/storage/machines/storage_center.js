@@ -4,8 +4,22 @@ import * as DoriosLib from "DoriosLib/index.js";
 import { spawnStorageMachine } from "../../../DigitalStorageCore/entities.js";
 import { releaseCellNetwork } from "../cell_store.js";
 import { getDriveEntity, getDriveKey, readDriveCells, setDriveNetworkId, setStoredDriveSignature } from "../drive_cells.js";
-import { createNetworkFromCellIds, getNetwork, getNetworkSnapshot, powerOffNetwork } from "../network_runtime.js";
-import { NETWORK_TOPOLOGY_PROPERTY } from "../network_topology.js";
+import {
+  createNetworkFromCellIds,
+  getNetwork,
+  getNetworkSnapshot,
+  getStorageRuntimeFailure,
+  isStorageRuntimeReady,
+  powerOffNetwork,
+} from "../network_runtime.js";
+import {
+  NETWORK_TOPOLOGY_PROPERTY,
+  V2_NETWORK_TOPOLOGY_PROPERTY,
+  V2_NETWORK_TOPOLOGY_READ_PROPERTY,
+  writeTopologySnapshot,
+} from "../network_topology.js";
+import { readPagedJson } from "../persistence/paged_store.js";
+import { formatCompactCount, formatStorageBytes, formatStoragePercent } from "../storage_format.js";
 import { getExportBufferEntity, setExportBufferNetworkId } from "./export_buffer.js";
 import { getImportBufferEntity, setImportBufferNetworkId } from "./import_buffer.js";
 import { CraftingTerminalInterface } from "../../interface/crafting_terminal.js";
@@ -62,12 +76,22 @@ function setNetworkId(entity, networkId) {
 }
 
 function readTopology(entity) {
+  const paged = readPagedJson(entity, V2_NETWORK_TOPOLOGY_PROPERTY);
+  if (paged?.value && typeof paged.value === "object") {
+    return { ...paged.value, read: entity.getDynamicProperty(V2_NETWORK_TOPOLOGY_READ_PROPERTY) === true };
+  }
   const raw = entity?.getDynamicProperty?.(NETWORK_TOPOLOGY_PROPERTY);
   if (typeof raw !== "string" || raw.length === 0) return undefined;
 
   try {
     const topology = JSON.parse(raw);
-    return topology && typeof topology === "object" ? topology : undefined;
+    return topology && typeof topology === "object"
+      ? {
+          ...topology,
+          read: entity.getDynamicProperty(V2_NETWORK_TOPOLOGY_READ_PROPERTY) === true
+            || topology.read === true,
+        }
+      : undefined;
   } catch {
     return undefined;
   }
@@ -77,11 +101,15 @@ function markTopologyRead(entity, topology) {
   if (!entity?.isValid || !topology) return;
 
   try {
-    entity.setDynamicProperty(NETWORK_TOPOLOGY_PROPERTY, JSON.stringify({
-      ...topology,
-      read: true,
-    }));
-  } catch {}
+    if (readPagedJson(entity, V2_NETWORK_TOPOLOGY_PROPERTY)) {
+      entity.setDynamicProperty(V2_NETWORK_TOPOLOGY_READ_PROPERTY, true);
+    } else {
+      entity.setDynamicProperty(V2_NETWORK_TOPOLOGY_READ_PROPERTY, true);
+      writeTopologySnapshot(entity, { ...topology, read: true });
+    }
+  } catch (error) {
+    console.warn(`[DigitalStorage] Unable to mark Storage Center topology as read: ${error?.message ?? error}`);
+  }
 }
 
 function topologyNeedsApply(topology) {
@@ -134,36 +162,15 @@ function writeStatusDisplay(entity, status, topology, snapshot, { force = false 
   const item = new ItemStack(STATUS_ITEM_ID, 1);
   item.nameTag = ` `;
   item.setLore([
-    `\u00A7r\u00A7bStorage Network`,
-    `\u00A7r\u00A77  Status: \u00A7f${status}`,
-    `\u00A7r\u00A77  Stored: \u00A7f${formatAmount(snapshot?.used ?? 0)} / ${formatAmount(snapshot?.capacity ?? 0)}`,
-    `\u00A7r\u00A77  Usage: \u00A7f${formatPercent(snapshot?.used ?? 0, snapshot?.capacity ?? 0)}%%`,
-    `\u00A7r\u00A77  Cells: \u00A7f${snapshot?.cells?.length ?? 0}`,
-    `\u00A7r\u00A77  Drives: \u00A7f${getMachineCount(topology, STORAGE_CELL_DRIVE_TYPE)}`,
-    `\u00A7r\u00A77  Cost: \u00A7f${EnergyStorage.formatEnergyToText(cost)}/t`,
+    `\u00A7r\u00A7bStorage Network: \u00A7f${status}`,
+    `\u00A7r\u00A77 Stored: \u00A7f${formatCompactCount(snapshot?.itemCount ?? 0)} Items`,
+    `\u00A7r\u00A77 Types: \u00A7f${formatCompactCount(snapshot?.typeCount ?? 0)} Item Types`,
+    `\u00A7r\u00A77 Storage: \u00A7f${formatStorageBytes(snapshot?.usedUnits ?? 0)} / ${formatStorageBytes(snapshot?.capacityUnits ?? 0)} (${formatStoragePercent(snapshot?.usedUnits ?? 0, snapshot?.capacityUnits ?? 0)}%)`,
+    `\u00A7r\u00A77 Cells: \u00A7f${snapshot?.cells?.length ?? 0}`,
+    `\u00A7r\u00A77 Drives: \u00A7f${getMachineCount(topology, STORAGE_CELL_DRIVE_TYPE)}`,
+    `\u00A7r\u00A77 Energy Usage: \u00A7f${EnergyStorage.formatEnergyToText(cost)}/t`,
   ]);
   container.setItem(1, item);
-}
-
-function formatAmount(value) {
-  const amount = Math.max(0, Math.floor(Number(value) || 0));
-  if (amount < 1000) return String(amount);
-
-  const units = ["K", "M", "B", "T"];
-  let scaled = amount;
-  let unit = "";
-  for (const nextUnit of units) {
-    if (scaled < 1000) break;
-    scaled /= 1000;
-    unit = nextUnit;
-  }
-  return `${scaled >= 100 ? scaled.toFixed(0) : scaled >= 10 ? scaled.toFixed(1) : scaled.toFixed(2)}${unit}`;
-}
-
-function formatPercent(used, capacity) {
-  const max = Math.max(0, Number(capacity) || 0);
-  if (max <= 0) return "0.00%";
-  return `${Math.min(100, (Math.max(0, Number(used) || 0) / max) * 100).toFixed(2)}%`;
 }
 
 function displayEnergy(entity, energy) {
@@ -189,8 +196,13 @@ function powerOffCenterNetwork(entity, topology, networkId = getNetworkId(entity
   unlinkTopologyImportBuffers(entity.dimension, topology);
   unlinkTopologyExportBuffers(entity.dimension, topology);
   const poweredOff = powerOffNetwork(networkId);
-  setNetworkId(entity, 0);
+  if (poweredOff) setNetworkId(entity, 0);
   return poweredOff;
+}
+
+function getShortError(error) {
+  const message = String(error?.message ?? error ?? "unknown_error");
+  return message.length <= 96 ? message : `${message.slice(0, 93)}...`;
 }
 
 function unlinkTopologyDrives(dimension, topology) {
@@ -335,18 +347,21 @@ function initializeNetwork(entity, block, energy, topology) {
       recoverOwnedCells(driveSnapshot.cellIds, driveSnapshot.ownedNetworkIds);
       driveSnapshot = collectDriveCells(block.dimension, topology);
     } catch (error) {
-      const reason = error?.message ?? String(error);
-      const status = `Network Recovery Failed: ${reason}`;
+      console.warn(`[DigitalStorage] Network recovery failed: ${error?.stack ?? error}`);
+      const reason = getShortError(error);
+      const status = `Recovery Failed: ${reason}`;
+      const previousNetworkId = [...driveSnapshot.ownedNetworkIds][0];
+      const previousSnapshot = previousNetworkId ? getNetworkSnapshot(previousNetworkId) : undefined;
       setStatus(entity, status, { warn: true, force: true });
-      writeStatusDisplay(entity, status, topology, undefined, { force: true });
+      writeStatusDisplay(entity, status, topology, previousSnapshot, { force: true });
       return;
     }
   }
 
   const { cellIds, driveEntities, driveKeys } = driveSnapshot;
 
-  setStatus(entity, "Initializing Network", { force: true });
-  writeStatusDisplay(entity, "Initializing Network", topology, undefined, { force: true });
+  setStatus(entity, "Initializing", { force: true });
+  writeStatusDisplay(entity, "Initializing", topology, undefined, { force: true });
 
   let network;
   try {
@@ -358,15 +373,16 @@ function initializeNetwork(entity, block, energy, topology) {
       terminals: buildTerminalKeys(topology),
     });
   } catch (error) {
-    const reason = error?.message ?? String(error);
-    const status = `Network Init Failed: ${reason}`;
+    console.warn(`[DigitalStorage] Network initialization failed: ${error?.stack ?? error}`);
+    const reason = getShortError(error);
+    const status = `Initialization Failed: ${reason}`;
     setStatus(entity, status, { warn: true, force: true });
     writeStatusDisplay(entity, status, topology, undefined, { force: true });
     return;
   }
 
   if (!network?.networkId) {
-    const status = "Network Init Failed: Network record could not be loaded";
+    const status = "Initialization Failed: Network record could not be loaded";
     setStatus(entity, status, { warn: true, force: true });
     writeStatusDisplay(entity, status, topology, undefined, { force: true });
     return;
@@ -394,10 +410,18 @@ function tickCenter(entity, block) {
   if (energy.getCap() <= 0) energy.setCap(CENTER_ENERGY_CAP);
   displayEnergy(entity, energy);
 
+  if (!isStorageRuntimeReady()) {
+    const failure = getStorageRuntimeFailure();
+    const status = failure ? `Recovery Failed: ${failure}` : "Loading";
+    setStatus(entity, status, { warn: !!failure, force: true });
+    writeStatusDisplay(entity, status, undefined, undefined, { force: true });
+    return;
+  }
+
   const topology = readTopology(entity);
   if (!topology) {
-    setStatus(entity, "Missing Network Topology", { warn: true });
-    writeStatusDisplay(entity, "Missing Network Topology", undefined, undefined, { force: true });
+    setStatus(entity, "Missing Topology", { warn: true });
+    writeStatusDisplay(entity, "Missing Topology", undefined, undefined, { force: true });
     return;
   }
 
@@ -417,16 +441,17 @@ function tickCenter(entity, block) {
   const runtime = getNetwork(networkId);
   if (!runtime?.online) {
     setNetworkId(entity, 0);
-    setStatus(entity, "Network Offline", { warn: true, force: true });
-    writeStatusDisplay(entity, "Network Offline", topology, undefined, { force: true });
+    setStatus(entity, "Offline", { warn: true, force: true });
+    writeStatusDisplay(entity, "Offline", topology, undefined, { force: true });
     return;
   }
 
   if (!consumeNetworkEnergy(entity, energy, topology, networkId)) return;
 
   const snapshot = getNetworkSnapshot(networkId);
-  setStatus(entity, "Online");
-  writeStatusDisplay(entity, "Online", topology, snapshot);
+  const displayStatus = (snapshot?.overCapacityUnits ?? 0) > 0 ? "Over Capacity" : "Online";
+  setStatus(entity, displayStatus);
+  writeStatusDisplay(entity, displayStatus, topology, snapshot);
 }
 
 DoriosLib.registry.blockComponent("utilitycraft:storage_center", {

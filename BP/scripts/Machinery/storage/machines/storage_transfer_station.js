@@ -7,9 +7,10 @@ import {
   getCellId,
   isStorageCell,
   readCellRecord,
-  writeCellRecord,
 } from "../cell_store.js";
-import { getNetwork } from "../network_runtime.js";
+import { isStorageRuntimeReady } from "../network_runtime.js";
+import { commitCellTransaction, hasPendingCellTransaction } from "../persistence/cell_transactions.js";
+import { getEntryStorageDelta, getMaxInsertAmount } from "../storage_cost.js";
 
 export const STORAGE_TRANSFER_STATION_ENTITY_TYPE = "utilitycraft:storage_transfer_station";
 
@@ -85,9 +86,8 @@ function readCellSlot(container, slot) {
  * @param {object} record Cell record.
  * @returns {boolean} True when the owning network is online.
  */
-function belongsToOnlineNetwork(record) {
-  if (!record?.networkId) return false;
-  return getNetwork(record.networkId)?.online === true;
+function belongsToNetwork(record) {
+  return !!record?.networkId;
 }
 
 /**
@@ -97,67 +97,71 @@ function belongsToOnlineNetwork(record) {
  * @returns {number} Amount transferred.
  */
 function transferCellData(entity) {
+  if (!isStorageRuntimeReady()) return 0;
   const container = entity.getComponent("minecraft:inventory")?.container;
   if (!container) return 0;
 
   const source = readCellSlot(container, SOURCE_SLOT);
   const destination = readCellSlot(container, DESTINATION_SLOT);
   if (!source || !destination || source.cellId === destination.cellId) return 0;
-  if (source.record.used <= 0) return 0;
-  if (belongsToOnlineNetwork(source.record) || belongsToOnlineNetwork(destination.record)) return 0;
+  if (hasPendingCellTransaction(source.cellId) || hasPendingCellTransaction(destination.cellId)) return 0;
+  if (source.record.itemCount <= 0) return 0;
+  if (belongsToNetwork(source.record) || belongsToNetwork(destination.record)) return 0;
 
-  const destinationFree = Math.max(0, destination.record.capacity - destination.record.used);
-  let remainingBatch = Math.min(getTransferLimit(container), source.record.used, destinationFree);
+  let remainingBatch = Math.min(getTransferLimit(container), source.record.itemCount);
   if (remainingBatch <= 0) return 0;
 
   const sourceItems = { ...source.record.items };
   const destinationItems = { ...destination.record.items };
   let moved = 0;
 
-  for (const [itemKey, rawAmount] of Object.entries(sourceItems)) {
+  const entries = Object.entries(sourceItems).sort(([left], [right]) => {
+    const leftExisting = destinationItems[left] > 0 ? 0 : 1;
+    const rightExisting = destinationItems[right] > 0 ? 0 : 1;
+    return leftExisting - rightExisting || left.localeCompare(right);
+  });
+  let destinationUsedUnits = destination.record.usedUnits;
+  for (const [itemKey, rawAmount] of entries) {
     if (remainingBatch <= 0) break;
 
     const available = Math.max(0, Math.floor(Number(rawAmount) || 0));
     if (available <= 0) continue;
 
-    const transfer = Math.min(available, remainingBatch);
+    const destinationBefore = Math.max(0, Math.floor(Number(destinationItems[itemKey]) || 0));
+    const freeUnits = Math.max(0, destination.record.capacityUnits - destinationUsedUnits);
+    const transfer = getMaxInsertAmount(
+      itemKey,
+      destinationBefore,
+      freeUnits,
+      Math.min(available, remainingBatch),
+    );
+    if (transfer <= 0) continue;
     const sourceRemaining = available - transfer;
     if (sourceRemaining > 0) sourceItems[itemKey] = sourceRemaining;
     else delete sourceItems[itemKey];
 
-    destinationItems[itemKey] = (destinationItems[itemKey] ?? 0) + transfer;
+    destinationItems[itemKey] = destinationBefore + transfer;
+    destinationUsedUnits += getEntryStorageDelta(itemKey, destinationBefore, destinationItems[itemKey]);
     moved += transfer;
     remainingBatch -= transfer;
   }
 
   if (moved <= 0) return 0;
 
-  let savedDestination;
-  let savedSource;
-  try {
-    savedDestination = writeCellRecord(destination.cellId, {
-      ...destination.record,
-      version: destination.record.version,
-      items: destinationItems,
-    });
-    if (!savedDestination) return 0;
-
-    savedSource = writeCellRecord(source.cellId, {
-      ...source.record,
-      version: source.record.version,
-      items: sourceItems,
-    });
-    if (!savedSource) throw new Error("Unable to save source storage cell");
-  } catch {
-    if (savedDestination) {
-      writeCellRecord(destination.cellId, {
-        ...destination.record,
-        version: savedDestination.version,
-        items: destination.record.items,
-      });
-    }
-    return 0;
-  }
+  const committed = commitCellTransaction(
+    {
+      cellId: source.cellId,
+      record: { ...source.record, version: source.record.version, items: sourceItems },
+    },
+    {
+      cellId: destination.cellId,
+      record: { ...destination.record, version: destination.record.version, items: destinationItems },
+    },
+  );
+  if (!committed) return 0;
+  const savedSource = readCellRecord(source.cellId);
+  const savedDestination = readCellRecord(destination.cellId);
+  if (!savedSource || !savedDestination) return 0;
 
   syncCellItem(source.item, savedSource);
   syncCellItem(destination.item, savedDestination);

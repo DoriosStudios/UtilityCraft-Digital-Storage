@@ -1,4 +1,6 @@
-import { world } from "@minecraft/server";
+import { world } from '@minecraft/server';
+import { deletePagedJson, readPagedJson, updatePagedMetadata, writePagedJson, writePagedJsonJob } from './persistence/paged_store.js';
+import { getEntriesStorageSummary } from './storage_cost.js';
 
 /**
  * Persistent storage layer for Digital Storage.
@@ -14,6 +16,8 @@ export const CELL_INDEX_KEY = "ucds:cell_index";
 export const NETWORK_INDEX_KEY = "ucds:network_index";
 export const CELL_RECORD_PREFIX = "ucds:cell:";
 export const NETWORK_RECORD_PREFIX = "ucds:network:";
+export const V2_CELL_RECORD_PREFIX = "ucds:v2:c:";
+export const V2_NETWORK_RECORD_PREFIX = "ucds:v2:n:";
 export const STORAGE_CELL_TAG = "utilitycraft:ds.is_storage_cell";
 export const STORAGE_CELL_CAPACITY_TAG_PREFIX = "utilitycraft:ds.capacity.";
 
@@ -26,6 +30,9 @@ export const CELL_CAPACITIES = {
 };
 
 const NETWORK_CHANGE_LIMIT = 64;
+const INDEX_BUCKET_SIZE = 256;
+const CELL_INDEX_BUCKET_PREFIX = "ucds:v2:ci:";
+const NETWORK_INDEX_BUCKET_PREFIX = "ucds:v2:ni:";
 const storageCellCapacityCache = new Map(Object.entries(CELL_CAPACITIES));
 const nonStorageCellTypes = new Set();
 
@@ -50,7 +57,7 @@ function deleteJson(key) {
 
 function normalizePositiveInt(value, fallback = 0) {
   const number = Math.floor(Number(value));
-  return Number.isFinite(number) && number > 0 ? number : fallback;
+  return Number.isSafeInteger(number) && number > 0 ? number : fallback;
 }
 
 function normalizeAmountMap(items) {
@@ -68,29 +75,70 @@ function normalizeAmountMap(items) {
   return { items: normalized, used };
 }
 
-function readIndex(key) {
-  const index = readJson(key, []);
+function getIndexBucketPrefix(key) {
+  return key === CELL_INDEX_KEY ? CELL_INDEX_BUCKET_PREFIX : NETWORK_INDEX_BUCKET_PREFIX;
+}
+
+function getIndexBucketKey(key, id) {
+  return `${getIndexBucketPrefix(key)}${Math.floor(normalizePositiveInt(id) / INDEX_BUCKET_SIZE)}`;
+}
+
+function readIndexBucket(bucketKey) {
+  const index = readJson(bucketKey, []);
   if (!Array.isArray(index)) return [];
   return [...new Set(index.map((id) => normalizePositiveInt(id)).filter(Boolean))];
 }
 
-function writeIndex(key, ids) {
-  writeJson(key, [...new Set(ids.map((id) => normalizePositiveInt(id)).filter(Boolean))]);
+function readIndex(key) {
+  const ids = new Set();
+  const legacy = readJson(key, []);
+  if (Array.isArray(legacy)) {
+    const buckets = new Map();
+    for (const id of legacy) {
+      const cleanId = normalizePositiveInt(id);
+      if (!cleanId) continue;
+      ids.add(cleanId);
+      const bucketKey = getIndexBucketKey(key, cleanId);
+      let bucket = buckets.get(bucketKey);
+      if (!bucket) {
+        bucket = new Set(readIndexBucket(bucketKey));
+        buckets.set(bucketKey, bucket);
+      }
+      bucket.add(cleanId);
+    }
+    for (const [bucketKey, bucket] of buckets) writeJson(bucketKey, [...bucket].sort((a, b) => a - b));
+    if (legacy.length > 0) deleteJson(key);
+  }
+
+  const prefix = getIndexBucketPrefix(key);
+  for (const propertyId of world.getDynamicPropertyIds()) {
+    if (!propertyId.startsWith(prefix)) continue;
+    for (const id of readIndexBucket(propertyId)) ids.add(id);
+  }
+  return [...ids].sort((a, b) => a - b);
 }
 
 function addToIndex(key, id) {
   const cleanId = normalizePositiveInt(id);
   if (!cleanId) return;
-  const ids = readIndex(key);
+  const bucketKey = getIndexBucketKey(key, cleanId);
+  const ids = readIndexBucket(bucketKey);
   if (ids.includes(cleanId)) return;
   ids.push(cleanId);
-  writeIndex(key, ids);
+  writeJson(bucketKey, ids.sort((a, b) => a - b));
 }
 
 function removeFromIndex(key, id) {
   const cleanId = normalizePositiveInt(id);
   if (!cleanId) return;
-  writeIndex(key, readIndex(key).filter((entry) => entry !== cleanId));
+  const bucketKey = getIndexBucketKey(key, cleanId);
+  const ids = readIndexBucket(bucketKey).filter((entry) => entry !== cleanId);
+  if (ids.length > 0) writeJson(bucketKey, ids);
+  else deleteJson(bucketKey);
+  const legacy = readJson(key, []);
+  if (Array.isArray(legacy) && legacy.some((entry) => normalizePositiveInt(entry) === cleanId)) {
+    writeJson(key, legacy.filter((entry) => normalizePositiveInt(entry) !== cleanId));
+  }
 }
 
 function nextId(key) {
@@ -111,6 +159,14 @@ export function getCellKey(cellId) {
  */
 export function getNetworkKey(networkId) {
   return `${NETWORK_RECORD_PREFIX}${networkId}`;
+}
+
+export function getV2CellKey(cellId) {
+  return `${V2_CELL_RECORD_PREFIX}${cellId}`;
+}
+
+export function getV2NetworkKey(networkId) {
+  return `${V2_NETWORK_RECORD_PREFIX}${networkId}`;
 }
 
 /**
@@ -236,23 +292,85 @@ export function getCellId(item) {
  * Reads and normalizes one persistent cell record.
  *
  * @param {number} cellId Cell id.
- * @returns {{version:number, cellId:number, networkId?:number, capacity:number, used:number, items:Record<string, number>} | undefined}
+ * @returns {object | undefined}
  */
 export function readCellRecord(cellId) {
   const cleanId = normalizePositiveInt(cellId);
   if (!cleanId) return undefined;
 
-  const record = readJson(getCellKey(cleanId), undefined);
+  const paged = readPagedJson(world, getV2CellKey(cleanId));
+  const record = paged
+    ? {
+        ...paged.manifest.metadata,
+        items: entriesToAmountObject(paged.value?.entries),
+      }
+    : readJson(getCellKey(cleanId), undefined);
   if (!record || typeof record !== "object") return undefined;
 
   const normalized = normalizeAmountMap(record.items);
+  const summary = getEntriesStorageSummary(normalized.items);
+  if (!summary.valid) return undefined;
+  const capacityUnits = Math.max(0, Math.floor(Number(record.capacityUnits ?? record.capacity ?? 0)));
   return {
+    schemaVersion: paged ? 2 : 1,
     version: Math.floor(Number(record.version ?? 0)),
     cellId: cleanId,
     networkId: normalizePositiveInt(record.networkId) || undefined,
-    capacity: Math.max(0, Math.floor(Number(record.capacity ?? 0))),
-    used: normalized.used,
+    capacityUnits,
+    usedUnits: summary.usedUnits,
+    itemCount: summary.itemCount,
+    typeCount: summary.typeCount,
+    overCapacity: summary.usedUnits > capacityUnits,
+    capacity: capacityUnits,
+    used: summary.usedUnits,
     items: normalized.items,
+  };
+}
+
+function entriesToAmountObject(entries) {
+  const items = {};
+  if (!Array.isArray(entries)) return items;
+  for (const entry of entries) {
+    if (!Array.isArray(entry) || entry.length < 2 || typeof entry[0] !== "string") continue;
+    const amount = normalizePositiveInt(entry[1]);
+    if (amount) items[entry[0]] = (items[entry[0]] ?? 0) + amount;
+  }
+  return items;
+}
+
+function buildCellRecord(cellId, record) {
+  const normalized = normalizeAmountMap(record?.items);
+  const summary = getEntriesStorageSummary(normalized.items);
+  if (!summary.valid) throw new Error("invalid_cell_entries");
+  const capacityUnits = Math.max(0, Math.floor(Number(record?.capacityUnits ?? record?.capacity ?? 0)));
+  return {
+    schemaVersion: 2,
+    version: Math.floor(Number(record?.version ?? 0)) + 1,
+    cellId,
+    networkId: normalizePositiveInt(record?.networkId) || undefined,
+    capacityUnits,
+    usedUnits: summary.usedUnits,
+    itemCount: summary.itemCount,
+    typeCount: summary.typeCount,
+    overCapacity: summary.usedUnits > capacityUnits,
+    capacity: capacityUnits,
+    used: summary.usedUnits,
+    items: normalized.items,
+  };
+}
+
+function getCellPayload(record) {
+  return { entries: Object.entries(record.items).sort(([a], [b]) => a.localeCompare(b)) };
+}
+
+function getCellMetadata(record) {
+  return {
+    version: record.version,
+    networkId: record.networkId,
+    capacityUnits: record.capacityUnits,
+    usedUnits: record.usedUnits,
+    itemCount: record.itemCount,
+    typeCount: record.typeCount,
   };
 }
 
@@ -270,19 +388,26 @@ export function writeCellRecord(cellId, record) {
   const cleanId = normalizePositiveInt(cellId);
   if (!cleanId) return undefined;
 
-  const normalized = normalizeAmountMap(record?.items);
-  const capacity = Math.max(0, Math.floor(Number(record?.capacity ?? 0)));
-  const nextRecord = {
-    version: Math.floor(Number(record?.version ?? 0)) + 1,
-    networkId: normalizePositiveInt(record?.networkId) || undefined,
-    capacity,
-    used: normalized.used,
-    items: normalized.items,
-  };
-
-  writeJson(getCellKey(cleanId), nextRecord);
+  const nextRecord = buildCellRecord(cleanId, record);
+  writePagedJson(world, getV2CellKey(cleanId), getCellPayload(nextRecord), {
+    revision: nextRecord.version,
+    metadata: getCellMetadata(nextRecord),
+  });
   addToIndex(CELL_INDEX_KEY, cleanId);
-  return { cellId: cleanId, ...nextRecord };
+  return nextRecord;
+}
+
+export function* writeCellRecordJob(cellId, record, options = {}) {
+  const cleanId = normalizePositiveInt(cellId);
+  if (!cleanId) return undefined;
+  const nextRecord = buildCellRecord(cleanId, record);
+  yield* writePagedJsonJob(world, getV2CellKey(cleanId), getCellPayload(nextRecord), {
+    pagesPerTick: options.pagesPerTick,
+    revision: nextRecord.version,
+    metadata: getCellMetadata(nextRecord),
+  });
+  addToIndex(CELL_INDEX_KEY, cleanId);
+  return nextRecord;
 }
 
 /**
@@ -301,14 +426,33 @@ export function releaseCellNetwork(cellId, networkId) {
   if (!cell) return false;
 
   const expectedNetworkId = normalizePositiveInt(networkId);
+  if (!cell.networkId) return true;
   if (expectedNetworkId && cell.networkId !== expectedNetworkId) return false;
 
-  writeCellRecord(cell.cellId, {
-    ...cell,
-    networkId: undefined,
-    version: cell.version,
-  });
+  if (cell.schemaVersion === 2) {
+    const next = { ...cell, networkId: undefined, version: cell.version + 1 };
+    updatePagedMetadata(world, getV2CellKey(cell.cellId), getCellMetadata(next), next.version);
+  } else {
+    writeCellRecord(cell.cellId, {
+      ...cell,
+      networkId: undefined,
+      version: cell.version,
+    });
+  }
   return true;
+}
+
+export function setCellNetwork(cellId, networkId) {
+  const cell = readCellRecord(cellId);
+  if (!cell) return undefined;
+  const owner = normalizePositiveInt(networkId) || undefined;
+  if (cell.networkId === owner) return cell;
+  if (cell.schemaVersion !== 2) {
+    return writeCellRecord(cell.cellId, { ...cell, networkId: owner, version: cell.version });
+  }
+  const next = { ...cell, networkId: owner, version: cell.version + 1 };
+  updatePagedMetadata(world, getV2CellKey(cell.cellId), getCellMetadata(next), next.version);
+  return next;
 }
 
 /**
@@ -343,13 +487,15 @@ export function ensureCellId(item, networkId) {
       capacity,
       items: {},
     });
-  } else if (existing.capacity !== capacity || (networkId && existing.networkId !== networkId)) {
+  } else if (existing.capacity !== capacity) {
     writeCellRecord(cellId, {
       ...existing,
       networkId: networkId || existing.networkId,
       capacity,
       version: existing.version,
     });
+  } else if (networkId && existing.networkId !== networkId) {
+    setCellNetwork(cellId, networkId);
   }
 
   return cellId;
@@ -368,12 +514,17 @@ export function readNetworkRecord(networkId) {
   const cleanId = normalizePositiveInt(networkId);
   if (!cleanId) return undefined;
 
-  const record = readJson(getNetworkKey(cleanId), undefined);
+  const paged = readPagedJson(world, getV2NetworkKey(cleanId));
+  const record = paged ? { ...paged.manifest.metadata, ...paged.value } : readJson(getNetworkKey(cleanId), undefined);
   if (!record || typeof record !== "object") return undefined;
 
+  const capacityUnits = Math.max(0, Math.floor(Number(record.capacityUnits ?? record.capacity ?? 0)));
+  const usedUnits = Math.max(0, Math.floor(Number(record.usedUnits ?? record.used ?? 0)));
   return {
+    schemaVersion: paged ? 2 : 1,
     version: Math.floor(Number(record.version ?? 0)),
     networkId: cleanId,
+    state: typeof record.state === "string" ? record.state : (record.online === true ? "online" : "offline"),
     online: record.online === true,
     center: typeof record.center === "string" ? record.center : undefined,
     centers: Array.isArray(record.centers) ? record.centers : [],
@@ -382,8 +533,12 @@ export function readNetworkRecord(networkId) {
     cells: Array.isArray(record.cells)
       ? [...new Set(record.cells.map((id) => normalizePositiveInt(id)).filter(Boolean))]
       : [],
-    used: Math.max(0, Math.floor(Number(record.used ?? 0))),
-    capacity: Math.max(0, Math.floor(Number(record.capacity ?? 0))),
+    usedUnits,
+    capacityUnits,
+    itemCount: Math.max(0, Math.floor(Number(record.itemCount ?? 0))),
+    typeCount: Math.max(0, Math.floor(Number(record.typeCount ?? 0))),
+    used: usedUnits,
+    capacity: capacityUnits,
     changeSeq: Math.max(0, Math.floor(Number(record.changeSeq ?? 0))),
     changes: Array.isArray(record.changes) ? record.changes.slice(-NETWORK_CHANGE_LIMIT) : [],
   };
@@ -403,7 +558,9 @@ export function writeNetworkRecord(networkId, record) {
   if (!cleanId) return undefined;
 
   const nextRecord = {
+    schemaVersion: 2,
     version: Math.floor(Number(record?.version ?? 0)) + 1,
+    state: typeof record?.state === "string" ? record.state : (record?.online === true ? "online" : "offline"),
     online: record?.online === true,
     center: typeof record?.center === "string" ? record.center : undefined,
     centers: Array.isArray(record?.centers) ? record.centers : [],
@@ -412,15 +569,34 @@ export function writeNetworkRecord(networkId, record) {
     cells: Array.isArray(record?.cells)
       ? [...new Set(record.cells.map((id) => normalizePositiveInt(id)).filter(Boolean))]
       : [],
-    used: Math.max(0, Math.floor(Number(record?.used ?? 0))),
-    capacity: Math.max(0, Math.floor(Number(record?.capacity ?? 0))),
+    usedUnits: Math.max(0, Math.floor(Number(record?.usedUnits ?? record?.used ?? 0))),
+    capacityUnits: Math.max(0, Math.floor(Number(record?.capacityUnits ?? record?.capacity ?? 0))),
+    itemCount: Math.max(0, Math.floor(Number(record?.itemCount ?? 0))),
+    typeCount: Math.max(0, Math.floor(Number(record?.typeCount ?? 0))),
     changeSeq: Math.max(0, Math.floor(Number(record?.changeSeq ?? 0))),
-    changes: Array.isArray(record?.changes)
-      ? record.changes.slice(-NETWORK_CHANGE_LIMIT)
-      : [],
+    changes: [],
   };
 
-  writeJson(getNetworkKey(cleanId), nextRecord);
+  nextRecord.used = nextRecord.usedUnits;
+  nextRecord.capacity = nextRecord.capacityUnits;
+  const payload = {
+    centers: nextRecord.centers,
+    drives: nextRecord.drives,
+    terminals: nextRecord.terminals,
+    cells: nextRecord.cells,
+  };
+  const metadata = {
+    version: nextRecord.version,
+    state: nextRecord.state,
+    online: nextRecord.online,
+    center: nextRecord.center,
+    usedUnits: nextRecord.usedUnits,
+    capacityUnits: nextRecord.capacityUnits,
+    itemCount: nextRecord.itemCount,
+    typeCount: nextRecord.typeCount,
+    changeSeq: nextRecord.changeSeq,
+  };
+  writePagedJson(world, getV2NetworkKey(cleanId), payload, { revision: nextRecord.version, metadata });
   addToIndex(NETWORK_INDEX_KEY, cleanId);
   return { networkId: cleanId, ...nextRecord };
 }
@@ -439,6 +615,7 @@ export function deleteNetworkRecord(networkId) {
   if (!cleanId) return false;
 
   deleteJson(getNetworkKey(cleanId));
+  deletePagedJson(world, getV2NetworkKey(cleanId));
   removeFromIndex(NETWORK_INDEX_KEY, cleanId);
   return true;
 }

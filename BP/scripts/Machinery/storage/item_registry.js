@@ -1,5 +1,6 @@
 import { EnchantmentTypes, ItemStack, world } from "@minecraft/server";
 import { isOpaqueItemKey, peekOpaqueItem } from "./opaque_vault.js";
+import { readPagedJson, writePagedJson } from "./persistence/paged_store.js";
 
 /**
  * Item identity registry for Digital Storage.
@@ -11,6 +12,7 @@ import { isOpaqueItemKey, peekOpaqueItem } from "./opaque_vault.js";
 
 const ITEM_KEY_PREFIX = "ucds:item:";
 const ITEM_DEF_PREFIX = "ucds:itemdef:";
+const V2_ITEM_DEF_PREFIX = "ucds:v2:d:";
 const ITEM_DEF_HASH_LENGTH = 14;
 
 const IGNORED_DYNAMIC_PROPERTIES = new Set([
@@ -63,6 +65,8 @@ function hashString(value) {
 }
 
 function readItemDefinition(defId) {
+  const paged = readPagedJson(world, `${V2_ITEM_DEF_PREFIX}${defId}`);
+  if (paged?.value && typeof paged.value === "object") return paged.value;
   const raw = world.getDynamicProperty(getItemDefKey(defId));
   if (typeof raw !== "string") return undefined;
 
@@ -75,7 +79,7 @@ function readItemDefinition(defId) {
 }
 
 function writeItemDefinition(defId, canonicalJson) {
-  world.setDynamicProperty(getItemDefKey(defId), canonicalJson);
+  writePagedJson(world, `${V2_ITEM_DEF_PREFIX}${defId}`, JSON.parse(canonicalJson));
 }
 
 function stripFormatting(text = "") {
@@ -157,8 +161,8 @@ function getOrCreateItemDefinitionKey(data) {
 
   for (let suffix = 0; suffix < 1000; suffix++) {
     const defId = suffix === 0 ? baseId : `${baseId}_${suffix}`;
-    const key = getItemDefKey(defId);
-    const existing = world.getDynamicProperty(key);
+    const existingData = readItemDefinition(defId);
+    const existing = existingData ? stableStringify(existingData) : world.getDynamicProperty(getItemDefKey(defId));
 
     if (existing === canonicalJson) return `${ITEM_KEY_PREFIX}${defId}`;
     if (typeof existing !== "string") {

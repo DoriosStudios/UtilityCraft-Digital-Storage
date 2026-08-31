@@ -8,7 +8,7 @@
 	"name": "UtilityCraft Digital Storage",
 	"namespace": "utilitycraft",
 	"targetVersion": "1.21.130",
-	"description": "v1.0.1 - Requires UtilityCraft 3.5.1+",
+	"description": "v1.0.2 - Requires UtilityCraft 3.5.1+",
 	"experimentalGameplay": {
 		"upcomingCreatorFeatures": false,
 		"experimentalCreatorCameraFeatures": false,

@@ -201,13 +201,8 @@ function addPlainItem(event, params) {
     reply(event, `network ${networkId} is offline`);
     return;
   }
-  if (snapshot.free <= 0) {
-    reply(event, `network ${networkId} is full (${snapshot.used}/${snapshot.capacity})`);
-    return;
-  }
-
   const result = addItem(networkId, itemKey, amount, "debug_add_item");
-  reply(event, `add ${itemKey}: inserted ${result.inserted}, remaining ${result.remaining}, after ${result.after ?? "n/a"}`);
+  reply(event, `add ${itemKey}: inserted ${result.inserted}, remaining ${result.remaining}, unitDelta ${result.unitDelta ?? 0}, after ${result.after ?? "n/a"}`);
 }
 
 /**
@@ -257,15 +252,10 @@ function addFromChest(event, params) {
     reply(event, `network ${networkId} is offline`);
     return;
   }
-  if (snapshot.free <= 0) {
-    reply(event, `network ${networkId} is full (${snapshot.used}/${snapshot.capacity})`);
-    return;
-  }
-
   const result = addItemStack(networkId, item, "debug_add_from_chest");
   if (result.inserted <= 0) {
     const nextSnapshot = getNetworkSnapshot(networkId);
-    reply(event, `could not store ${itemKey}; free=${nextSnapshot?.free ?? "unknown"}`);
+    reply(event, `could not store ${itemKey}; freeUnits=${nextSnapshot?.freeUnits ?? "unknown"}`);
     return;
   }
 
@@ -337,7 +327,7 @@ function printNetwork(event, params) {
   const top = getSortedItems(networkId).slice(0, Math.max(1, Math.floor(Number(params.limit) || 100)));
   reply(
     event,
-    `network ${networkId}: online=${snapshot.online}, dirty=${snapshot.dirty}, used=${snapshot.used}/${snapshot.capacity}, cells=${snapshot.cells.join(",") || "none"}`,
+    `network ${networkId}: state=${snapshot.state}, dirty=${snapshot.dirty}, items=${snapshot.itemCount}, types=${snapshot.typeCount}, bytes=${snapshot.usedUnits}/${snapshot.capacityUnits}, cells=${snapshot.cells.join(",") || "none"}`,
   );
   for (const [itemKey, amount] of top) {
     reply(event, ` - ${amount}x ${itemKey}`);
@@ -355,7 +345,7 @@ function printCell(event, params) {
     return;
   }
 
-  reply(event, `cell ${cellId}: network=${cell.networkId ?? "none"}, used=${cell.used}/${cell.capacity}`);
+  reply(event, `cell ${cellId}: network=${cell.networkId ?? "none"}, items=${cell.itemCount}, types=${cell.typeCount}, bytes=${cell.usedUnits}/${cell.capacityUnits}, schema=${cell.schemaVersion}`);
   for (const [itemKey, amount] of Object.entries(cell.items).slice(0, Math.max(1, Math.floor(Number(params.limit) || 10)))) {
     reply(event, ` - ${amount}x ${itemKey}`);
   }

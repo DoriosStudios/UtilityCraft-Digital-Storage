@@ -1,9 +1,12 @@
 import { system, world } from "@minecraft/server";
+import { readPagedJson, writePagedJsonJob } from "./persistence/paged_store.js";
 
 export const NETWORK_TAG = "ucds:network";
 export const NETWORK_CABLE_TAG = "ucds:network_cable";
 export const NETWORK_MACHINE_TAG = "ucds:network_machine";
 export const NETWORK_TOPOLOGY_PROPERTY = "ucds:network_topology";
+export const V2_NETWORK_TOPOLOGY_PROPERTY = "ucds:v2:t";
+export const V2_NETWORK_TOPOLOGY_READ_PROPERTY = "ucds:v2:t_read";
 
 const STORAGE_CENTER_TYPE = "utilitycraft:storage_center";
 const TOPOLOGY_VERSION = 1;
@@ -25,6 +28,7 @@ const DIRECTIONS = [
   { name: "south", x: 0, y: 0, z: 1 },
   { name: "north", x: 0, y: 0, z: -1 },
 ];
+const topologyWriteStates = new Map();
 
 function locationKey(location) {
   return `${Math.floor(location.x)},${Math.floor(location.y)},${Math.floor(location.z)}`;
@@ -65,6 +69,10 @@ function getMachineEntityAt(block) {
 }
 
 function readExistingTopology(entity) {
+  const paged = readPagedJson(entity, V2_NETWORK_TOPOLOGY_PROPERTY);
+  if (paged?.value && typeof paged.value === "object") {
+    return { ...paged.value, read: entity.getDynamicProperty(V2_NETWORK_TOPOLOGY_READ_PROPERTY) === true };
+  }
   const raw = entity?.getDynamicProperty?.(NETWORK_TOPOLOGY_PROPERTY);
   if (typeof raw !== "string" || raw.length === 0) return undefined;
 
@@ -196,6 +204,53 @@ export function scanNetworkTopology(startBlock) {
 }
 
 /**
+ * @param {import("@minecraft/server").Block} startBlock
+ * @param {{blocksPerTick?:number, onComplete?:(topology:object|undefined, visited:Set<string>)=>void}} [options]
+ */
+export function* scanNetworkTopologyJob(startBlock, { blocksPerTick = 256, onComplete } = {}) {
+  if (!isNetworkBlock(startBlock)) {
+    onComplete?.(undefined, new Set());
+    return;
+  }
+  const topology = {
+    version: TOPOLOGY_VERSION,
+    dimensionId: startBlock.dimension.id,
+    updatedTick: system.currentTick,
+    read: false,
+    energyTickCost: 0,
+    machinesCount: {},
+    machinesPos: {},
+  };
+  const queue = [startBlock.location];
+  const visited = new Set();
+  const budget = Math.max(1, Math.floor(Number(blocksPerTick) || 1));
+  let cursor = 0;
+  let work = 0;
+  while (cursor < queue.length) {
+    const position = queue[cursor++];
+    const key = locationKey(position);
+    if (visited.has(key)) continue;
+    visited.add(key);
+    const block = startBlock.dimension.getBlock(position);
+    if (!isNetworkBlock(block)) continue;
+    if (isNetworkMachine(block)) addMachineToTopology(topology, block);
+    for (const direction of DIRECTIONS) {
+      const neighborPosition = offsetLocation(block.location, direction);
+      const neighborKey = locationKey(neighborPosition);
+      if (visited.has(neighborKey)) continue;
+      const neighbor = startBlock.dimension.getBlock(neighborPosition);
+      if (isNetworkBlock(neighbor)) queue.push(neighborPosition);
+    }
+    work += 1;
+    if (work >= budget) {
+      work = 0;
+      yield;
+    }
+  }
+  onComplete?.(topology, visited);
+}
+
+/**
  * Writes a topology snapshot to every storage center entity in that topology.
  *
  * @param {import("@minecraft/server").Dimension} dimension Network dimension.
@@ -221,12 +276,55 @@ export function writeTopologyToCenters(dimension, topology, { preserveRead = fal
       const nextTopology = preserveRead && existing?.read === true
         ? { ...topology, read: true }
         : topology;
-      entity.setDynamicProperty(NETWORK_TOPOLOGY_PROPERTY, JSON.stringify(nextTopology));
+      queueTopologyWrite(entity, nextTopology);
       written += 1;
     } catch {}
   }
 
   return written;
+}
+
+function queueTopologyWrite(entity, topology) {
+  let state = topologyWriteStates.get(entity.id);
+  if (!state) {
+    state = { entity, pending: undefined, running: false };
+    topologyWriteStates.set(entity.id, state);
+  }
+  state.entity = entity;
+  state.pending = topology;
+  if (state.running) return;
+  state.running = true;
+  system.runJob(drainTopologyWrites(state));
+}
+
+export function writeTopologySnapshot(entity, topology) {
+  if (!entity?.isValid || !topology) return false;
+  queueTopologyWrite(entity, topology);
+  return true;
+}
+
+function* drainTopologyWrites(state) {
+  try {
+    while (state.pending && state.entity?.isValid) {
+      const topology = state.pending;
+      state.pending = undefined;
+      yield* writeTopologyJob(state.entity, topology);
+    }
+  } finally {
+    topologyWriteStates.delete(state.entity?.id);
+  }
+}
+
+function* writeTopologyJob(entity, topology) {
+  try {
+    yield* writePagedJsonJob(entity, V2_NETWORK_TOPOLOGY_PROPERTY, { ...topology, read: false }, {
+      revision: Math.max(0, Math.floor(Number(topology.updatedTick) || 0)),
+      pagesPerTick: 2,
+    });
+    entity.setDynamicProperty(V2_NETWORK_TOPOLOGY_READ_PROPERTY, topology.read === true);
+  } catch (error) {
+    console.warn(`[DigitalStorage] Unable to persist topology: ${error?.message ?? error}`);
+  }
 }
 
 function rebuildTopologyFromCandidates(block, options = {}) {
@@ -236,20 +334,26 @@ function rebuildTopologyFromCandidates(block, options = {}) {
     block.location,
     ...DIRECTIONS.map((direction) => offsetLocation(block.location, direction)),
   ];
-  const scanned = new Set();
+  system.runJob(rebuildTopologyJob(block.dimension, positions, options));
+}
 
+function* rebuildTopologyJob(dimension, positions, options) {
+  const covered = new Set();
   for (const position of positions) {
-    const candidate = block.dimension.getBlock(position);
+    if (covered.has(locationKey(position))) continue;
+    const candidate = dimension.getBlock(position);
     if (!isNetworkBlock(candidate)) continue;
 
-    const topology = scanNetworkTopology(candidate);
-    if (!topology) continue;
-
-    const signature = JSON.stringify(topology.machinesPos);
-    if (scanned.has(signature)) continue;
-    scanned.add(signature);
-
-    writeTopologyToCenters(block.dimension, topology, options);
+    let result;
+    let visited = new Set();
+    yield* scanNetworkTopologyJob(candidate, {
+      onComplete(topology, scannedPositions) {
+        result = topology;
+        visited = scannedPositions;
+      },
+    });
+    for (const key of visited) covered.add(key);
+    if (result) writeTopologyToCenters(dimension, result, options);
   }
 }
 

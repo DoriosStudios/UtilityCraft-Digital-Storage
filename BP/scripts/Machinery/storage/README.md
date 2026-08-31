@@ -1,5 +1,7 @@
 # Digital Storage runtime
 
+The Storage V2 rework is specified in `STORAGE_V2_DESIGN.md`.
+
 `storage` is the canonical storage backend for Digital Storage. It is intentionally
 separate from terminals and block ticking: terminals should behave as UI views
 over this API, not as database owners.
@@ -35,108 +37,83 @@ over this API, not as database owners.
 
 ## Persistent Data
 
-### Cell Record
-
-Stored at:
-
-```txt
-ucds:cell:<cellId>
-```
-
-Shape:
-
-```js
-{
-  version: 1,
-  networkId: 1,
-  capacity: 65536,
-  used: 6400,
-  items: {
-    "minecraft:diamond": 64,
-    "ucds:item:abc123def456": 1
-  }
-}
-```
-
-Cells are the durable source of item amounts. Runtime data is rebuilt from the
-cells listed in a network record.
-
-### Network Record
-
-Stored at:
+V2 records use immutable UTF-8 pages, two alternating manifests, hashes, and a
+one-character head written last:
 
 ```txt
-ucds:network:<networkId>
+<base>:h
+<base>:ma
+<base>:mb
+<base>:g<generation>:p<page>
 ```
 
-Shape:
+The canonical bases are `ucds:v2:c:<cellId>` for cells,
+`ucds:v2:n:<networkId>` for network metadata, `ucds:v2:d:<definitionId>`
+for special-item definitions, and `ucds:v2:t` on a Storage Center for its
+topology. Pages target 24 KB and are verified before a manifest becomes active.
+The prior generation remains readable if a write is interrupted or the newest
+generation is damaged.
 
-```js
-{
-  version: 1,
-  online: false,
-  center: "overworld|[0,64,0]",
-  centers: [],
-  drives: [],
-  terminals: [],
-  cells: [1, 2, 3],
-  used: 6400,
-  capacity: 65536,
-  changeSeq: 12,
-  changes: []
-}
-```
+Cell payloads contain sorted `[itemKey, amount]` tuples. Their manifest metadata
+contains ownership, capacity in logical bytes, item/type totals, and revision.
+Cells—not aggregate network totals—remain the durable source of item amounts.
+Network and cell indexes are split into fixed 256-id buckets so the indexes
+cannot grow into one oversized dynamic property.
 
-The network record is ownership/topology metadata. It tells the runtime which
-cell records belong to this network.
+Simple stackable items continue to use their `typeId` directly. Items with
+additional identity use `ucds:item:<definitionId>`; opaque items that cannot be
+serialized safely use `ucds:vault:<cellId>:<slot>` and remain native
+`ItemStack` values in the cell entity.
 
-### Item Definitions
+Legacy `ucds:cell:*`, `ucds:network:*`, and `ucds:itemdef:*` records remain
+readable. Cells are migrated lazily to V2 without deleting their V1 data first.
 
-Simple stackable items use their `typeId` directly:
+## Capacity
 
-```txt
-minecraft:stone
-```
+Cell capacity tags keep their existing numeric values but now represent logical
+storage bytes, not raw item counts or actual serialized bytes. There is no hard
+item-type limit.
 
-Items with extra identity use an item definition:
+- Simple type: 8 B overhead plus 1 B per 8 items.
+- Defined type: 16 B overhead plus 1 B per 8 items.
+- Opaque native item: 64 B.
 
-```txt
-ucds:item:<definitionId>
-ucds:itemdef:<definitionId>
-```
-
-The definition stores the canonical item data needed to recreate the stack.
-Definitions are written immediately when a new special item is first stored,
-because losing a definition would make the item unrecoverable.
+Type overhead is charged per physical cell. Runtime therefore retains the exact
+contents of every cell; a flush serializes that allocation and never repartitions
+the whole network.
 
 ## Runtime Lifecycle
 
 1. `world.afterEvents.worldLoad`
-   - Reads saved network ids.
-   - Reads each network's cell records.
-   - Builds one runtime per network id through `system.runJob`.
-   - The job yields every few network/cell records so startup work is spread
-     across multiple ticks.
+   - Recovers pending two-cell transfer intents first.
+   - Loads and lazily migrates saved records through `system.runJob`.
+   - Storage Centers remain in `Loading Storage` until recovery is complete.
 
 2. Network online use
-   - `addItem` and `removeItem` only mutate runtime maps.
-   - No cell DP writes are performed per item operation.
+   - `addItem` allocates into cells already containing the key first, then the
+     smallest suitable empty cell.
+   - `removeItem` prefers cells that release type overhead.
+   - Operations update in-memory cell maps and aggregate indexes.
 
 3. `flushNetwork`
-   - Repartitions the runtime totals across the network cells by capacity.
-   - Writes each `ucds:cell:<cellId>`.
-   - Writes `ucds:network:<networkId>`.
+   - Snapshots and writes only dirty cells through an incremental job.
+   - Runtime stays online while pages are written.
+   - A cell remains dirty when it changes after the snapshot was taken.
 
 4. `powerOffNetwork`
-   - Flushes it.
+   - Moves the runtime to `closing` and rejects new mutations.
+   - Cancels an older background snapshot and flushes current dirty cells.
    - Releases `networkId` from each attached cell.
-   - Deletes `ucds:network:<networkId>` and removes it from the network index.
+   - Deletes the network record and removes it from the network index.
    - Deletes it from `runtimeNetworks`.
-   - Cell records keep their capacity, used count, and items.
-   - The next online activation must create a fresh network from the current cells/topology.
+   - A failed content flush never releases ownership.
 
 5. `system.beforeEvents.shutdown`
-   - Flushes dirty runtimes.
+   - Cancels background jobs and synchronously flushes dirty runtimes.
+
+The Transfer Station works on offline cells only. It calculates exact byte deltas,
+writes a recoverable intent containing both post-states, then commits source and
+destination. Startup recovery repeats an interrupted commit idempotently.
 
 ## Debug Commands
 

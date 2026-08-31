@@ -1,36 +1,20 @@
 import { world } from "@minecraft/server";
 import { getCellId, isStorageCell } from "./cell_store.js";
 import { DRIVE_SLOT_COUNT, getDriveEntity } from "./drive_cells.js";
+import { formatCompactCount, formatStorageBytes, formatStoragePercent } from "./storage_format.js";
 
 const CELL_MAX_DURABILITY = 1000;
 const CELL_MIN_VISIBLE_DURABILITY = 50;
 const CELL_MAX_VISIBLE_DURABILITY = 999;
 
-function formatStorageAmount(value) {
-  const amount = Math.max(0, Math.floor(Number(value) || 0));
-  if (amount >= 1000000000) return `${(amount / 1000000000).toFixed(1)}B`;
-  if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M`;
-  if (amount >= 1000) return `${(amount / 1000).toFixed(1)}k`;
-  return amount.toString();
-}
-
-function formatUsagePercent(used, capacity) {
-  const max = Math.max(0, Math.floor(Number(capacity) || 0));
-  if (max <= 0) return "0.0%";
-
-  const percent = Math.max(0, Math.min(100, ((Number(used) || 0) / max) * 100));
-  return `${percent.toFixed(1)}%`;
-}
-
 function getCellLore(cell) {
-  const used = Math.max(0, Math.floor(Number(cell?.used) || 0));
-  const capacity = Math.max(0, Math.floor(Number(cell?.capacity) || 0));
-  const free = Math.max(0, capacity - used);
+  const used = Math.max(0, Math.floor(Number(cell?.usedUnits ?? cell?.used) || 0));
+  const capacity = Math.max(0, Math.floor(Number(cell?.capacityUnits ?? cell?.capacity) || 0));
 
   return [
-    `\u00A7r\u00A77- Stored: \u00A7f${formatStorageAmount(used)}`,
-    `\u00A7r\u00A77- Usage: \u00A7f${formatUsagePercent(used, capacity)}`,
-    `\u00A7r\u00A77- Free: \u00A7f${formatStorageAmount(free)}`,
+    `\u00A7r\u00A77Stored: \u00A7f${formatCompactCount(cell?.itemCount ?? 0)} Items`,
+    `\u00A7r\u00A77Types: \u00A7f${formatCompactCount(cell?.typeCount ?? 0)} Item Types`,
+    `\u00A7r\u00A77Storage: \u00A7f${formatStorageBytes(used)} / ${formatStorageBytes(capacity)} (${formatStoragePercent(used, capacity)}%)`,
   ];
 }
 
@@ -39,10 +23,10 @@ function getDurability(item) {
 }
 
 function getCellDamage(cell) {
-  const used = Math.max(0, Math.floor(Number(cell?.used) || 0));
+  const used = Math.max(0, Math.floor(Number(cell?.usedUnits ?? cell?.used) || 0));
   if (used <= 0) return CELL_MAX_DURABILITY - CELL_MIN_VISIBLE_DURABILITY;
 
-  const capacity = Math.max(0, Math.floor(Number(cell?.capacity) || 0));
+  const capacity = Math.max(0, Math.floor(Number(cell?.capacityUnits ?? cell?.capacity) || 0));
   if (capacity <= 0) return CELL_MAX_DURABILITY - CELL_MIN_VISIBLE_DURABILITY;
 
   const usage = Math.max(0, Math.min(1, used / capacity));

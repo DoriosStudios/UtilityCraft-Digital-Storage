@@ -1,3 +1,36 @@
+# UtilityCraft: Digital Storage v1.0.2
+
+## ADDED
+- Added weighted logical storage bytes: new simple item types cost 8 B plus one byte per eight items, defined custom types cost 16 B plus payload, and opaque non-stackable items cost 64 B.
+- Added paged, checksummed dynamic-property generations with A/B manifests and automatic fallback to the previous valid generation.
+- Added recoverable cell-to-cell transaction intents for the Storage Transfer Station.
+- Added explicit item count, type count, used bytes, free bytes and over-capacity metrics.
+
+## CHANGED
+- Storage Cell capacity numbers now represent logical bytes instead of a raw one-item-per-capacity limit; existing tier capacities remain unchanged.
+- Online networks now preserve physical per-cell allocations and flush only dirty cells instead of repartitioning and rewriting the complete network.
+- Large cell records, network records, item definitions and Storage Center topologies are fragmented into bounded pages.
+- Auto-flush, topology scans, topology writes, startup migration and transaction recovery now run incrementally across ticks.
+- Topology rebuilds now deduplicate connected components so one cable change does not rescan the same large network from multiple adjacent blocks.
+- Successful paged commits retain the active and fallback generations while collecting only the older unreferenced pages.
+- Storage Center and Storage Cell displays now distinguish stored items, item types and logical-byte usage in a shorter format.
+- Storage percentage lore now escapes Minecraft's percent formatting correctly, and Storage Center detail lines retain their visual indentation.
+- Storage Transfer Station capacity checks now use exact logical-byte deltas while transfer speed remains item-count based.
+
+## FIXED
+- Fixed large networks failing recovery when a serialized cell, network or topology exceeded the Dynamic Property string limit.
+- Fixed failed recovery displays replacing useful totals with a misleading `0 / 0` snapshot.
+- Fixed routine network flushes concentrating many item types into the earliest high-capacity cell.
+- Fixed failed network creation or shutdown leaving cells partially claimed or releasing a network record before every cell was safely detached.
+- Fixed machines mutating storage while startup transaction recovery was still in progress; blocking recovery faults are now shown on the Storage Center.
+
+## COMPATIBILITY
+- Existing V1 cell and network records are read and migrated lazily to V2 without deleting or clamping stored items.
+- Cells that exceed the new weighted capacity preserve all contents and allow withdrawals or zero-cost additions until usage returns within capacity.
+- Existing `utilitycraft:ds.capacity.<number>` third-party cell tags remain supported; the number is now interpreted as logical bytes.
+
+---
+
 # UtilityCraft: Digital Storage v1.0.1
 
 ## ADDED

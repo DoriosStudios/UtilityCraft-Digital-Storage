@@ -1,9 +1,11 @@
 {
   "name": "utilitycraft-digital-storage",
-  "version": "1.0.0",
+  "version": "1.0.2",
+  "type": "module",
   "private": true,
   "scripts": {
     "check": "tsc --noEmit --project jsconfig.json",
+    "test:storage": "node tests/storage-v2.mjs",
     "bundle": "node tools/bundle.mjs",
     "verify:imports": "node tools/verify-public-imports.mjs"
   },
