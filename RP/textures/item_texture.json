@@ -53,6 +53,9 @@
      "utilitycraft_wireless_crafting_panel_on": {
       "textures": "textures/items/wireless/wireless_crafting_panel_on"
     },
+     "utilitycraft_dimensional_range_upgrade": {
+      "textures": "textures/items/dimensional_range_upgrade"
+    },
      "utilitycraft_storage_filler": {
       "textures": "textures/ui/empty_cell"
     }

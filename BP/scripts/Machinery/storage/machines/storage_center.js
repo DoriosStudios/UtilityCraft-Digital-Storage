@@ -11,6 +11,7 @@ import {
   getStorageRuntimeFailure,
   isStorageRuntimeReady,
   powerOffNetwork,
+  setNetworkWirelessAccess,
 } from "../network_runtime.js";
 import {
   NETWORK_TOPOLOGY_PROPERTY,
@@ -20,6 +21,7 @@ import {
 } from "../network_topology.js";
 import { readPagedJson } from "../persistence/paged_store.js";
 import { formatCompactCount, formatStorageBytes, formatStoragePercent } from "../storage_format.js";
+import { getWirelessAccessFromUpgrade } from "../wireless_access.js";
 import { getExportBufferEntity, setExportBufferNetworkId } from "./export_buffer.js";
 import { getImportBufferEntity, setImportBufferNetworkId } from "./import_buffer.js";
 import { CraftingTerminalInterface } from "../../interface/crafting_terminal.js";
@@ -49,7 +51,9 @@ const CENTER_STATUS_PROPERTY = "ucds:center_status";
 const CENTER_LAST_DISPLAY_TICK_PROPERTY = "ucds:center_last_display_tick";
 const CENTER_ENERGY_CAP = 512000;
 const STATUS_ITEM_ID = "utilitycraft:ui_filler";
+const CENTER_UPGRADE_SLOT = 2;
 const DISPLAY_REFRESH_TICKS = 20;
+const wirelessAccessFailureByEntity = new Map();
 
 function getStorageCenterEntity(block) {
   return block?.dimension?.getEntitiesAtBlockLocation(block.location)?.find((entity) => entity.typeId === STORAGE_CENTER_ENTITY_TYPE);
@@ -183,6 +187,38 @@ function writeStatusDisplay(entity, status, topology, snapshot, { force = false 
 function displayEnergy(entity, energy) {
   if (!TickScheduler.hasOpenUI(entity)) return;
   energy.display(0);
+}
+
+function dropCenterUpgrade(entity, block) {
+  const container = entity?.getComponent("minecraft:inventory")?.container;
+  if (!container || CENTER_UPGRADE_SLOT >= container.size) return;
+  const item = container?.getItem(CENTER_UPGRADE_SLOT);
+  if (!item) return;
+
+  block.dimension.spawnItem(item, block.center());
+  container.setItem(CENTER_UPGRADE_SLOT, undefined);
+}
+
+function getCenterWirelessAccess(entity) {
+  const container = entity?.getComponent("minecraft:inventory")?.container;
+  const upgrade = container && CENTER_UPGRADE_SLOT < container.size
+    ? container.getItem(CENTER_UPGRADE_SLOT)
+    : undefined;
+  return getWirelessAccessFromUpgrade(upgrade);
+}
+
+function syncCenterWirelessAccess(entity, networkId) {
+  const access = getCenterWirelessAccess(entity);
+  try {
+    setNetworkWirelessAccess(networkId, access);
+    wirelessAccessFailureByEntity.delete(entity.id);
+  } catch (error) {
+    const message = String(error?.message ?? error);
+    if (wirelessAccessFailureByEntity.get(entity.id) !== message) {
+      wirelessAccessFailureByEntity.set(entity.id, message);
+      console.warn(`[DigitalStorage] Unable to persist wireless range for network ${networkId}: ${message}`);
+    }
+  }
 }
 
 function consumeNetworkEnergy(entity, energy, topology, networkId) {
@@ -378,9 +414,12 @@ function initializeNetwork(entity, block, energy, topology) {
 
   let network;
   try {
+    const wirelessAccess = getCenterWirelessAccess(entity);
     network = createNetworkFromCellIds(cellIds, {
       online: true,
       center: getCenterKey(block),
+      wirelessRange: wirelessAccess.range,
+      wirelessDimensional: wirelessAccess.dimensional,
       centers: [getCenterKey(block)],
       drives: driveKeys,
       terminals: buildTerminalKeys(topology),
@@ -460,6 +499,8 @@ function tickCenter(entity, block) {
     return;
   }
 
+  syncCenterWirelessAccess(entity, networkId);
+
   if (!consumeNetworkEnergy(entity, energy, topology, networkId)) return;
 
   const snapshot = getNetworkSnapshot(networkId);
@@ -491,6 +532,8 @@ DoriosLib.registry.blockComponent("utilitycraft:storage_center", {
     if (!entity?.isValid) return;
 
     powerOffCenterNetwork(entity);
+    wirelessAccessFailureByEntity.delete(entity.id);
+    dropCenterUpgrade(entity, block);
     TickScheduler.releaseTickGroup(entity);
     entity.triggerEvent("despawn");
   },

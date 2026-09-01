@@ -1,0 +1,35 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "utilitycraft:dimensional_range_upgrade"
+    },
+    "tags": [
+      "utilitycraft_workbench"
+    ],
+    "pattern": [
+      "RRR",
+      "RNR",
+      "RRR"
+    ],
+    "key": {
+      "R": {
+        "item": "utilitycraft:range_upgrade"
+      },
+      "N": {
+        "item": "minecraft:nether_star"
+      }
+    },
+    "result": {
+      "item": "utilitycraft:dimensional_range_upgrade"
+    },
+    "unlock": [
+      {
+        "item": "minecraft:nether_star"
+      },
+      {
+        "item": "utilitycraft:range_upgrade"
+      }
+    ]
+  }
+}

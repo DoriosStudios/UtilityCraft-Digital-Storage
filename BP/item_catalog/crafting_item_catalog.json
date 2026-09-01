@@ -70,7 +70,8 @@
                         },
                         "items": [
                             "utilitycraft:wireless_panel_off",
-                            "utilitycraft:wireless_panel_on"
+                            "utilitycraft:wireless_panel_on",
+                            "utilitycraft:dimensional_range_upgrade"
                         ]
                     }
                 ]

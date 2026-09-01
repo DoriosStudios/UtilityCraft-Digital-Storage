@@ -19,14 +19,20 @@
 			"utilitycraft:storage_center": {
 				"entity": {
 					"identifier": "utilitycraft:storage_center",
-					"inventory_size": 2,
+					"inventory_size": 3,
 					"name": "storage_center"
 				},
 				"machine": {
 					"energy_cap": 512000,
-					"rate_speed_base": 0
+					"rate_speed_base": 0,
+					"upgrades": [
+						2
+					]
 				}
 			},
+			"utilitycraft:machine_upgrades": [
+				{ "type": "range", "slot": 2, "max": 8 }
+			],
 			"minecraft:geometry": "minecraft:geometry.full_block",
 			"minecraft:material_instances": {
 				"*": {

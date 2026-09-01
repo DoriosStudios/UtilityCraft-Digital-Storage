@@ -1,11 +1,12 @@
-import { ItemStack, system, world } from "@minecraft/server";
+import { ItemLockMode, ItemStack, system, world } from "@minecraft/server";
 import { ButtonManager, TickScheduler } from "DoriosCore/index.js";
 import * as DoriosLib from "DoriosLib/index.js";
 import { StorageTerminalInterface, STORAGE_TERMINAL_CONFIG } from "../../interface/terminal.js";
 import { materializeOutputItem, readOutputToken } from "../../interface/terminal_output.js";
 import { getOnlineNetworkByCenter } from "../network_runtime.js";
+import { checkWirelessAccess } from "../wireless_access.js";
 
-const OVERWORLD_ID = "minecraft:overworld";
+const DIMENSION_IDS = ["minecraft:overworld", "minecraft:nether", "minecraft:the_end"];
 const STORAGE_CENTER_ENTITY_TYPE = "utilitycraft:storage_center";
 const WIRELESS_PANEL_OFF = "utilitycraft:wireless_panel_off";
 const WIRELESS_PANEL_ON = "utilitycraft:wireless_panel_on";
@@ -32,6 +33,8 @@ const activePanels = new Map();
 const lastStatusByPlayer = new Map();
 const lastBindTickByPlayer = new Map();
 const recoveryCheckedPlayers = new Set();
+const lockedPanelSlotByPlayer = new Map();
+const panelLockRecoveryCheckedPlayers = new Set();
 
 class WirelessStorageTerminalInterface extends StorageTerminalInterface {
   static get config() {
@@ -46,23 +49,82 @@ function getWirelessTerminal(entity) {
   return block ? new WirelessStorageTerminalInterface(block) : undefined;
 }
 
-function findWirelessTerminal(playerId) {
-  return world.getDimension(OVERWORLD_ID).getEntities({
-    type: WIRELESS_TERMINAL_ENTITY_TYPE,
-    tags: [playerId],
-  })[0];
+function findWirelessTerminal(playerId, preferredDimension) {
+  const dimensions = [];
+  const usedDimensionIds = new Set();
+  if (preferredDimension) {
+    dimensions.push(preferredDimension);
+    usedDimensionIds.add(preferredDimension.id);
+  }
+  for (const dimensionId of DIMENSION_IDS) {
+    if (usedDimensionIds.has(dimensionId)) continue;
+    dimensions.push(world.getDimension(dimensionId));
+  }
+
+  for (const dimension of dimensions) {
+    const entity = dimension.getEntities({
+      type: WIRELESS_TERMINAL_ENTITY_TYPE,
+      tags: [playerId],
+    })[0];
+    if (entity) return entity;
+  }
+  return undefined;
 }
 
-function recoverWirelessTerminal(playerId) {
+function recoverWirelessTerminal(playerId, preferredDimension) {
   if (recoveryCheckedPlayers.has(playerId)) return undefined;
   recoveryCheckedPlayers.add(playerId);
-  return findWirelessTerminal(playerId);
+  return findWirelessTerminal(playerId, preferredDimension);
 }
 
-function getHeldItem(player) {
+function setPanelSlotLock(inventory, slot, lockMode) {
+  const item = inventory?.getItem(slot);
+  if (item?.typeId !== WIRELESS_PANEL_ON) return item;
+  if (item.lockMode === lockMode) return item;
+
+  item.lockMode = lockMode;
+  inventory.setItem(slot, item);
+  return item;
+}
+
+function recoverPanelSlotLocks(player, inventory, selectedSlot) {
+  if (panelLockRecoveryCheckedPlayers.has(player.id)) return;
+  panelLockRecoveryCheckedPlayers.add(player.id);
+
+  for (let slot = 0; slot < inventory.size; slot++) {
+    if (slot === selectedSlot) continue;
+    const item = inventory.getItem(slot);
+    if (item?.typeId !== WIRELESS_PANEL_ON || item.lockMode !== ItemLockMode.slot) continue;
+    setPanelSlotLock(inventory, slot, ItemLockMode.none);
+  }
+}
+
+/**
+ * Locks an active Wireless Panel only while it is the selected main-hand item.
+ * The previous selected panel is unlocked as soon as the player changes slots.
+ */
+function syncHeldPanelSlotLock(player) {
   const inventory = player?.getComponent("minecraft:inventory")?.container;
   if (!inventory) return undefined;
-  return inventory.getItem(player.selectedSlotIndex ?? 0);
+
+  const selectedSlot = player.selectedSlotIndex ?? 0;
+  recoverPanelSlotLocks(player, inventory, selectedSlot);
+
+  const previousSlot = lockedPanelSlotByPlayer.get(player.id);
+  if (previousSlot !== undefined && previousSlot !== selectedSlot) {
+    setPanelSlotLock(inventory, previousSlot, ItemLockMode.none);
+    lockedPanelSlotByPlayer.delete(player.id);
+  }
+
+  let heldItem = inventory.getItem(selectedSlot);
+  if (heldItem?.typeId !== WIRELESS_PANEL_ON) {
+    if (previousSlot === selectedSlot) lockedPanelSlotByPlayer.delete(player.id);
+    return heldItem;
+  }
+
+  heldItem = setPanelSlotLock(inventory, selectedSlot, ItemLockMode.slot);
+  lockedPanelSlotByPlayer.set(player.id, selectedSlot);
+  return heldItem;
 }
 
 function getCenterKey(entity) {
@@ -89,10 +151,6 @@ function copyItemData(source, target) {
 
 function bindHeldPanel(player, centerEntity) {
   if (!player?.isValid || !centerEntity?.isValid) return false;
-  if (player.dimension.id !== OVERWORLD_ID || centerEntity.dimension.id !== OVERWORLD_ID) {
-    player.sendMessage({ translate: "message.utilitycraft:wireless_overworld_only" });
-    return false;
-  }
 
   const centerKey = getCenterKey(centerEntity);
   if (!getOnlineNetworkByCenter(centerKey)) {
@@ -110,14 +168,22 @@ function bindHeldPanel(player, centerEntity) {
     : new ItemStack(WIRELESS_PANEL_ON, 1);
   if (linkedItem !== heldItem) copyItemData(heldItem, linkedItem);
   linkedItem.setDynamicProperty(WIRELESS_CENTER_PROPERTY, centerKey);
+  linkedItem.lockMode = ItemLockMode.slot;
+
+  const previousSlot = lockedPanelSlotByPlayer.get(player.id);
+  if (previousSlot !== undefined && previousSlot !== slot) {
+    setPanelSlotLock(inventory, previousSlot, ItemLockMode.none);
+  }
+
   inventory.setItem(slot, linkedItem);
+  lockedPanelSlotByPlayer.set(player.id, slot);
   lastStatusByPlayer.delete(player.id);
   player.sendMessage({ translate: "message.utilitycraft:wireless_linked" });
   return true;
 }
 
 function spawnWirelessTerminal(player, centerKey, networkId) {
-  let entity = recoverWirelessTerminal(player.id);
+  let entity = recoverWirelessTerminal(player.id, player.dimension);
   const isNew = !entity?.isValid;
   try {
     if (isNew) {
@@ -184,7 +250,7 @@ function returnRemainingItems(terminal, player) {
 
 function removeWirelessTerminal(playerId, player) {
   const cached = activePanels.get(playerId);
-  const entity = cached?.isValid ? cached : recoverWirelessTerminal(playerId);
+  const entity = cached?.isValid ? cached : recoverWirelessTerminal(playerId, player?.dimension);
   activePanels.delete(playerId);
   if (!entity?.isValid) return;
 
@@ -209,16 +275,10 @@ function removeWirelessTerminal(playerId, player) {
 }
 
 function updateWirelessPlayer(player) {
-  const heldItem = getHeldItem(player);
+  const heldItem = syncHeldPanelSlotLock(player);
   if (heldItem?.typeId !== WIRELESS_PANEL_ON) {
     removeWirelessTerminal(player.id, player);
     lastStatusByPlayer.delete(player.id);
-    return;
-  }
-
-  if (player.dimension.id !== OVERWORLD_ID) {
-    removeWirelessTerminal(player.id, player);
-    showStatusOnce(player, "dimension", "message.utilitycraft:wireless_overworld_only");
     return;
   }
 
@@ -233,6 +293,19 @@ function updateWirelessPlayer(player) {
   if (!network) {
     removeWirelessTerminal(player.id, player);
     showStatusOnce(player, "offline", "message.utilitycraft:wireless_network_unavailable");
+    return;
+  }
+
+  const access = checkWirelessAccess(network, player.dimension.id, player.location);
+  if (!access.allowed) {
+    removeWirelessTerminal(player.id, player);
+    if (access.reason === "dimension") {
+      showStatusOnce(player, "dimension", "message.utilitycraft:wireless_dimension_unavailable");
+    } else if (access.reason === "range") {
+      showStatusOnce(player, "range", "message.utilitycraft:wireless_out_of_range");
+    } else {
+      showStatusOnce(player, "offline", "message.utilitycraft:wireless_network_unavailable");
+    }
     return;
   }
 
@@ -277,6 +350,8 @@ world.afterEvents.playerLeave.subscribe(({ playerId }) => {
   lastStatusByPlayer.delete(playerId);
   lastBindTickByPlayer.delete(playerId);
   recoveryCheckedPlayers.delete(playerId);
+  lockedPanelSlotByPlayer.delete(playerId);
+  panelLockRecoveryCheckedPlayers.delete(playerId);
 });
 
 system.runInterval(() => {

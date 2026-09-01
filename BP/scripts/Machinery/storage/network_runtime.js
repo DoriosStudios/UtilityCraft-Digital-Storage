@@ -26,6 +26,7 @@ import {
   getMaxInsertAmount,
 } from "./storage_cost.js";
 import { hasPendingCellTransaction } from "./persistence/cell_transactions.js";
+import { normalizeWirelessRange } from "./wireless_access.js";
 
 /**
  * Runtime network manager for Digital Storage.
@@ -304,6 +305,8 @@ function buildRuntime(networkRecord, cellRecords) {
     changeSeq: Math.floor(Number(networkRecord.changeSeq ?? 0)),
     changes: Array.isArray(networkRecord.changes) ? [...networkRecord.changes] : [],
     center: networkRecord.center,
+    wirelessRange: normalizeWirelessRange(networkRecord.wirelessRange),
+    wirelessDimensional: networkRecord.wirelessDimensional === true,
     centers: new Set(networkRecord.centers ?? []),
     drives: new Set(networkRecord.drives ?? []),
     terminals: new Set(networkRecord.terminals ?? []),
@@ -407,6 +410,8 @@ export function* loadAllNetworksJob({ recordsPerTick = 8, onComplete } = {}) {
       changeSeq: Math.floor(Number(record.changeSeq ?? 0)),
       changes: Array.isArray(record.changes) ? [...record.changes] : [],
       center: record.center,
+      wirelessRange: normalizeWirelessRange(record.wirelessRange),
+      wirelessDimensional: record.wirelessDimensional === true,
       centers: new Set(record.centers ?? []),
       drives: new Set(record.drives ?? []),
       terminals: new Set(record.terminals ?? []),
@@ -604,6 +609,8 @@ export function getNetworkSnapshot(networkId) {
     online: runtime.online,
     state: runtime.state,
     dirty: runtime.dirty,
+    wirelessRange: runtime.wirelessRange,
+    wirelessDimensional: runtime.wirelessDimensional,
     itemCount: runtime.itemCount,
     typeCount: runtime.typeCount,
     usedUnits: runtime.usedUnits,
@@ -629,7 +636,7 @@ export function getNetworkSnapshot(networkId) {
  * network before the runtime is built.
  *
  * @param {number[]} cellIds Cell ids to attach.
- * @param {{networkId?: number, online?: boolean, center?: string, centers?: string[], drives?: string[], terminals?: string[], allowReassign?: boolean}} [options]
+ * @param {{networkId?: number, online?: boolean, center?: string, wirelessRange?: number, wirelessDimensional?: boolean, centers?: string[], drives?: string[], terminals?: string[], allowReassign?: boolean}} [options]
  * @returns {object} Runtime network.
  */
 export function createNetworkFromCellIds(cellIds, options = {}) {
@@ -678,6 +685,8 @@ export function createNetworkFromCellIds(cellIds, options = {}) {
       version: readNetworkRecord(networkId)?.version ?? 0,
       online: options.online !== false,
       center: options.center,
+      wirelessRange: normalizeWirelessRange(options.wirelessRange),
+      wirelessDimensional: options.wirelessDimensional === true,
       centers: options.centers ?? [],
       drives: options.drives ?? [],
       terminals: options.terminals ?? [],
@@ -702,6 +711,63 @@ export function createNetworkFromCellIds(cellIds, options = {}) {
       }
     }
     if (allocatedNetworkId) deleteNetworkRecord(networkId);
+    throw error;
+  }
+}
+
+/**
+ * Updates and immediately persists the wireless access cached by one network.
+ * This write only touches the network record; dirty cell contents keep their
+ * normal incremental flush cadence.
+ *
+ * @param {number} networkId Network id.
+ * @param {{range?:number, dimensional?:boolean}} access Wireless access settings.
+ * @returns {boolean} True when the settings changed.
+ */
+export function setNetworkWirelessAccess(networkId, access = {}) {
+  const runtime = getNetwork(networkId);
+  if (!runtime) return false;
+
+  const nextRange = normalizeWirelessRange(access.range);
+  const nextDimensional = access.dimensional === true;
+  if (
+    runtime.wirelessRange === nextRange
+    && runtime.wirelessDimensional === nextDimensional
+  ) {
+    return false;
+  }
+
+  const previousRange = runtime.wirelessRange;
+  const previousDimensional = runtime.wirelessDimensional;
+  runtime.wirelessRange = nextRange;
+  runtime.wirelessDimensional = nextDimensional;
+
+  try {
+    const saved = writeNetworkRecord(runtime.networkId, {
+      networkId: runtime.networkId,
+      version: runtime.version,
+      state: runtime.state,
+      online: runtime.online,
+      center: runtime.center,
+      wirelessRange: runtime.wirelessRange,
+      wirelessDimensional: runtime.wirelessDimensional,
+      centers: [...runtime.centers],
+      drives: [...runtime.drives],
+      terminals: [...runtime.terminals],
+      cells: [...runtime.cells.keys()],
+      usedUnits: runtime.usedUnits,
+      capacityUnits: runtime.capacityUnits,
+      itemCount: runtime.itemCount,
+      typeCount: runtime.typeCount,
+      changeSeq: runtime.changeSeq,
+      changes: runtime.changes,
+    });
+    if (!saved) throw new Error("network_wireless_settings_write_failed");
+    runtime.version = saved.version;
+    return true;
+  } catch (error) {
+    runtime.wirelessRange = previousRange;
+    runtime.wirelessDimensional = previousDimensional;
     throw error;
   }
 }
@@ -991,6 +1057,8 @@ export function flushNetwork(networkId, { syncDriveItems = true } = {}) {
     state: runtime.state,
     online: runtime.online,
     center: runtime.center,
+    wirelessRange: runtime.wirelessRange,
+    wirelessDimensional: runtime.wirelessDimensional,
     centers: [...runtime.centers],
     drives: [...runtime.drives],
     terminals: [...runtime.terminals],
@@ -1053,6 +1121,8 @@ export function* flushNetworkJob(networkId, { syncDriveItems = true, pagesPerTic
       state: runtime.state,
       online: runtime.online,
       center: runtime.center,
+      wirelessRange: runtime.wirelessRange,
+      wirelessDimensional: runtime.wirelessDimensional,
       centers: [...runtime.centers],
       drives: [...runtime.drives],
       terminals: [...runtime.terminals],

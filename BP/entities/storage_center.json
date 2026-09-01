@@ -31,7 +31,7 @@
 			},
 			"utilitycraft:inventory_setup": {
 				"minecraft:inventory": {
-					"inventory_size": 2,
+					"inventory_size": 3,
 					"container_type": "container"
 				}
 			}
@@ -63,7 +63,7 @@
 			},
 			"minecraft:fire_immune": true,
 			"minecraft:inventory": {
-				"inventory_size": 2,
+				"inventory_size": 3,
 				"container_type": "container"
 			},
 			"minecraft:collision_box": {

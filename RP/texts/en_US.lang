@@ -66,6 +66,8 @@ item.utilitycraft:wireless_panel_off=Wireless Panel-Off\n§7- Interact with a St
 item.utilitycraft:wireless_panel_on=Wireless Panel-On\n§7- Hold to access the linked network\n§o§9@UC: Digital Storage
 item.utilitycraft:wireless_crafting_panel_off=Wireless Crafting Panel-Off\n§o§9@UC: Digital Storage
 item.utilitycraft:wireless_crafting_panel_on=Wireless Crafting Panel-On\n§7- Link with a terminal to use\n§o§9@UC: Digital Storage
+item.utilitycraft:dimensional_range_upgrade=§9Dimensional Range Upgrade§r\n§o§9@UC: Digital Storage
+upgrade.utilitycraft:dimensional_range_upgrade.name=§9Dimensional Range Upgrade§r
 
 ####################
 ####   GROUPS   ####
@@ -87,6 +89,8 @@ message.utilitycraft:vault_missing=§c[Digital Storage] This item had a problem.
 message.utilitycraft:wireless_linked=§a[Digital Storage] Wireless Panel linked.
 message.utilitycraft:wireless_network_unavailable=§c[Digital Storage] The linked network is not available.
 message.utilitycraft:wireless_overworld_only=§c[Digital Storage] The Wireless Panel only works in the Overworld.
+message.utilitycraft:wireless_out_of_range=§c[Digital Storage] You are outside the linked network's wireless range.
+message.utilitycraft:wireless_dimension_unavailable=§c[Digital Storage] This network requires a Dimensional Range Upgrade for access from another dimension.
 ui.utilitycraft:info.storage_transfer_station=§8Transfers stored items from the §9left slot§8 to the §cright slot§8 every 10 ticks. Each operation moves up to §q500 items§8, plus 500 for each installed §qSpeed Upgrade§8 level, without exceeding the destination cell capacity in logical bytes. Adding a new item type consumes more bytes than extending an existing type.\n\n§8Slots:\n- Left: source storage cell.\n- Right: destination storage cell.\n\n§8Accepted upgrade:\n- Speed Upgrade (maximum level: 8)
 ui.utilitycraft:info.storage_center=§8Creates, powers, and controls a digital storage network connected through §qNetwork Cables§8. It links Storage Cell Drives, terminals, Import Buffers, and Export Buffers into one network.\n\n§8The network requires exactly one §qStorage Center§8 and at least one §qStorage Cell Drive§8 containing a storage cell. Its energy cost depends on the connected topology, with a minimum consumption of §q10 DE/t§8. If the center runs out of energy, the network is turned off.
 ui.utilitycraft:info.storage_cell_drive=§8Holds up to §q16 storage cells§8 and contributes their combined byte capacity to the connected digital storage network. The §qStorage Center§8 reads the installed cells when it creates the network.\n\n§8Changing a cell while the drive is linked turns the §cnetwork off§8 so the Storage Center can rebuild it safely.

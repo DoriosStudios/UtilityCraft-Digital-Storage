@@ -1,0 +1,47 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "utilitycraft:wireless_panel"
+    },
+    "tags": [
+      "utilitycraft_workbench"
+    ],
+    "pattern": [
+      "FRF",
+      "ETE",
+      "FWF"
+    ],
+    "key": {
+      "F": {
+        "item": "utilitycraft:fluxite"
+      },
+      "R": {
+        "item": "utilitycraft:range_upgrade"
+      },
+      "E": {
+        "item": "minecraft:ender_eye"
+      },
+      "T": {
+        "item": "utilitycraft:storage_terminal"
+      },
+      "W": {
+        "item": "utilitycraft:way_chip"
+      }
+    },
+    "result": {
+      "item": "utilitycraft:wireless_panel_off"
+    },
+    "unlock": [
+      {
+        "item": "utilitycraft:storage_terminal"
+      },
+      {
+        "item": "utilitycraft:way_chip"
+      },
+      {
+        "item": "utilitycraft:range_upgrade"
+      }
+    ]
+  }
+}

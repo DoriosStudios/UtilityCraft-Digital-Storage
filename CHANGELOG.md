@@ -1,6 +1,8 @@
 # UtilityCraft: Digital Storage v1.0.2
 
 ## ADDED
+- Added the Dimensional Range Upgrade, which grants Wireless Panels unlimited range across every dimension.
+- Added UtilityCraft Workbench recipes for the Wireless Panel and Dimensional Range Upgrade.
 - Added weighted logical storage bytes: new simple item types cost 8 B plus one byte per eight items, defined custom types cost 16 B plus payload, and opaque non-stackable items cost 64 B.
 - Added paged, checksummed dynamic-property generations with A/B manifests and automatic fallback to the previous valid generation.
 - Added recoverable cell-to-cell transaction intents for the Storage Transfer Station.
@@ -16,6 +18,9 @@
 - Successful paged commits retain the active and fallback generations while collecting only the older unreferenced pages.
 - Storage Center and Storage Cell displays now distinguish stored items, item types and logical-byte usage in a shorter format.
 - Storage percentage lore now escapes Minecraft's percent formatting correctly, and Storage Center detail lines retain their visual indentation.
+- Active Wireless Panels now lock into their selected hotbar slot while held, preventing them from being dropped or moved into another inventory until deselected.
+- Wireless Panels now have a 64-block base range, gain 128 blocks per Range Upgrade up to level 8 (1,088 blocks), and retain the Center's last verified range while its chunk is unloaded.
+- The Storage Center interface now reserves a dedicated range upgrade slot above its lowered information tab.
 - Storage Transfer Station capacity checks now use exact logical-byte deltas while transfer speed remains item-count based.
 
 ## FIXED

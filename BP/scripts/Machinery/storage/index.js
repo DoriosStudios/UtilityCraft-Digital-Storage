@@ -7,6 +7,7 @@ import {
 } from "./network_runtime.js";
 import { initializeOpaqueVaults } from "./opaque_vault.js";
 import { recoverCellTransactionsJob } from "./persistence/cell_transactions.js";
+import "./upgrade_register.js";
 import "./network_debug.js";
 import "./network_topology.js";
 import "./machines/export_buffer.js";

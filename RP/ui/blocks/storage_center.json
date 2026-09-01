@@ -48,14 +48,21 @@
                 "machine_screen@uc.big_machine_screen": {}
             },
             {
+                "single_upgrade_slot@uc.single_upgrade_slot": {
+                    "$single_upgrade_index": 2,
+                    "$single_upgrade_outline_texture": "textures/ui/slots/item_resource_slot",
+                    "$single_upgrade_overlay": "textures/items/machinery/range_upgrade"
+                }
+            },
+            {
                 "info_tab@uc.info_tab": {
                     "offset": [
                         0,
-                        -52
+                        -26
                     ],
                     "$info_panel_size": [
                         80,
-                        160
+                        134
                     ],
                     "$info_description": "ui.utilitycraft:info.storage_center"
                 }

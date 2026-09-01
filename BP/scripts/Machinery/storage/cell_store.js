@@ -1,6 +1,7 @@
 import { world } from '@minecraft/server';
 import { deletePagedJson, readPagedJson, updatePagedMetadata, writePagedJson, writePagedJsonJob } from './persistence/paged_store.js';
 import { getEntriesStorageSummary } from './storage_cost.js';
+import { normalizeWirelessRange } from './wireless_access.js';
 
 /**
  * Persistent storage layer for Digital Storage.
@@ -527,6 +528,8 @@ export function readNetworkRecord(networkId) {
     state: typeof record.state === "string" ? record.state : (record.online === true ? "online" : "offline"),
     online: record.online === true,
     center: typeof record.center === "string" ? record.center : undefined,
+    wirelessRange: normalizeWirelessRange(record.wirelessRange),
+    wirelessDimensional: record.wirelessDimensional === true,
     centers: Array.isArray(record.centers) ? record.centers : [],
     drives: Array.isArray(record.drives) ? record.drives : [],
     terminals: Array.isArray(record.terminals) ? record.terminals : [],
@@ -563,6 +566,8 @@ export function writeNetworkRecord(networkId, record) {
     state: typeof record?.state === "string" ? record.state : (record?.online === true ? "online" : "offline"),
     online: record?.online === true,
     center: typeof record?.center === "string" ? record.center : undefined,
+    wirelessRange: normalizeWirelessRange(record?.wirelessRange),
+    wirelessDimensional: record?.wirelessDimensional === true,
     centers: Array.isArray(record?.centers) ? record.centers : [],
     drives: Array.isArray(record?.drives) ? record.drives : [],
     terminals: Array.isArray(record?.terminals) ? record.terminals : [],
@@ -590,6 +595,8 @@ export function writeNetworkRecord(networkId, record) {
     state: nextRecord.state,
     online: nextRecord.online,
     center: nextRecord.center,
+    wirelessRange: nextRecord.wirelessRange,
+    wirelessDimensional: nextRecord.wirelessDimensional,
     usedUnits: nextRecord.usedUnits,
     capacityUnits: nextRecord.capacityUnits,
     itemCount: nextRecord.itemCount,
