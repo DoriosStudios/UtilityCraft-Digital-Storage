@@ -28,6 +28,115 @@ const MIN_Y_BY_DIMENSION = {
   "minecraft:nether": DoriosLib.constants.DIMENSIONS.nether.minY,
   "minecraft:the_end": DoriosLib.constants.DIMENSIONS.end.minY,
 };
+const activeRecipeResolutions = new Map();
+const activeResolutionLanes = new Map();
+
+function hashString(value) {
+  let hash = 0;
+  for (const character of String(value ?? "")) {
+    hash = (Math.imul(hash, 31) + character.charCodeAt(0)) | 0;
+  }
+  return hash >>> 0;
+}
+
+function allocateResolutionLane(entity, block, minY) {
+  const chunkX = Math.floor(block.location.x / 16) * 16;
+  const chunkZ = Math.floor(block.location.z / 16) * 16;
+  const seed = hashString(entity.id) % 256;
+
+  for (let offset = 0; offset < 256; offset++) {
+    const lane = (seed + offset) % 256;
+    const x = chunkX + (lane % 16);
+    const z = chunkZ + Math.floor(lane / 16);
+    const key = `${entity.dimension.id}:${x},${z}`;
+    if (activeResolutionLanes.has(key)) continue;
+
+    return {
+      key,
+      crafterLocation: { x, y: minY, z },
+      redstoneLocation: { x, y: minY + 1, z },
+      outputLocation: { x, y: minY - 1, z },
+    };
+  }
+  return undefined;
+}
+
+function getItemEntityIds(dimension, location) {
+  try {
+    return new Set(dimension.getEntitiesAtBlockLocation(location)
+      .filter((entity) => entity.typeId === "minecraft:item")
+      .map((entity) => entity.id));
+  } catch {
+    return new Set();
+  }
+}
+
+function removeResolutionOutputEntities(session) {
+  try {
+    for (const entity of session.dimension.getEntitiesAtBlockLocation(session.outputLocation)) {
+      if (entity.typeId !== "minecraft:item" || session.initialOutputEntityIds.has(entity.id)) continue;
+      entity.remove();
+    }
+  } catch {}
+}
+
+function cleanupRecipeResolutionSession(session) {
+  removeResolutionOutputEntities(session);
+
+  if (!session.crafterRestored) {
+    try {
+      const block = session.dimension.getBlock(session.crafterLocation);
+      if (block?.typeId === "minecraft:crafter") {
+        for (let slot = 0; slot < CRAFTING_GRID.length; slot++) {
+          session.dimension.runCommand(
+            `replaceitem block ${session.crafterLocation.x} ${session.crafterLocation.y} ${session.crafterLocation.z} slot.container ${slot} air`,
+          );
+        }
+      }
+      session.dimension.setBlockType(session.crafterLocation, session.previousCrafterBlock || "minecraft:bedrock");
+      session.crafterRestored = true;
+    } catch {}
+  }
+
+  if (!session.redstoneRestored) {
+    try {
+      session.dimension.setBlockType(session.redstoneLocation, session.previousRedstoneBlock || "minecraft:bedrock");
+      session.redstoneRestored = true;
+    } catch {}
+  }
+}
+
+function releaseRecipeResolutionSession(session) {
+  if (activeRecipeResolutions.get(session.terminalId) === session) {
+    activeRecipeResolutions.delete(session.terminalId);
+  }
+  if (activeResolutionLanes.get(session.laneKey) === session) {
+    activeResolutionLanes.delete(session.laneKey);
+  }
+}
+
+/**
+ * Cancels the physical recipe probe owned by one terminal. Cleanup is attempted
+ * immediately and its scheduled callback repeats it as a watchdog.
+ *
+ * @param {import("@minecraft/server").Entity | undefined} entity
+ * @returns {boolean} True when a live resolution was cancelled.
+ */
+export function cancelCraftingRecipeResolution(entity) {
+  const session = entity?.id ? activeRecipeResolutions.get(entity.id) : undefined;
+  if (!session) return false;
+
+  session.cancelled = true;
+  activeRecipeResolutions.delete(session.terminalId);
+  cleanupRecipeResolutionSession(session);
+  try {
+    if (entity.isValid) {
+      entity.setDynamicProperty(CRAFT_RESOLVING_PROPERTY, false);
+      entity.setDynamicProperty(CRAFT_RECIPE_PROPERTY, undefined);
+    }
+  } catch {}
+  return true;
+}
 
 export const CRAFTING_TERMINAL_CONFIG = {
   ...STORAGE_TERMINAL_CONFIG,
@@ -82,6 +191,7 @@ export class CraftingTerminalInterface extends StorageTerminalInterface {
   }
 
   destroy() {
+    cancelCraftingRecipeResolution(this.entity);
     this.dropCraftingGridItems();
     super.destroy();
   }
@@ -136,19 +246,38 @@ export class CraftingTerminalInterface extends StorageTerminalInterface {
       return;
     }
 
-    const x = Math.floor(this.block.location.x);
-    const z = Math.floor(this.block.location.z);
-    const crafterLocation = { x, y: minY, z };
-    const redstoneLocation = { x, y: minY + 1, z };
-    const outputLocation = { x, y: minY - 1, z };
-    const previousCrafterBlock = this.dimension.getBlock(crafterLocation)?.typeId;
-    const previousRedstoneBlock = this.dimension.getBlock(redstoneLocation)?.typeId;
+    cancelCraftingRecipeResolution(this.entity);
+    const lane = allocateResolutionLane(this.entity, this.block, minY);
+    if (!lane) {
+      this.entity.setDynamicProperty(CRAFT_RESOLVING_PROPERTY, false);
+      this.entity.setDynamicProperty(CRAFT_GRID_HASH_PROPERTY, "__retry__");
+      return;
+    }
+
+    const session = {
+      terminalId: this.entity.id,
+      entity: this.entity,
+      dimension: this.dimension,
+      laneKey: lane.key,
+      crafterLocation: lane.crafterLocation,
+      redstoneLocation: lane.redstoneLocation,
+      outputLocation: lane.outputLocation,
+      previousCrafterBlock: this.dimension.getBlock(lane.crafterLocation)?.typeId,
+      previousRedstoneBlock: this.dimension.getBlock(lane.redstoneLocation)?.typeId,
+      initialOutputEntityIds: getItemEntityIds(this.dimension, lane.outputLocation),
+      crafterRestored: false,
+      redstoneRestored: false,
+      cancelled: false,
+    };
+    activeRecipeResolutions.set(session.terminalId, session);
+    activeResolutionLanes.set(session.laneKey, session);
+
     const materialMap = {};
     const recipeParts = [];
     let materialCount = 0;
 
     try {
-      this.dimension.setBlockType(crafterLocation, "minecraft:crafter");
+      this.dimension.setBlockType(session.crafterLocation, "minecraft:crafter");
       for (let index = 0; index < CRAFTING_GRID.length; index++) {
         const item = gridItems[index];
         if (!item) {
@@ -160,34 +289,42 @@ export class CraftingTerminalInterface extends StorageTerminalInterface {
         const itemKey = getItemKey(item);
         materialMap[itemKey] = (materialMap[itemKey] ?? 0) + 1;
         recipeParts.push(item.typeId.split(":")[1] ?? item.typeId);
-        this.dimension.runCommand(`replaceitem block ${x} ${minY} ${z} slot.container ${index} ${item.typeId}`);
+        this.dimension.runCommand(
+          `replaceitem block ${session.crafterLocation.x} ${session.crafterLocation.y} ${session.crafterLocation.z} slot.container ${index} ${item.typeId}`,
+        );
       }
 
       if (materialCount <= 0) {
-        this.finishRecipeResolve(undefined, crafterLocation, redstoneLocation, previousCrafterBlock, previousRedstoneBlock);
+        this.finishRecipeResolve(session, undefined);
         return;
       }
 
-      this.dimension.setBlockType(redstoneLocation, "minecraft:redstone_block");
+      this.dimension.setBlockType(session.redstoneLocation, "minecraft:redstone_block");
     } catch (error) {
       console.warn(`[DigitalStorage] Crafting Terminal recipe setup failed: ${error?.message ?? error}`);
-      this.finishRecipeResolve(undefined, crafterLocation, redstoneLocation, previousCrafterBlock, previousRedstoneBlock);
+      this.finishRecipeResolve(session, undefined);
       return;
     }
 
     system.runTimeout(() => {
-      if (!this.entity?.isValid) return;
-
-      const recipe = this.createRecipeFromResolvedItems(outputLocation, materialMap, recipeParts.join(","));
-      this.finishRecipeResolve(recipe, crafterLocation, redstoneLocation, previousCrafterBlock, previousRedstoneBlock);
+      let recipe;
+      try {
+        if (!session.cancelled) {
+          recipe = this.createRecipeFromResolvedItems(session, materialMap, recipeParts.join(","));
+        }
+      } catch (error) {
+        console.warn(`[DigitalStorage] Crafting Terminal recipe read failed: ${error?.message ?? error}`);
+      } finally {
+        this.finishRecipeResolve(session, recipe);
+      }
     }, 9);
   }
 
-  createRecipeFromResolvedItems(outputLocation, materialMap, recipeString) {
+  createRecipeFromResolvedItems(session, materialMap, recipeString) {
     const outputs = [];
-    const itemEntities = this.dimension
-      .getEntitiesAtBlockLocation(outputLocation)
-      .filter((entity) => entity.typeId === "minecraft:item");
+    const itemEntities = session.dimension
+      .getEntitiesAtBlockLocation(session.outputLocation)
+      .filter((entity) => entity.typeId === "minecraft:item" && !session.initialOutputEntityIds.has(entity.id));
 
     for (const itemEntity of itemEntities) {
       const itemStack = itemEntity.getComponent("minecraft:item")?.itemStack;
@@ -211,14 +348,10 @@ export class CraftingTerminalInterface extends StorageTerminalInterface {
     };
   }
 
-  finishRecipeResolve(recipe, crafterLocation, redstoneLocation, previousCrafterBlock, previousRedstoneBlock) {
-    try {
-      for (let slot = 0; slot < CRAFTING_GRID.length; slot++) {
-        this.dimension.runCommand(`replaceitem block ${crafterLocation.x} ${crafterLocation.y} ${crafterLocation.z} slot.container ${slot} air`);
-      }
-      this.dimension.setBlockType(crafterLocation, previousCrafterBlock || "minecraft:bedrock");
-      this.dimension.setBlockType(redstoneLocation, previousRedstoneBlock || "minecraft:bedrock");
-    } catch {}
+  finishRecipeResolve(session, recipe) {
+    cleanupRecipeResolutionSession(session);
+    releaseRecipeResolutionSession(session);
+    if (session.cancelled || !this.entity?.isValid) return;
 
     this.entity.setDynamicProperty(CRAFT_RECIPE_PROPERTY, recipe ? JSON.stringify(recipe) : undefined);
     this.entity.setDynamicProperty(CRAFT_RESOLVING_PROPERTY, false);
@@ -241,86 +374,88 @@ export class CraftingTerminalInterface extends StorageTerminalInterface {
   }
 
   getCraftSource(recipe) {
-    const networkCrafts = this.networkId ? this.getCraftsFromNetwork(recipe) : 0;
-    const gridCrafts = this.getCraftsFromGrid(recipe);
-    if (networkCrafts <= 0 && gridCrafts <= 0) return undefined;
-
-    return networkCrafts >= gridCrafts
-      ? { type: "network", maxCrafts: networkCrafts }
-      : { type: "grid", maxCrafts: gridCrafts };
-  }
-
-  getCraftsFromNetwork(recipe) {
     const totals = getNetworkSnapshot(this.networkId)?.totals ?? {};
     let possibleCrafts = Infinity;
 
     for (const material of recipe.materials) {
-      const available = Math.floor(Number(totals[material.id] ?? 0));
+      const available = Math.floor(Number(totals[material.id] ?? 0))
+        + this.countItemsInGrid(material.id);
       const crafts = Math.floor(available / material.amount);
-      if (crafts <= 0) return 0;
+      if (crafts <= 0) return undefined;
       possibleCrafts = Math.min(possibleCrafts, crafts);
     }
 
-    return possibleCrafts === Infinity ? 0 : possibleCrafts;
+    return possibleCrafts === Infinity ? undefined : { type: "combined", maxCrafts: possibleCrafts };
   }
 
-  getCraftsFromGrid(recipe) {
-    let possibleCrafts = Infinity;
+  consumeCraftMaterials(recipe, _source, crafts) {
+    const gridSnapshot = new Map(CRAFTING_GRID.map((slot) => [slot, this.container.getItem(slot)?.clone()]));
+    const removedFromNetwork = [];
+    const totals = getNetworkSnapshot(this.networkId)?.totals ?? {};
 
     for (const material of recipe.materials) {
-      const available = this.countItemsInGrid(material.id);
-      const crafts = Math.floor(available / material.amount);
-      if (crafts <= 0) return 0;
-      possibleCrafts = Math.min(possibleCrafts, crafts);
-    }
-
-    return possibleCrafts === Infinity ? 0 : possibleCrafts;
-  }
-
-  consumeCraftMaterials(recipe, source, crafts) {
-    if (source === "grid") return this.consumeGridMaterials(recipe, crafts);
-    if (!this.networkId) return false;
-
-    const removed = [];
-    for (const material of recipe.materials) {
-      const amount = material.amount * crafts;
-      const result = removeItem(this.networkId, material.id, amount, "crafting_terminal_input");
-      if (result.removed === amount) {
-        removed.push({ id: material.id, amount });
-        continue;
+      let remaining = material.amount * crafts;
+      const availableInNetwork = Math.max(0, Math.floor(Number(totals[material.id] ?? 0)));
+      if (this.networkId && availableInNetwork > 0) {
+        const result = removeItem(
+          this.networkId,
+          material.id,
+          Math.min(remaining, availableInNetwork),
+          "crafting_terminal_input",
+        );
+        if (result.removed > 0) {
+          removedFromNetwork.push({
+            id: material.id,
+            amount: result.removed,
+            itemStack: result.itemStack,
+          });
+          remaining -= result.removed;
+        }
       }
 
-      for (const item of removed) addItem(this.networkId, item.id, item.amount, "crafting_terminal_rollback");
+      if (remaining > 0) remaining -= this.consumeGridMaterial(material.id, remaining);
+      if (remaining <= 0) continue;
+
+      this.restoreCraftingGrid(gridSnapshot);
+      this.restoreNetworkMaterials(removedFromNetwork);
       return false;
     }
 
     return true;
   }
 
-  consumeGridMaterials(recipe, crafts) {
-    for (const material of recipe.materials) {
-      if (this.countItemsInGrid(material.id) < material.amount * crafts) return false;
-    }
+  consumeGridMaterial(itemKey, amount) {
+    let remaining = Math.max(0, Math.floor(Number(amount) || 0));
+    for (const slot of CRAFTING_GRID) {
+      if (remaining <= 0) break;
 
-    for (const material of recipe.materials) {
-      let remaining = material.amount * crafts;
-      for (const slot of CRAFTING_GRID) {
-        if (remaining <= 0) break;
+      const item = this.container.getItem(slot);
+      if (!item || getItemKey(item) !== itemKey) continue;
 
-        const item = this.container.getItem(slot);
-        if (!item || getItemKey(item) !== material.id) continue;
-
-        const take = Math.min(item.amount, remaining);
-        remaining -= take;
-        if (take >= item.amount) this.container.setItem(slot, undefined);
-        else {
-          item.amount -= take;
-          this.container.setItem(slot, item);
-        }
+      const take = Math.min(item.amount, remaining);
+      remaining -= take;
+      if (take >= item.amount) this.container.setItem(slot, undefined);
+      else {
+        item.amount -= take;
+        this.container.setItem(slot, item);
       }
     }
+    return Math.max(0, Math.floor(Number(amount) || 0)) - remaining;
+  }
 
-    return true;
+  restoreCraftingGrid(snapshot) {
+    for (const [slot, item] of snapshot) this.container.setItem(slot, item);
+  }
+
+  restoreNetworkMaterials(removedItems) {
+    if (!this.networkId) return;
+    for (const removed of removedItems) {
+      if (removed.itemStack) {
+        addItemStack(this.networkId, removed.itemStack, "crafting_terminal_rollback");
+      } else {
+        addItem(this.networkId, removed.id, removed.amount, "crafting_terminal_rollback");
+      }
+    }
   }
 
   deliverOutputs(outputs, crafts) {
@@ -329,7 +464,7 @@ export class CraftingTerminalInterface extends StorageTerminalInterface {
     for (const output of outputs) {
       for (const stack of this.splitItemAmount(output.id, output.amount * crafts)) {
         if (!toNetwork) {
-          this.dimension.spawnItem(stack, this.block.center());
+          this.deliverItemStack(stack);
           continue;
         }
 
@@ -337,9 +472,13 @@ export class CraftingTerminalInterface extends StorageTerminalInterface {
         if (result.remaining <= 0) continue;
 
         stack.amount = result.remaining;
-        this.dimension.spawnItem(stack, this.block.center());
+        this.deliverItemStack(stack);
       }
     }
+  }
+
+  deliverItemStack(stack) {
+    this.dimension.spawnItem(stack, this.block.center());
   }
 
   renderCraftingControls() {

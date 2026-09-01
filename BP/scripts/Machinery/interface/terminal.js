@@ -103,12 +103,13 @@ export class StorageTerminalInterface {
    * Creates a lightweight terminal runtime wrapper.
    *
    * @param {import("@minecraft/server").Block} block Terminal block.
+   * @param {import("@minecraft/server").Entity} [entityOverride] Exact backing entity for virtual terminals.
    */
-  constructor(block) {
+  constructor(block, entityOverride) {
     this.valid = false;
     this.block = block;
     const TerminalClass = /** @type {typeof StorageTerminalInterface} */ (this.constructor);
-    this.entity = TerminalClass.getEntity(block);
+    this.entity = entityOverride?.isValid ? entityOverride : TerminalClass.getEntity(block);
     if (!this.entity?.isValid) return;
     this.shouldUpdateUI = TickScheduler.hasOpenUI(this.entity);
     this.shouldProcess = this.shouldUpdateUI || TickScheduler.shouldProcessMachine(this.entity);
@@ -131,7 +132,7 @@ export class StorageTerminalInterface {
     ButtonManager.registerMachineButton(config.machineId, config.slots.controls, ({ entity, slot }) => {
       const block = TerminalClass.getBlock(entity);
       if (!block) return undefined;
-      return new TerminalClass(block).handleControlPress(slot);
+      return new TerminalClass(block, entity).handleControlPress(slot);
     });
   }
 

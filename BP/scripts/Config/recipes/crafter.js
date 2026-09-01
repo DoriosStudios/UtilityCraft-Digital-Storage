@@ -46,6 +46,10 @@ const digitalStorageCrafterRecipes = {
     output: "utilitycraft:crafting_terminal",
     amount: 1,
   },
+  "range_upgrade,range_upgrade,range_upgrade,range_upgrade,nether_star,range_upgrade,range_upgrade,range_upgrade,range_upgrade": {
+    output: "utilitycraft:dimensional_range_upgrade",
+    amount: 1,
+  },
   "cell_casing,expert_storage_part,air,air,air,air,air,air,air": {
     output: "utilitycraft:expert_storage_cell",
     amount: 1,
@@ -132,6 +136,14 @@ const digitalStorageCrafterRecipes = {
   },
   "tinted_glass,expert_storage_part,tinted_glass,expert_storage_part,storage_core,expert_storage_part,glowstone_dust,ultimate_chip,glowstone_dust": {
     output: "utilitycraft:ultimate_storage_part",
+    amount: 1,
+  },
+  "redstone,crafter,redstone,gold_dust,wireless_panel_off,gold_dust,redstone,fluxite,redstone": {
+    output: "utilitycraft:wireless_crafting_panel_off",
+    amount: 1,
+  },
+  "fluxite,range_upgrade,fluxite,ender_eye,storage_terminal,ender_eye,fluxite,way_chip,fluxite": {
+    output: "utilitycraft:wireless_panel_off",
     amount: 1,
   },
 };

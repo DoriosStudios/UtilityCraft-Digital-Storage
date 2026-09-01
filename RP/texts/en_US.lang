@@ -64,8 +64,8 @@ item.utilitycraft:fluxite=Fluxite\n§7- Obtained by infusing quartz with diamond
 item.utilitycraft:storage_filler=Storage Filler\n§o§9@UC: Digital Storage
 item.utilitycraft:wireless_panel_off=Wireless Panel-Off\n§7- Interact with a Storage Center to link\n§o§9@UC: Digital Storage
 item.utilitycraft:wireless_panel_on=Wireless Panel-On\n§7- Hold to access the linked network\n§o§9@UC: Digital Storage
-item.utilitycraft:wireless_crafting_panel_off=Wireless Crafting Panel-Off\n§o§9@UC: Digital Storage
-item.utilitycraft:wireless_crafting_panel_on=Wireless Crafting Panel-On\n§7- Link with a terminal to use\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_crafting_panel_off=Wireless Crafting Panel-Off\n§7- Interact with a Storage Center to link\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_crafting_panel_on=Wireless Crafting Panel-On\n§7- Hold to access crafting and storage\n§o§9@UC: Digital Storage
 item.utilitycraft:dimensional_range_upgrade=§9Dimensional Range Upgrade§r\n§o§9@UC: Digital Storage
 upgrade.utilitycraft:dimensional_range_upgrade.name=§9Dimensional Range Upgrade§r
 

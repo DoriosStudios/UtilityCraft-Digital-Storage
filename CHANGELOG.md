@@ -1,6 +1,7 @@
 # UtilityCraft: Digital Storage v1.0.2
 
 ## ADDED
+- Added the Wireless Crafting Panel, combining wireless storage access with the Crafting Terminal grid and controls.
 - Added the Dimensional Range Upgrade, which grants Wireless Panels unlimited range across every dimension.
 - Added UtilityCraft Workbench recipes for the Wireless Panel and Dimensional Range Upgrade.
 - Added weighted logical storage bytes: new simple item types cost 8 B plus one byte per eight items, defined custom types cost 16 B plus payload, and opaque non-stackable items cost 64 B.
@@ -9,6 +10,7 @@
 - Added explicit item count, type count, used bytes, free bytes and over-capacity metrics.
 
 ## CHANGED
+- Crafting Terminals can now satisfy one recipe from any combination of items in the network and crafting grid, consuming and rolling back the transaction safely.
 - Storage Cell capacity numbers now represent logical bytes instead of a raw one-item-per-capacity limit; existing tier capacities remain unchanged.
 - Online networks now preserve physical per-cell allocations and flush only dirty cells instead of repartitioning and rewriting the complete network.
 - Large cell records, network records, item definitions and Storage Center topologies are fragmented into bounded pages.
@@ -24,6 +26,9 @@
 - Storage Transfer Station capacity checks now use exact logical-byte deltas while transfer speed remains item-count based.
 
 ## FIXED
+- Fixed colocated Wireless Panels being able to resolve another player's helper entity instead of their own.
+- Fixed Crafting Terminal recipe probes leaving their temporary Crafter or redstone behind when a terminal closed during validation.
+- Wireless Crafting Panels now return remaining grid items to the network, player inventory or world on close, retaining any undelivered remainder for a safe retry.
 - Fixed large networks failing recovery when a serialized cell, network or topology exceeded the Dynamic Property string limit.
 - Fixed failed recovery displays replacing useful totals with a misleading `0 / 0` snapshot.
 - Fixed routine network flushes concentrating many item types into the earliest high-capacity cell.

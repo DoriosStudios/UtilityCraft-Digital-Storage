@@ -4,7 +4,7 @@
 		"description": {
 			"identifier": "utilitycraft:wireless_crafting_panel_off",
 			"menu_category": {
-				"category": "none"
+				"category": "items"
 			}
 		},
 		"components": {

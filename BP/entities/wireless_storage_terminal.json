@@ -50,7 +50,7 @@
       },
       "minecraft:fire_immune": true,
       "minecraft:inventory": {
-        "inventory_size": 178,
+        "inventory_size": 192,
         "container_type": "container",
         "can_be_siphoned_from": false,
         "restrict_to_owner": true

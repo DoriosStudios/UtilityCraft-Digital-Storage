@@ -65,8 +65,8 @@ item.utilitycraft:fluxite=Fluxite\n§7- Se obtiene infundiendo cuarzo con polvo 
 item.utilitycraft:storage_filler=Relleno de Almacenamiento\n§o§9@UC: Digital Storage
 item.utilitycraft:wireless_panel_off=Panel Inalámbrico - Apagado\n§7- Interactúa con un Centro de Almacenamiento para vincularlo\n§o§9@UC: Digital Storage
 item.utilitycraft:wireless_panel_on=Panel Inalámbrico - Encendido\n§7- Sostenlo para acceder a la network vinculada\n§o§9@UC: Digital Storage
-item.utilitycraft:wireless_crafting_panel_off=Panel de Crafteo Inalámbrico - Apagado\n§o§9@UC: Digital Storage
-item.utilitycraft:wireless_crafting_panel_on=Panel de Crafteo Inalámbrico - Encendido\n§7- Vincúlalo con un terminal para usarlo\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_crafting_panel_off=Panel de Crafteo Inalámbrico - Apagado\n§7- Interactúa con un Centro de Almacenamiento para vincularlo\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_crafting_panel_on=Panel de Crafteo Inalámbrico - Encendido\n§7- Sostenlo para craftear y acceder al storage\n§o§9@UC: Digital Storage
 item.utilitycraft:dimensional_range_upgrade=§9Mejora de Rango Dimensional§r\n§o§9@UC: Digital Storage
 upgrade.utilitycraft:dimensional_range_upgrade.name=§9Mejora de Rango Dimensional§r
 

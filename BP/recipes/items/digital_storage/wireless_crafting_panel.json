@@ -1,0 +1,44 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "utilitycraft:wireless_crafting_panel"
+    },
+    "tags": [
+      "utilitycraft_workbench"
+    ],
+    "pattern": [
+      "RCR",
+      "GWG",
+      "RFR"
+    ],
+    "key": {
+      "C": {
+        "item": "minecraft:crafter"
+      },
+      "G": {
+        "item": "utilitycraft:gold_dust"
+      },
+      "W": {
+        "item": "utilitycraft:wireless_panel_off"
+      },
+      "R": {
+        "item": "minecraft:redstone"
+      },
+      "F": {
+        "item": "utilitycraft:fluxite"
+      }
+    },
+    "result": {
+      "item": "utilitycraft:wireless_crafting_panel_off"
+    },
+    "unlock": [
+      {
+        "item": "utilitycraft:wireless_panel_off"
+      },
+      {
+        "item": "minecraft:crafter"
+      }
+    ]
+  }
+}

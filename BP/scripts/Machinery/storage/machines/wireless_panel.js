@@ -1,20 +1,52 @@
 import { ItemLockMode, ItemStack, system, world } from "@minecraft/server";
 import { ButtonManager, TickScheduler } from "DoriosCore/index.js";
 import * as DoriosLib from "DoriosLib/index.js";
+import {
+  cancelCraftingRecipeResolution,
+  CRAFTING_TERMINAL_CONFIG,
+  CraftingTerminalInterface,
+} from "../../interface/crafting_terminal.js";
 import { StorageTerminalInterface, STORAGE_TERMINAL_CONFIG } from "../../interface/terminal.js";
 import { materializeOutputItem, readOutputToken } from "../../interface/terminal_output.js";
-import { getOnlineNetworkByCenter } from "../network_runtime.js";
+import { addItemStack, getOnlineNetworkByCenter } from "../network_runtime.js";
 import { checkWirelessAccess } from "../wireless_access.js";
 
 const DIMENSION_IDS = ["minecraft:overworld", "minecraft:nether", "minecraft:the_end"];
 const STORAGE_CENTER_ENTITY_TYPE = "utilitycraft:storage_center";
 const WIRELESS_PANEL_OFF = "utilitycraft:wireless_panel_off";
 const WIRELESS_PANEL_ON = "utilitycraft:wireless_panel_on";
+const WIRELESS_CRAFTING_PANEL_OFF = "utilitycraft:wireless_crafting_panel_off";
+const WIRELESS_CRAFTING_PANEL_ON = "utilitycraft:wireless_crafting_panel_on";
 const WIRELESS_TERMINAL_ENTITY_TYPE = "utilitycraft:wireless_storage_terminal";
 const WIRELESS_CENTER_PROPERTY = "ucds:wireless_center";
-const WIRELESS_MACHINE_ID = "wireless_storage_terminal";
+const WIRELESS_MODE_PROPERTY = "ucds:wireless_mode";
+const STORAGE_MODE = "storage";
+const CRAFTING_MODE = "crafting";
 const UPDATE_INTERVAL_TICKS = 1;
 const BIND_COOLDOWN_TICKS = 5;
+
+const PANEL_PROFILES = Object.freeze({
+  [WIRELESS_PANEL_OFF]: Object.freeze({
+    mode: STORAGE_MODE,
+    onId: WIRELESS_PANEL_ON,
+    entityName: "entity.utilitycraft:storage_terminal.name",
+  }),
+  [WIRELESS_PANEL_ON]: Object.freeze({
+    mode: STORAGE_MODE,
+    onId: WIRELESS_PANEL_ON,
+    entityName: "entity.utilitycraft:storage_terminal.name",
+  }),
+  [WIRELESS_CRAFTING_PANEL_OFF]: Object.freeze({
+    mode: CRAFTING_MODE,
+    onId: WIRELESS_CRAFTING_PANEL_ON,
+    entityName: "entity.utilitycraft:crafting_terminal.name",
+  }),
+  [WIRELESS_CRAFTING_PANEL_ON]: Object.freeze({
+    mode: CRAFTING_MODE,
+    onId: WIRELESS_CRAFTING_PANEL_ON,
+    entityName: "entity.utilitycraft:crafting_terminal.name",
+  }),
+});
 
 const TRACKING_OPTIONS = Object.freeze({
   anchor: "head",
@@ -23,9 +55,15 @@ const TRACKING_OPTIONS = Object.freeze({
   offset: Object.freeze({ x: 0, y: -0.5, z: 0 }),
 });
 
-const WIRELESS_TERMINAL_CONFIG = {
+const WIRELESS_STORAGE_CONFIG = {
   ...STORAGE_TERMINAL_CONFIG,
-  machineId: WIRELESS_MACHINE_ID,
+  machineId: "wireless_storage_terminal",
+  entityType: WIRELESS_TERMINAL_ENTITY_TYPE,
+};
+
+const WIRELESS_CRAFTING_CONFIG = {
+  ...CRAFTING_TERMINAL_CONFIG,
+  machineId: "wireless_crafting_terminal",
   entityType: WIRELESS_TERMINAL_ENTITY_TYPE,
 };
 
@@ -35,18 +73,60 @@ const lastBindTickByPlayer = new Map();
 const recoveryCheckedPlayers = new Set();
 const lockedPanelSlotByPlayer = new Map();
 const panelLockRecoveryCheckedPlayers = new Set();
+const pendingCleanupPanels = new Map();
 
 class WirelessStorageTerminalInterface extends StorageTerminalInterface {
   static get config() {
-    return WIRELESS_TERMINAL_CONFIG;
+    return WIRELESS_STORAGE_CONFIG;
+  }
+}
+
+class WirelessCraftingTerminalInterface extends CraftingTerminalInterface {
+  static get config() {
+    return WIRELESS_CRAFTING_CONFIG;
+  }
+
+  deliverItemStack(stack) {
+    const player = getTerminalOwner(this.entity);
+    if (player?.isValid) {
+      DoriosLib.player.giveItem(player, { item: stack });
+      return;
+    }
+    super.deliverItemStack(stack);
   }
 }
 
 WirelessStorageTerminalInterface.registerButtons();
+WirelessCraftingTerminalInterface.registerButtons();
 
-function getWirelessTerminal(entity) {
-  const block = WirelessStorageTerminalInterface.getBlock(entity);
-  return block ? new WirelessStorageTerminalInterface(block) : undefined;
+function getPanelProfile(itemOrTypeId) {
+  const typeId = typeof itemOrTypeId === "string" ? itemOrTypeId : itemOrTypeId?.typeId;
+  return PANEL_PROFILES[typeId];
+}
+
+function isActivePanel(item) {
+  const profile = getPanelProfile(item);
+  return Boolean(profile && item?.typeId === profile.onId);
+}
+
+function getEntityMode(entity) {
+  return entity?.getDynamicProperty(WIRELESS_MODE_PROPERTY) === CRAFTING_MODE
+    ? CRAFTING_MODE
+    : STORAGE_MODE;
+}
+
+function getWirelessTerminal(entity, mode = getEntityMode(entity)) {
+  const TerminalClass = mode === CRAFTING_MODE
+    ? WirelessCraftingTerminalInterface
+    : WirelessStorageTerminalInterface;
+  const block = TerminalClass.getBlock(entity);
+  return block ? new TerminalClass(block, entity) : undefined;
+}
+
+function getTerminalOwner(entity) {
+  const ownerId = entity?.getComponent("minecraft:tameable")?.tamedToPlayerId;
+  if (!ownerId) return undefined;
+  return world.getAllPlayers().find((player) => player.id === ownerId);
 }
 
 function findWirelessTerminal(playerId, preferredDimension) {
@@ -79,7 +159,7 @@ function recoverWirelessTerminal(playerId, preferredDimension) {
 
 function setPanelSlotLock(inventory, slot, lockMode) {
   const item = inventory?.getItem(slot);
-  if (item?.typeId !== WIRELESS_PANEL_ON) return item;
+  if (!isActivePanel(item)) return item;
   if (item.lockMode === lockMode) return item;
 
   item.lockMode = lockMode;
@@ -94,7 +174,7 @@ function recoverPanelSlotLocks(player, inventory, selectedSlot) {
   for (let slot = 0; slot < inventory.size; slot++) {
     if (slot === selectedSlot) continue;
     const item = inventory.getItem(slot);
-    if (item?.typeId !== WIRELESS_PANEL_ON || item.lockMode !== ItemLockMode.slot) continue;
+    if (!isActivePanel(item) || item.lockMode !== ItemLockMode.slot) continue;
     setPanelSlotLock(inventory, slot, ItemLockMode.none);
   }
 }
@@ -117,7 +197,7 @@ function syncHeldPanelSlotLock(player) {
   }
 
   let heldItem = inventory.getItem(selectedSlot);
-  if (heldItem?.typeId !== WIRELESS_PANEL_ON) {
+  if (!isActivePanel(heldItem)) {
     if (previousSlot === selectedSlot) lockedPanelSlotByPlayer.delete(player.id);
     return heldItem;
   }
@@ -161,11 +241,12 @@ function bindHeldPanel(player, centerEntity) {
   const inventory = player.getComponent("minecraft:inventory")?.container;
   const slot = player.selectedSlotIndex ?? 0;
   const heldItem = inventory?.getItem(slot);
-  if (!heldItem || (heldItem.typeId !== WIRELESS_PANEL_OFF && heldItem.typeId !== WIRELESS_PANEL_ON)) return false;
+  const profile = getPanelProfile(heldItem);
+  if (!profile) return false;
 
-  const linkedItem = heldItem.typeId === WIRELESS_PANEL_ON
+  const linkedItem = heldItem.typeId === profile.onId
     ? heldItem
-    : new ItemStack(WIRELESS_PANEL_ON, 1);
+    : new ItemStack(profile.onId, 1);
   if (linkedItem !== heldItem) copyItemData(heldItem, linkedItem);
   linkedItem.setDynamicProperty(WIRELESS_CENTER_PROPERTY, centerKey);
   linkedItem.lockMode = ItemLockMode.slot;
@@ -182,7 +263,7 @@ function bindHeldPanel(player, centerEntity) {
   return true;
 }
 
-function spawnWirelessTerminal(player, centerKey, networkId) {
+function spawnWirelessTerminal(player, centerKey, networkId, profile) {
   let entity = recoverWirelessTerminal(player.id, player.dimension);
   const isNew = !entity?.isValid;
   try {
@@ -191,8 +272,9 @@ function spawnWirelessTerminal(player, centerKey, networkId) {
       entity.addTag(player.id);
     }
 
-    entity.nameTag = "entity.utilitycraft:storage_terminal.name";
+    entity.nameTag = profile.entityName;
     entity.setDynamicProperty(WIRELESS_CENTER_PROPERTY, centerKey);
+    entity.setDynamicProperty(WIRELESS_MODE_PROPERTY, profile.mode);
     const tameable = entity.getComponent("minecraft:tameable");
     if (!tameable || (
       tameable.tamedToPlayerId !== player.id
@@ -203,7 +285,7 @@ function spawnWirelessTerminal(player, centerKey, networkId) {
       return undefined;
     }
 
-    const terminal = getWirelessTerminal(entity);
+    const terminal = getWirelessTerminal(entity, profile.mode);
     if (!terminal?.valid) {
       entity.remove();
       return undefined;
@@ -223,46 +305,76 @@ function spawnWirelessTerminal(player, centerKey, networkId) {
   }
 }
 
-function returnRemainingItems(terminal, player) {
-  const container = terminal.container;
-  if (!container) return;
+function routeRemainingItem(terminal, player, item, networkId, networkFirst) {
+  let remainder = item.clone();
 
-  const burnSlots = new Set(terminal.getInterfaceConfig().slots.burn ?? []);
-  for (let slot = 0; slot < container.size; slot++) {
-    const item = container.getItem(slot);
-    if (!item) continue;
+  if (networkFirst && networkId) {
+    const result = addItemStack(networkId, remainder, "wireless_crafting_close");
+    if (result.remaining <= 0) return { complete: true };
+    remainder.amount = result.remaining;
+  }
 
-    if (burnSlots.has(slot)) {
-      const materialized = materializeOutputItem(item, player);
-      const realItem = materialized.item ?? (!materialized.handled ? item : undefined);
-      if (realItem) {
-        if (player?.isValid) DoriosLib.player.giveItem(player, { item: realItem });
-        else terminal.dimension.spawnItem(realItem, terminal.entity.location);
-      }
-    } else if (!terminal.isUiElementItem(item) && !readOutputToken(item)) {
-      if (player?.isValid) DoriosLib.player.giveItem(player, { item });
-      else terminal.dimension.spawnItem(item, terminal.entity.location);
-    }
+  if (player?.isValid) {
+    const result = DoriosLib.player.giveItem(player, { item: remainder, dropRemainder: false });
+    if (!result.remainder) return { complete: true };
+    remainder = result.remainder;
+  }
 
-    container.setItem(slot, undefined);
+  try {
+    const location = player?.isValid
+      ? { x: player.location.x, y: player.location.y + 1, z: player.location.z }
+      : terminal.entity.location;
+    const dimension = player?.isValid ? player.dimension : terminal.dimension;
+    dimension.spawnItem(remainder, location);
+    return { complete: true };
+  } catch {
+    return { complete: false, remainder };
   }
 }
 
-function removeWirelessTerminal(playerId, player) {
-  const cached = activePanels.get(playerId);
-  const entity = cached?.isValid ? cached : recoverWirelessTerminal(playerId, player?.dimension);
-  activePanels.delete(playerId);
-  if (!entity?.isValid) return;
+function returnRemainingItems(terminal, player) {
+  const container = terminal.container;
+  if (!container) return true;
 
-  DoriosLib.entity.stopPlayerTracking(entity);
-  const terminal = getWirelessTerminal(entity);
-  if (terminal?.valid) {
-    const networkId = terminal.getLinkedNetworkId(entity);
-    if (networkId) terminal.processBurnSlots(entity, terminal.container, networkId);
-    returnRemainingItems(terminal, player);
-    terminal.destroy();
+  const slots = terminal.getInterfaceConfig().slots;
+  const burnSlots = new Set(slots.burn ?? []);
+  const craftingSlots = new Set(slots.craftingGrid ?? []);
+  const networkId = terminal.getLinkedNetworkId(terminal.entity);
+  let complete = true;
+
+  for (let slot = 0; slot < container.size; slot++) {
+    let item = container.getItem(slot);
+    if (!item) continue;
+
+    if (terminal.isUiElementItem(item)) {
+      container.setItem(slot, undefined);
+      continue;
+    }
+
+    if (craftingSlots.has(slot) || burnSlots.has(slot)) {
+      const materialized = materializeOutputItem(item, player);
+      item = materialized.item ?? (!materialized.handled ? item : undefined);
+      container.setItem(slot, item);
+      if (!item) continue;
+    } else if (readOutputToken(item)) {
+      container.setItem(slot, undefined);
+      continue;
+    }
+
+    const routed = routeRemainingItem(terminal, player, item, networkId, craftingSlots.has(slot));
+    if (routed.complete) {
+      container.setItem(slot, undefined);
+    } else {
+      container.setItem(slot, routed.remainder);
+      complete = false;
+    }
   }
 
+  return complete;
+}
+
+function finalizeWirelessTerminal(entity, terminal) {
+  terminal?.destroy();
   ButtonManager.unwatchEntity(entity);
   TickScheduler.releaseTickGroup(entity);
   try {
@@ -274,9 +386,49 @@ function removeWirelessTerminal(playerId, player) {
   }
 }
 
+function removeWirelessTerminal(playerId, player, explicitEntity) {
+  const cached = activePanels.get(playerId);
+  const pending = pendingCleanupPanels.get(playerId);
+  const entity = explicitEntity?.isValid
+    ? explicitEntity
+    : cached?.isValid
+      ? cached
+      : pending?.isValid
+        ? pending
+        : recoverWirelessTerminal(playerId, player?.dimension);
+  activePanels.delete(playerId);
+  if (!entity?.isValid) {
+    pendingCleanupPanels.delete(playerId);
+    return true;
+  }
+
+  DoriosLib.entity.stopPlayerTracking(entity);
+  const terminal = getWirelessTerminal(entity);
+  if (!terminal?.valid) {
+    pendingCleanupPanels.set(playerId, entity);
+    return false;
+  }
+
+  if (getEntityMode(entity) === CRAFTING_MODE) cancelCraftingRecipeResolution(entity);
+  const networkId = terminal.getLinkedNetworkId(entity);
+  if (networkId) terminal.processBurnSlots(entity, terminal.container, networkId);
+  if (!returnRemainingItems(terminal, player)) {
+    pendingCleanupPanels.set(playerId, entity);
+    return false;
+  }
+
+  pendingCleanupPanels.delete(playerId);
+  finalizeWirelessTerminal(entity, terminal);
+  return true;
+}
+
 function updateWirelessPlayer(player) {
+  const pending = pendingCleanupPanels.get(player.id);
+  if (pending?.isValid && !removeWirelessTerminal(player.id, player, pending)) return;
+
   const heldItem = syncHeldPanelSlotLock(player);
-  if (heldItem?.typeId !== WIRELESS_PANEL_ON) {
+  const profile = getPanelProfile(heldItem);
+  if (!profile || heldItem.typeId !== profile.onId) {
     removeWirelessTerminal(player.id, player);
     lastStatusByPlayer.delete(player.id);
     return;
@@ -311,13 +463,21 @@ function updateWirelessPlayer(player) {
 
   lastStatusByPlayer.delete(player.id);
   let entity = activePanels.get(player.id);
+  if (!entity?.isValid) entity = recoverWirelessTerminal(player.id, player.dimension);
+  if (entity?.isValid && getEntityMode(entity) !== profile.mode) {
+    if (!removeWirelessTerminal(player.id, player, entity)) return;
+    entity = undefined;
+  }
   if (!entity?.isValid) {
-    entity = spawnWirelessTerminal(player, centerKey, network.networkId);
+    entity = spawnWirelessTerminal(player, centerKey, network.networkId, profile);
   }
   if (!entity?.isValid) return;
 
+  activePanels.set(player.id, entity);
+  entity.nameTag = profile.entityName;
   entity.setDynamicProperty(WIRELESS_CENTER_PROPERTY, centerKey);
-  const terminal = getWirelessTerminal(entity);
+  entity.setDynamicProperty(WIRELESS_MODE_PROPERTY, profile.mode);
+  const terminal = getWirelessTerminal(entity, profile.mode);
   if (!terminal?.valid) {
     removeWirelessTerminal(player.id, player);
     return;
@@ -332,7 +492,7 @@ function updateWirelessPlayer(player) {
 world.beforeEvents.playerInteractWithEntity.subscribe(
   /** @param {any} event */ (event) => {
     if (event?.target?.typeId !== STORAGE_CENTER_ENTITY_TYPE) return;
-    if (event?.itemStack?.typeId !== WIRELESS_PANEL_OFF && event?.itemStack?.typeId !== WIRELESS_PANEL_ON) return;
+    if (!getPanelProfile(event?.itemStack)) return;
 
     event.cancel = true;
     const lastTick = lastBindTickByPlayer.get(event.player.id) ?? -BIND_COOLDOWN_TICKS;
@@ -355,7 +515,15 @@ world.afterEvents.playerLeave.subscribe(({ playerId }) => {
 });
 
 system.runInterval(() => {
-  for (const player of world.getAllPlayers()) {
+  const players = world.getAllPlayers();
+  for (const [playerId, entity] of pendingCleanupPanels) {
+    const player = players.find((candidate) => candidate.id === playerId);
+    try {
+      removeWirelessTerminal(playerId, player, entity);
+    } catch {}
+  }
+
+  for (const player of players) {
     try {
       updateWirelessPlayer(player);
     } catch {}

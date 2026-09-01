@@ -65,8 +65,8 @@ item.utilitycraft:fluxite=Fluxite\n§7- Obtida ao infundir quartzo com pó de di
 item.utilitycraft:storage_filler=Preenchedor de Armazenamento\n§o§9@UC: Digital Storage
 item.utilitycraft:wireless_panel_off=Painel Sem Fios - Desligado\n§7- Interage com um Centro de Armazenamento para associar\n§o§9@UC: Digital Storage
 item.utilitycraft:wireless_panel_on=Painel Sem Fios - Ligado\n§7- Segura-o para aceder à rede associada\n§o§9@UC: Digital Storage
-item.utilitycraft:wireless_crafting_panel_off=Painel de Criação Sem Fios - Desligado\n§o§9@UC: Digital Storage
-item.utilitycraft:wireless_crafting_panel_on=Painel de Criação Sem Fios - Ligado\n§7- Associa-o a um terminal para usar\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_crafting_panel_off=Painel de Criação Sem Fios - Desligado\n§7- Interage com um Centro de Armazenamento para associar\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_crafting_panel_on=Painel de Criação Sem Fios - Ligado\n§7- Segura-o para criar e aceder ao armazenamento\n§o§9@UC: Digital Storage
 item.utilitycraft:dimensional_range_upgrade=§9Melhoria de Alcance Dimensional§r\n§o§9@UC: Digital Storage
 upgrade.utilitycraft:dimensional_range_upgrade.name=§9Melhoria de Alcance Dimensional§r
 
