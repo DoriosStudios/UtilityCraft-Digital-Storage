@@ -26,6 +26,7 @@
 - Storage Transfer Station capacity checks now use exact logical-byte deltas while transfer speed remains item-count based.
 
 ## FIXED
+- Fixed the active Wireless Crafting Panel declaring a hidden creative category while its catalog entry placed it in Items, which caused an item catalog warning during world load.
 - Fixed colocated Wireless Panels being able to resolve another player's helper entity instead of their own.
 - Fixed Crafting Terminal recipe probes leaving their temporary Crafter or redstone behind when a terminal closed during validation.
 - Wireless Crafting Panels now return remaining grid items to the network, player inventory or world on close, retaining any undelivered remainder for a safe retry.
