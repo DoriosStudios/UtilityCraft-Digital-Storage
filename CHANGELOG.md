@@ -10,6 +10,7 @@
 - Added explicit item count, type count, used bytes, free bytes and over-capacity metrics.
 
 ## CHANGED
+- Active button watchers now make repeated registration checks a constant-time no-op, and Wireless Panels update every two ticks to reduce runtime overhead.
 - Crafting Terminals can now satisfy one recipe from any combination of items in the network and crafting grid, consuming and rolling back the transaction safely.
 - Storage Cell capacity numbers now represent logical bytes instead of a raw one-item-per-capacity limit; existing tier capacities remain unchanged.
 - Online networks now preserve physical per-cell allocations and flush only dirty cells instead of repartitioning and rewriting the complete network.
@@ -26,6 +27,7 @@
 - Storage Transfer Station capacity checks now use exact logical-byte deltas while transfer speed remains item-count based.
 
 ## FIXED
+- Fixed terminal button presses being restored before the button watcher could detect and handle them.
 - Fixed the active Wireless Crafting Panel declaring a hidden creative category while its catalog entry placed it in Items, which caused an item catalog warning during world load.
 - Fixed colocated Wireless Panels being able to resolve another player's helper entity instead of their own.
 - Fixed Crafting Terminal recipe probes leaving their temporary Crafter or redstone behind when a terminal closed during validation.

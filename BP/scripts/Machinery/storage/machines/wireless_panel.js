@@ -22,7 +22,7 @@ const WIRELESS_CENTER_PROPERTY = "ucds:wireless_center";
 const WIRELESS_MODE_PROPERTY = "ucds:wireless_mode";
 const STORAGE_MODE = "storage";
 const CRAFTING_MODE = "crafting";
-const UPDATE_INTERVAL_TICKS = 1;
+const UPDATE_INTERVAL_TICKS = 2;
 const BIND_COOLDOWN_TICKS = 5;
 
 const PANEL_PROFILES = Object.freeze({
