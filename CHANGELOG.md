@@ -10,6 +10,7 @@
 - Added explicit item count, type count, used bytes, free bytes and over-capacity metrics.
 
 ## CHANGED
+- The creative inventory now lists only the unlinked Wireless Panel variants; linked `On` variants remain hidden until produced by binding to a Storage Center.
 - Active button watchers now make repeated registration checks a constant-time no-op, and Wireless Panels update every two ticks to reduce runtime overhead.
 - Crafting Terminals can now satisfy one recipe from any combination of items in the network and crafting grid, consuming and rolling back the transaction safely.
 - Storage Cell capacity numbers now represent logical bytes instead of a raw one-item-per-capacity limit; existing tier capacities remain unchanged.
