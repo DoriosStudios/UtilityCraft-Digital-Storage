@@ -28,21 +28,25 @@ const BIND_COOLDOWN_TICKS = 5;
 const PANEL_PROFILES = Object.freeze({
   [WIRELESS_PANEL_OFF]: Object.freeze({
     mode: STORAGE_MODE,
+    offId: WIRELESS_PANEL_OFF,
     onId: WIRELESS_PANEL_ON,
     entityName: "entity.utilitycraft:storage_terminal.name",
   }),
   [WIRELESS_PANEL_ON]: Object.freeze({
     mode: STORAGE_MODE,
+    offId: WIRELESS_PANEL_OFF,
     onId: WIRELESS_PANEL_ON,
     entityName: "entity.utilitycraft:storage_terminal.name",
   }),
   [WIRELESS_CRAFTING_PANEL_OFF]: Object.freeze({
     mode: CRAFTING_MODE,
+    offId: WIRELESS_CRAFTING_PANEL_OFF,
     onId: WIRELESS_CRAFTING_PANEL_ON,
     entityName: "entity.utilitycraft:crafting_terminal.name",
   }),
   [WIRELESS_CRAFTING_PANEL_ON]: Object.freeze({
     mode: CRAFTING_MODE,
+    offId: WIRELESS_CRAFTING_PANEL_OFF,
     onId: WIRELESS_CRAFTING_PANEL_ON,
     entityName: "entity.utilitycraft:crafting_terminal.name",
   }),
@@ -229,20 +233,35 @@ function copyItemData(source, target) {
   }
 }
 
-function bindHeldPanel(player, centerEntity) {
+function toggleHeldPanelLink(player, centerEntity) {
   if (!player?.isValid || !centerEntity?.isValid) return false;
 
   const centerKey = getCenterKey(centerEntity);
-  if (!getOnlineNetworkByCenter(centerKey)) {
-    player.sendMessage({ translate: "message.utilitycraft:wireless_network_unavailable" });
-    return false;
-  }
-
   const inventory = player.getComponent("minecraft:inventory")?.container;
   const slot = player.selectedSlotIndex ?? 0;
   const heldItem = inventory?.getItem(slot);
   const profile = getPanelProfile(heldItem);
   if (!profile) return false;
+
+  if (heldItem.getDynamicProperty(WIRELESS_CENTER_PROPERTY) === centerKey) {
+    // Finish returning crafting/input items before clearing the original link.
+    if (!removeWirelessTerminal(player.id, player)) return false;
+
+    const unlinkedItem = new ItemStack(profile.offId, 1);
+    copyItemData(heldItem, unlinkedItem);
+    unlinkedItem.setDynamicProperty(WIRELESS_CENTER_PROPERTY, undefined);
+    unlinkedItem.lockMode = ItemLockMode.none;
+    inventory.setItem(slot, unlinkedItem);
+    lockedPanelSlotByPlayer.delete(player.id);
+    lastStatusByPlayer.delete(player.id);
+    player.sendMessage({ translate: "message.utilitycraft:wireless_unlinked" });
+    return true;
+  }
+
+  if (!getOnlineNetworkByCenter(centerKey)) {
+    player.sendMessage({ translate: "message.utilitycraft:wireless_network_unavailable" });
+    return false;
+  }
 
   const linkedItem = heldItem.typeId === profile.onId
     ? heldItem
@@ -501,7 +520,7 @@ world.beforeEvents.playerInteractWithEntity.subscribe(
 
     const player = event.player;
     const center = event.target;
-    system.run(() => bindHeldPanel(player, center));
+    system.run(() => toggleHeldPanelLink(player, center));
   },
 );
 
