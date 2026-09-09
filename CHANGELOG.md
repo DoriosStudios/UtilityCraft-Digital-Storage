@@ -29,6 +29,7 @@
 - Storage Transfer Station capacity checks now use exact logical-byte deltas while transfer speed remains item-count based.
 
 ## FIXED
+- Restricted multiblock entity lookup and deactivation to live dorios:multiblock controllers, preventing hide events and removal from targeting players, dropped items or visual entities.
 - Fixed terminal button presses being restored before the button watcher could detect and handle them.
 - Fixed the active Wireless Crafting Panel declaring a hidden creative category while its catalog entry placed it in Items, which caused an item catalog warning during world load.
 - Fixed colocated Wireless Panels being able to resolve another player's helper entity instead of their own.

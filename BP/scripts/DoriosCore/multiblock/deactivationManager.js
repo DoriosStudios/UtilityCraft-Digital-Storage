@@ -1,6 +1,6 @@
 import { system } from "@minecraft/server";
 import * as Constants from "./constants.js";
-import { EntityManager } from "./entityManager.js";
+import { EntityManager, isMultiblockEntity } from "./entityManager.js";
 import { isLinkNode, parseLinkNodeTag } from "../../DoriosLib/linkNodes/index.js";
 
 export class DeactivationManager {
@@ -56,8 +56,8 @@ export class DeactivationManager {
    */
   static deactivateMultiblock(block, player, emptyBlocksConfig) {
     const entity = EntityManager.getEntityFromBlock(block);
+    if (!isMultiblockEntity(entity)) return;
     if (player) player.sendMessage("\u00A7c[Scan] Multiblock structure deactivated.");
-    if (!entity) return;
 
     entity.triggerEvent(Constants.HIDE_EVENT_ID);
     entity.getTags().forEach((tag) => {
@@ -100,7 +100,7 @@ export class DeactivationManager {
    */
   static handleBreakController(block, player, emptyBlocksConfig) {
     const entity = DeactivationManager.deactivateMultiblock(block, player, emptyBlocksConfig);
-    if (!entity) return;
+    if (!isMultiblockEntity(entity)) return;
 
     system.runTimeout(() => entity.remove(), 2);
     return entity;

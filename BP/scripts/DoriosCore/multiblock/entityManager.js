@@ -1,5 +1,12 @@
 import * as Constants from "./constants.js";
 
+/** Only live multiblock controllers may receive controller events. */
+export function isMultiblockEntity(entity) {
+  return entity?.isValid === true
+    && entity.typeId !== "minecraft:player"
+    && entity.getComponent("minecraft:type_family")?.hasTypeFamily(Constants.MULTIBLOCK_FAMILY) === true;
+}
+
 export class EntityManager {
   /**
    * Returns the geometric center of a bounding box.
@@ -52,7 +59,7 @@ export class EntityManager {
    * Resolves the controller entity associated with a block.
    *
    * Resolution strategy:
-   * - First tries the entity directly stored at the exact block location.
+   * - First tries a multiblock controller at the exact block location.
    * - Falls back to nearby entities in the `dorios:multiblock` family.
    * - Uses serialized multiblock bounds to determine ownership.
    *
@@ -62,7 +69,7 @@ export class EntityManager {
   static getEntityFromBlock(block) {
     if (!block) return;
 
-    const directEntity = block.dimension.getEntitiesAtBlockLocation(block.location)[0];
+    const directEntity = block.dimension.getEntitiesAtBlockLocation(block.location).find(isMultiblockEntity);
     if (directEntity) return directEntity;
 
     return block.dimension
@@ -72,6 +79,7 @@ export class EntityManager {
         families: [Constants.MULTIBLOCK_FAMILY],
       })
       .find((entity) => {
+        if (!isMultiblockEntity(entity)) return false;
         const raw = entity.getDynamicProperty(Constants.BOUNDS_PROPERTY_ID);
         if (!raw) return false;
 
