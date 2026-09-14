@@ -1,6 +1,7 @@
 # UtilityCraft: Digital Storage v1.0.2
 
 ## ADDED
+- Added UtilityCore block-container selection compatibility to the eight placed storage entity types: full/hidden hitboxes and family-based discovery, with existing inventory sizes and storage cleanup preserved. Wireless session entities and the internal storage vault remain outside the block-container system.
 - Added the Wireless Crafting Panel, combining wireless storage access with the Crafting Terminal grid and controls.
 - Added the Dimensional Range Upgrade, which grants Wireless Panels unlimited range across every dimension.
 - Added UtilityCraft Workbench recipes for the Wireless Panel and Dimensional Range Upgrade.
