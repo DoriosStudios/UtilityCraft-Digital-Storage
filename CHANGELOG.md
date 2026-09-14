@@ -11,6 +11,7 @@
 - Added explicit item count, type count, used bytes, free bytes and over-capacity metrics.
 
 ## CHANGED
+- Restored normal block-container entity hitboxes to 1 x 1; the hidden selection state remains 0 x 0.
 - Interacting with the linked Storage Center now unlinks either Wireless Panel variant and returns it to Off; interacting again links it back.
 - The creative inventory now lists only the unlinked Wireless Panel variants; linked `On` variants remain hidden until produced by binding to a Storage Center.
 - Active button watchers now make repeated registration checks a constant-time no-op, and Wireless Panels update every two ticks to reduce runtime overhead.
