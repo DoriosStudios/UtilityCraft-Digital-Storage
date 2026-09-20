@@ -36,7 +36,7 @@
       {
         "transfer_arrow": {
           "type": "image",
-          "texture": "textures/ui/progress_bar/arrow_right_0",
+          "texture": "textures/ui/progress/f_00",
           "size": [ 32, 32 ],
           "anchor_from": "top_middle",
           "anchor_to": "top_middle",

@@ -1,5 +1,12 @@
 # UtilityCraft: Digital Storage v1.0.2
 
+## Unreleased
+
+### CHANGED
+
+- Updated the Storage Transfer Station arrow to UtilityCraft's simplified `textures/ui/progress/f_00` texture path.
+- Matched original-pack language files to ATA: Quick Info uses the shared `utilitycraft.identifier` label, while item and block tooltips preserve their individual `@Addon` attribution and existing descriptions.
+
 ## ADDED
 - Added UtilityCore block-container selection compatibility to the eight placed storage entity types: full/hidden hitboxes and family-based discovery, with existing inventory sizes and storage cleanup preserved. Wireless session entities and the internal storage vault remain outside the block-container system.
 - Added the Wireless Crafting Panel, combining wireless storage access with the Crafting Terminal grid and controls.

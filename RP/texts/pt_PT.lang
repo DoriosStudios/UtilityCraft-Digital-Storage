@@ -98,3 +98,6 @@ ui.utilitycraft:info.storage_center=§8Cria, alimenta e controla uma rede de arm
 ui.utilitycraft:info.storage_cell_drive=§8Armazena até §q16 células de armazenamento§8 e adiciona a capacidade combinada em bytes à rede de armazenamento digital ligada. O §qCentro de Armazenamento§8 lê as células instaladas ao criar a rede.\n\n§8Alterar uma célula enquanto a unidade está associada §cdesliga a rede§8 para que o Centro de Armazenamento possa reconstruí-la em segurança.
 ui.utilitycraft:info.import_buffer=§8Move itens dos seus §918 slots de entrada§8 para a rede de armazenamento digital ligada a cada §q10 ticks§8. Processa um stack ocupado por operação, mais um stack adicional por nível de §qMelhoria de Velocidade§8.\n\n§8Melhoria aceite:\n- §qMelhoria de Velocidade§8 (nível máximo: 8)\n\n§8A automatização só pode inserir itens nos slots de entrada.
 ui.utilitycraft:info.export_buffer=§8Usa os seus §q9 slots de filtro§8 para retirar itens correspondentes da rede de armazenamento digital ligada e colocá-los em §c27 slots de saída§8 a cada 10 ticks. Exporta um stack por operação, mais um stack adicional por nível de §qMelhoria de Velocidade§8.\n\n§8Melhoria aceite:\n- §qMelhoria de Velocidade§8 (nível máximo: 8)\n\n§8A automatização só pode extrair itens dos slots de saída.
+
+## Quick Info addon name
+utilitycraft.identifier=§o§9@UtilityCraft

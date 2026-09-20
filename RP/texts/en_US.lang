@@ -97,3 +97,6 @@ ui.utilitycraft:info.storage_center=§8Creates, powers, and controls a digital s
 ui.utilitycraft:info.storage_cell_drive=§8Holds up to §q16 storage cells§8 and contributes their combined byte capacity to the connected digital storage network. The §qStorage Center§8 reads the installed cells when it creates the network.\n\n§8Changing a cell while the drive is linked turns the §cnetwork off§8 so the Storage Center can rebuild it safely.
 ui.utilitycraft:info.import_buffer=§8Moves items from its §918 input slots§8 into the connected digital storage network every §q10 ticks§8. It processes one occupied stack per operation, plus one additional stack for each §qSpeed Upgrade§8 level.\n\n§8Accepted upgrade:\n- §qSpeed Upgrade§8 (maximum level: 8)\n\n§8Automation can only insert items into the input slots.
 ui.utilitycraft:info.export_buffer=§8Uses its §q9 filter slots§8 to pull matching items from the connected digital storage network into §c27 output slots§8 every 10 ticks. It exports one stack per operation, plus one additional stack for each §qSpeed Upgrade§8 level.\n\n§8Accepted upgrade:\n- §qSpeed Upgrade§8 (maximum level: 8)\n\n§8Automation can only extract items from the output slots.
+
+## Quick Info addon name
+utilitycraft.identifier=§o§9@UtilityCraft
