@@ -1,184 +1,67 @@
-# UtilityCraft: Digital Storage v1.0.2
+This update expands wireless storage and crafting, introduces byte-based cell capacity, and improves saving and recovery for large networks.
 
-Digital Storage now requires UtilityCraft 3.6.1 or newer for the updated block-container selection system.
-
-## UI/UX
-
-- Storage blocks now support UtilityCraft's shared selection switching: interact with their inventories while standing and select their blocks while sneaking, without enlarging entity hitboxes.
-
-## Unreleased
-
-### CHANGED
-
-- Updated the Storage Transfer Station arrow to UtilityCraft's simplified `textures/ui/progress/f_00` texture path.
-- Matched original-pack language files to ATA: Quick Info uses the shared `utilitycraft.identifier` label, while item and block tooltips preserve their individual `@Addon` attribution and existing descriptions.
-
-## ADDED
-- Added UtilityCore block-container selection compatibility to the eight placed storage entity types: full/hidden hitboxes and family-based discovery, with existing inventory sizes and storage cleanup preserved. Wireless session entities and the internal storage vault remain outside the block-container system.
-- Added the Wireless Crafting Panel, combining wireless storage access with the Crafting Terminal grid and controls.
-- Added the Dimensional Range Upgrade, which grants Wireless Panels unlimited range across every dimension.
-- Added UtilityCraft Workbench recipes for the Wireless Panel and Dimensional Range Upgrade.
-- Added weighted logical storage bytes: new simple item types cost 8 B plus one byte per eight items, defined custom types cost 16 B plus payload, and opaque non-stackable items cost 64 B.
-- Added paged, checksummed dynamic-property generations with A/B manifests and automatic fallback to the previous valid generation.
-- Added recoverable cell-to-cell transaction intents for the Storage Transfer Station.
-- Added explicit item count, type count, used bytes, free bytes and over-capacity metrics.
-
-## CHANGED
-- Restored normal block-container entity hitboxes to 1 x 1; the hidden selection state remains 0 x 0.
-- Interacting with the linked Storage Center now unlinks either Wireless Panel variant and returns it to Off; interacting again links it back.
-- The creative inventory now lists only the unlinked Wireless Panel variants; linked `On` variants remain hidden until produced by binding to a Storage Center.
-- Active button watchers now make repeated registration checks a constant-time no-op, and Wireless Panels update every two ticks to reduce runtime overhead.
-- Crafting Terminals can now satisfy one recipe from any combination of items in the network and crafting grid, consuming and rolling back the transaction safely.
-- Storage Cell capacity numbers now represent logical bytes instead of a raw one-item-per-capacity limit; existing tier capacities remain unchanged.
-- Online networks now preserve physical per-cell allocations and flush only dirty cells instead of repartitioning and rewriting the complete network.
-- Large cell records, network records, item definitions and Storage Center topologies are fragmented into bounded pages.
-- Auto-flush, topology scans, topology writes, startup migration and transaction recovery now run incrementally across ticks.
-- Topology rebuilds now deduplicate connected components so one cable change does not rescan the same large network from multiple adjacent blocks.
-- Physical network edits now debounce nearby changes, rescan the affected components and rebuild the runtime only after the topology snapshot is committed.
-- Successful paged commits retain the active and fallback generations while collecting only the older unreferenced pages.
-- Storage Center and Storage Cell displays now distinguish stored items, item types and logical-byte usage in a shorter format.
-- Storage percentage lore now escapes Minecraft's percent formatting correctly, and Storage Center detail lines retain their visual indentation.
-- Active Wireless Panels now lock into their selected hotbar slot while held, preventing them from being dropped or moved into another inventory until deselected.
-- Wireless Panels now have a 64-block base range, gain 128 blocks per Range Upgrade up to level 8 (1,088 blocks), and retain the Center's last verified range while its chunk is unloaded.
-- The Storage Center interface now reserves a dedicated range upgrade slot above its lowered information tab.
-- Storage Transfer Station capacity checks now use exact logical-byte deltas while transfer speed remains item-count based.
-
-## FIXED
-- Restricted multiblock entity lookup and deactivation to live dorios:multiblock controllers, preventing hide events and removal from targeting players, dropped items or visual entities.
-- Fixed terminal button presses being restored before the button watcher could detect and handle them.
-- Fixed the active Wireless Crafting Panel declaring a hidden creative category while its catalog entry placed it in Items, which caused an item catalog warning during world load.
-- Fixed colocated Wireless Panels being able to resolve another player's helper entity instead of their own.
-- Fixed Crafting Terminal recipe probes leaving their temporary Crafter or redstone behind when a terminal closed during validation.
-- Wireless Crafting Panels now return remaining grid items to the network, player inventory or world on close, retaining any undelivered remainder for a safe retry.
-- Fixed large networks failing recovery when a serialized cell, network or topology exceeded the Dynamic Property string limit.
-- Fixed failed recovery displays replacing useful totals with a misleading `0 / 0` snapshot.
-- Fixed routine network flushes concentrating many item types into the earliest high-capacity cell.
-- Fixed failed network creation or shutdown leaving cells partially claimed or releasing a network record before every cell was safely detached.
-- Fixed machines mutating storage while startup transaction recovery was still in progress; blocking recovery faults are now shown on the Storage Center.
-- Fixed disconnected Drives, terminals and Import/Export Buffers retaining an obsolete network link after cables or machines changed the physical topology.
-
-## COMPATIBILITY
-- Existing V1 cell and network records are read and migrated lazily to V2 without deleting or clamping stored items.
-- Cells that exceed the new weighted capacity preserve all contents and allow withdrawals or zero-cost additions until usage returns within capacity.
-- Existing `utilitycraft:ds.capacity.<number>` third-party cell tags remain supported; the number is now interpreted as logical bytes.
-
----
-
-# UtilityCraft: Digital Storage v1.0.1
-
-## ADDED
-- Added lightweight native ItemStack vault pages for items whose maximum stack size is one, preserving add-on dynamic properties, bundle contents, shulker contents, durability, enchantments, and other opaque data.
-- Added two rotating global entity-only vault backups, saved every five minutes and used only when a required page is missing.
-- Added automatic recovery of missing vault pages at a temporary location without moving live vault entities or pausing unrelated storage operations.
-- Added player feedback when an item's vault page is temporarily unavailable; the visual terminal item is removed while the network count remains unchanged.
-- Added the Wireless Panel to the Wireless creative inventory group; it links to an active Overworld Storage Center and opens a personal Storage Terminal while held.
-
-## CHANGED
-- New stackable-item keys now use only the item type, custom name, and exact lore; quantities continue using the existing cell and network system.
-- Export Buffers and Crafting Terminal recipes continue using normal logical keys; opaque vault references remain separate.
-- Export Buffer filters now control their three slots directly below them, merge compatible partial stacks, preserve duplicate filters as separate columns, and skip blocked columns when processing the next available filter.
-
-## COMPATIBILITY
-- Existing plain item keys and full ucds:item definitions remain readable and extractable. Reinserted legacy items use the new stackable or opaque storage path.
-
----
-
-# UtilityCraft: Digital Storage v1.0.0
-
-## ADDED
-- Added tag-based Storage Cell registration so other add-ons can provide compatible cells without script component dependencies.
-
-## COMPATIBILITY
-- Registered all Digital Storage recipes tagged `utilitycraft_workbench` with UtilityCraft's Crafter through the DoriosLib registry.
-- Added Vibrant Visuals support to the resource pack.
-
-## FIXES
-- Fixed Storage Centers failing to initialize when a Storage Cell retained ownership from a previous network.
-- Storage Centers now show the specific reason when network initialization or recovery fails.
-- Fixed Item Conduits visually connecting to Storage Cell Drives, whose inventory is not available to automation.
-
----
-
-# UtilityCraft: Digital Storage v1.0.0.07 Beta
-
-This update completely reworks Digital Storage with faster interfaces, improved storage networks, safer item handling, rebalanced recipes and new ways to manage Storage Cells.
+> [!WARNING]
+> Requires UtilityCraft 3.6.1 or newer. Existing storage records migrate automatically. Cell capacities now use logical bytes; cells that exceed their new capacity retain their contents and allow withdrawals until space is available again.
 
 ## HIGHLIGHTS
-- Completely reworked the Digital Storage network and terminal systems.
-- Added the Storage Transfer Station.
-- Added Cell Casings and reworked Storage Cell crafting.
-- Rebalanced machine, component and storage progression recipes.
-- Improved performance and fixed multiple causes of item loss.
 
----
+- Storage Cells now use byte-based capacity with clearer usage information.
+- Storage networks save incrementally and can recover a previous valid generation.
+- Wireless access gains configurable range and a cross-dimensional upgrade.
+- Wireless Crafting Panel adds crafting alongside remote storage access.
 
-## STORAGE NETWORK
-- Reworked how Digital Storage networks are created, powered and updated.
-- Added support for multiple independent storage networks in the same world.
-- Storage Centers now automatically connect Cell Drives, terminals and Import/Export Buffers.
-- Network energy consumption now depends on the connected machines.
-- Networks safely turn off when their structure changes, a Cell is replaced or the Storage Center runs out of energy.
-- Improved Network Cable connections and visuals when the network changes.
-- Storage Centers now display network status, stored items, capacity, usage, Cell count, Drive count and energy cost.
-- Cell Drives now support up to 16 Storage Cells and combine their capacities.
+## BLOCKS
 
-## TERMINALS
-### Storage Terminal
-- Completely reworked the interface to load and update stored items faster.
-- Displays up to 162 item types per page with compact amount labels.
-- Added improved page controls and a manual reload button.
-- Added four dedicated slots for inserting items into the network.
-- Improved handling of items with custom names, lore, durability and enchantments.
+- **Crafting Terminal**
+    - Recipes can combine ingredients from the network and the crafting grid.
+- **Storage Cells**
+    - Capacity values now represent logical bytes instead of individual item counts.
+    - Simple item types cost 8 B plus 1 B per eight items; defined custom types cost 16 B plus 1 B per eight items; opaque non-stackable items cost 64 B each.
+    - Existing cells retain their contents during migration, including cells over capacity.
+- **Storage Center**
+    - Added a dedicated wireless range upgrade slot.
+    - Wireless access starts at 64 blocks and gains 128 blocks per Range Upgrade, up to eight upgrades and a total of 1,088 blocks.
+    - Networks preserve item allocations across cells and save only changed cells.
+- **Storage Transfer Station**
+    - Capacity checks now account for the actual byte cost of transferred items.
+    - Interrupted cell-to-cell transfers can be recovered.
 
-### Crafting Terminal
-- Completely reworked the Crafting Terminal interface and functionality.
-- Added a functional 3x3 crafting grid that can use materials from the connected network.
-- Added crafting quantities of 1, 2, 4, 8, 16 and 64.
-- Crafted items can be sent to the player inventory or returned to the storage network.
-- Added support for recipes with multiple outputs and leftover container items.
+## ITEMS
 
-## AUTOMATION
-### Import Buffer
-- Reworked the Import Buffer with 18 input slots.
-- Imports one occupied stack every 10 ticks, plus one additional stack per Speed Upgrade level.
-
-### Export Buffer
-- Reworked the Export Buffer with 9 filter slots and 27 output slots.
-- Exports one matching stack every 10 ticks, plus one additional stack per Speed Upgrade level.
-
-### Storage Transfer Station
-- Added a new machine for transferring stored items directly between two Storage Cells.
-- Transfers up to 500 items every 10 ticks, plus 500 per Speed Upgrade level.
-- The Transfer Station respects the destination Cell capacity and cannot modify Cells in an active network.
-
-## BLOCKS AND ITEMS
-- Added the Cell Casing, used together with Storage Parts to craft Storage Cells.
-- Added the Block of Fluxite and updated the Fluxite texture.
-- Migrated Silicon and the Block of Silicon to the base UtilityCraft addon.
-- Updated Digital Storage machines with new full-block models and front textures.
-- Storage Cell capacities are now:
-  - Storage Cell: 1,024 items.
-  - Basic Storage Cell: 4,096 items.
-  - Advanced Storage Cell: 16,384 items.
-  - Expert Storage Cell: 65,536 items.
-  - Ultimate Storage Cell: 409,600 items.
+- Added **Dimensional Range Upgrade**.
+    - Allows Wireless Panels to access an online network across dimensions without a distance limit.
+- Added **Wireless Crafting Panel**.
+    - Combines remote storage access with the Crafting Terminal grid and controls.
+    - Returns remaining crafting-grid items when closed.
+- **Wireless Panels**
+    - Interacting with the linked Storage Center unlinks either panel variant; interacting again links it back.
+    - Active panels remain locked in the selected hotbar slot while in use.
+    - The creative inventory now lists only unlinked variants.
 
 ## RECIPES
-- Rebalanced recipes for Digital Storage machines, Storage Parts and Storage Cells.
-- Storage Cells are now crafted using a Cell Casing and the matching Storage Part.
-- Reworked the Storage Core, Storage Center, Cell Drive, terminal and colored Import/Export Buffer recipes.
-- The Crafting Terminal now uses a Crafter in its recipe.
-- Added recipes for the Storage Transfer Station and Block of Fluxite.
-- Updated Fluxite production and added its recipe to the Infuser Recipe Book.
-- Removed the Blueprint Terminal recipe while its rework remains unavailable.
+
+- Added UtilityCraft Workbench and Crafter recipes for the Wireless Panel, Wireless Crafting Panel and Dimensional Range Upgrade.
 
 ## UI/UX
-- Reworked the Storage Center, Cell Drive, terminal and buffer interfaces, including dedicated screens for the Import Buffer and Storage Transfer Station.
-- Added information panels and improved buttons, scrolling, item counts and capacity displays.
-- Interfaces now update only when needed, making terminals faster and more responsive.
 
-## FIXES
-- Fixed item loss when inserting, extracting or swapping items in terminals.
-- Fixed Storage Cells becoming stuck inside Cell Drives.
-- Fixed Digital Storage machines not dropping their stored items when broken.
-- Fixed internal interface items being moved or taken from terminal slots.
+- Storage Center and Storage Cell displays now distinguish item counts, item types and used or free bytes.
+- Updated the Storage Transfer Station progress arrow and addon labels.
+
+## BUG FIXES
+
+- Fixed opening placed storage inventories after Minecraft's interaction changes; sneaking selects the block for mining.
+- Fixed terminal button presses being restored before their actions could be detected.
+- Fixed nearby Wireless Panels resolving another player's helper entity.
+- Fixed temporary recipe-validation blocks remaining after a Crafting Terminal closed.
+- Fixed disconnected drives, terminals and buffers retaining obsolete network links after cable or machine changes.
+- Fixed large storage records exceeding dynamic-property limits and recovery failures displaying misleading empty totals.
+- Fixed partial network initialization or shutdown leaving cells incorrectly claimed, and blocked item changes while startup recovery is incomplete.
+
+## TECHNICAL CHANGES
+
+- Added paged storage with checksums and two recoverable generations, including fallback to the previous valid data.
+- Distributed saves, network scans, migrations and transaction recovery across ticks, and combined overlapping network rebuilds.
+
+## THIRD-PARTY / INTEGRATION
+
+- Existing storage-cell capacity tags remain supported; their values now represent logical bytes.
