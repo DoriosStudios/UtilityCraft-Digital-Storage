@@ -3,6 +3,7 @@
   "minecraft:block": {
     "description": {
       "identifier": "utilitycraft:storage_transfer_station",
+      "states": { "utilitycraft:has_selection": [true, false] },
       "menu_category": {
         "category": "construction"
       },
@@ -59,6 +60,10 @@
       "tag:minecraft:is_pickaxe_item_destructible": {}
     },
     "permutations": [
+            {
+                "condition": "!q.block_state('utilitycraft:has_selection')",
+                "components": { "minecraft:selection_box": false }
+            },
       {
         "condition": "q.block_state('minecraft:cardinal_direction') == 'north' ",
         "components": {

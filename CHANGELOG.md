@@ -1,5 +1,9 @@
 # UtilityCraft: Digital Storage v1.0.2
 
+## UI/UX
+
+- Storage blocks now support UtilityCraft's shared selection switching: interact with their inventories while standing and select their blocks while sneaking, without enlarging entity hitboxes.
+
 ## Unreleased
 
 ### CHANGED

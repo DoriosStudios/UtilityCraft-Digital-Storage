@@ -15,6 +15,7 @@
 				}
 			},
 			"states": {
+				"utilitycraft:has_selection": [true, false],
 				"utilitycraft:ui_open": [
 					false,
 					true
@@ -62,6 +63,10 @@
 			"tag:minecraft:is_pickaxe_item_destructible": {}
 		},
 		"permutations": [
+			{
+				"condition": "!q.block_state('utilitycraft:has_selection')",
+				"components": { "minecraft:selection_box": false }
+			},
 			{
 				"condition": "q.block_state('utilitycraft:ui_open') == true ",
 				"components": {
