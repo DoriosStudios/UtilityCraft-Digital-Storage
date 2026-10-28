@@ -44,6 +44,8 @@ This update expands wireless storage and crafting, introduces byte-based cell ca
 
 ## UI/UX
 
+- Removed addon signatures from internal UI items so machine information panels and interface placeholders no longer display them.
+
 - Storage Center and Storage Cell displays now distinguish item counts, item types and used or free bytes.
 - Updated the Storage Transfer Station progress arrow and addon labels.
 
