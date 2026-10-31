@@ -21,16 +21,26 @@ howtoplay.digital_storage.getting_started.expansion.p2=Extiende la network con �
 ####    BLOQUES   ####
 ######################
 
-tile.utilitycraft:storage_terminal.name=Terminal de Almacenamiento\n§7- Accede a objetos en una red de almacenamiento digital\n§o§9@UC: Digital Storage
-tile.utilitycraft:blueprint_terminal.name=Terminal de Planos\n§7- Accede a objetos de la red y administra planos de crafteo\n§o§9@UC: Digital Storage
-tile.utilitycraft:crafting_terminal.name=Terminal de Crafteo\n§7- Accede a objetos de la red y craftea desde el almacenamiento\n§o§9@UC: Digital Storage
-tile.utilitycraft:storage_cell_drive.name=Unidad de Celdas de Almacenamiento\n§7- Guarda celdas de almacenamiento para la red digital\n§o§9@UC: Digital Storage
-tile.utilitycraft:storage_transfer_station.name=Estación de Transferencia de Almacenamiento\n§7- Transfiere objetos almacenados entre celdas\n§o§9@UC: Digital Storage
-tile.utilitycraft:network_cable.name=Cable de Red\n§7- Conecta bloques de almacenamiento digital en una red\n§o§9@UC: Digital Storage
-tile.utilitycraft:import_buffer.name=Búfer de Importación\n§7- Envía objetos al almacenamiento digital conectado\n§o§9@UC: Digital Storage
-tile.utilitycraft:export_buffer.name=Búfer de Exportación\n§7- Extrae objetos filtrados del almacenamiento digital conectado\n§7- Mejoras aceptadas:\n   §a§7\n§o§9@UC: Digital Storage
-tile.utilitycraft:storage_center.name=Centro de Almacenamiento\n§7- Alimenta y controla una red de almacenamiento digital\n§o§9@UC: Digital Storage
-tile.utilitycraft:fluxite_block.name=Bloque de Fluxite\n§7- Material de crafteo\n§o§9@UC: Digital Storage
+tile.utilitycraft:storage_terminal.name=Terminal de Almacenamiento
+tile.utilitycraft:storage_terminal.tooltip=§r§7- Accede a objetos en una red de almacenamiento digital\n§o§9@UC: Digital Storage
+tile.utilitycraft:blueprint_terminal.name=Terminal de Planos
+tile.utilitycraft:blueprint_terminal.tooltip=§r§7- Accede a objetos de la red y administra planos de crafteo\n§o§9@UC: Digital Storage
+tile.utilitycraft:crafting_terminal.name=Terminal de Crafteo
+tile.utilitycraft:crafting_terminal.tooltip=§r§7- Accede a objetos de la red y craftea desde el almacenamiento\n§o§9@UC: Digital Storage
+tile.utilitycraft:storage_cell_drive.name=Unidad de Celdas de Almacenamiento
+tile.utilitycraft:storage_cell_drive.tooltip=§r§7- Guarda celdas de almacenamiento para la red digital\n§o§9@UC: Digital Storage
+tile.utilitycraft:storage_transfer_station.name=Estación de Transferencia de Almacenamiento
+tile.utilitycraft:storage_transfer_station.tooltip=§r§7- Transfiere objetos almacenados entre celdas\n§o§9@UC: Digital Storage
+tile.utilitycraft:network_cable.name=Cable de Red
+tile.utilitycraft:network_cable.tooltip=§r§7- Conecta bloques de almacenamiento digital en una red\n§o§9@UC: Digital Storage
+tile.utilitycraft:import_buffer.name=Búfer de Importación
+tile.utilitycraft:import_buffer.tooltip=§r§7- Envía objetos al almacenamiento digital conectado\n§o§9@UC: Digital Storage
+tile.utilitycraft:export_buffer.name=Búfer de Exportación
+tile.utilitycraft:export_buffer.tooltip=§r§7- Extrae objetos filtrados del almacenamiento digital conectado\n§7- Mejoras aceptadas:\n   §a§7\n§o§9@UC: Digital Storage
+tile.utilitycraft:storage_center.name=Centro de Almacenamiento
+tile.utilitycraft:storage_center.tooltip=§r§7- Alimenta y controla una red de almacenamiento digital\n§o§9@UC: Digital Storage
+tile.utilitycraft:fluxite_block.name=Bloque de Fluxite
+tile.utilitycraft:fluxite_block.tooltip=§r§7- Material de crafteo\n§o§9@UC: Digital Storage
 
 #######################
 ####   ENTIDADES   ####
@@ -49,25 +59,43 @@ entity.utilitycraft:storage_center.name=Centro de Almacenamiento
 ####    ITEMS    ####
 #####################
 
-item.utilitycraft:cell_casing=Carcasa de Celda\n§7- Carcasa vacía para celdas de almacenamiento\n§o§9@UC: Digital Storage
-item.utilitycraft:storage_cell=Celda de Almacenamiento\n§7- Almacenamiento: §f1 KB\n§o§9@UC: Digital Storage
-item.utilitycraft:basic_storage_cell=§eCelda de Almacenamiento Básica\n§7- Almacenamiento: §f4 KB\n§o§9@UC: Digital Storage
-item.utilitycraft:advanced_storage_cell=§cCelda de Almacenamiento Avanzada\n§7- Almacenamiento: §f16 KB\n§o§9@UC: Digital Storage
-item.utilitycraft:expert_storage_cell=§bCelda de Almacenamiento Experta\n§7- Almacenamiento: §f64 KB\n§o§9@UC: Digital Storage
-item.utilitycraft:ultimate_storage_cell=§8Celda de Almacenamiento Definitiva\n§7- Almacenamiento: §f400 KB\n§o§9@UC: Digital Storage
-item.utilitycraft:storage_part=Parte de Almacenamiento\n§7- Se usa para craftear celdas de almacenamiento\n§o§9@UC: Digital Storage
-item.utilitycraft:basic_storage_part=§eParte de Almacenamiento Básica\n§7- Se usa para craftear celdas de almacenamiento básicas\n§o§9@UC: Digital Storage
-item.utilitycraft:advanced_storage_part=§cParte de Almacenamiento Avanzada\n§7- Se usa para craftear celdas de almacenamiento avanzadas\n§o§9@UC: Digital Storage
-item.utilitycraft:expert_storage_part=§bParte de Almacenamiento Experta\n§7- Se usa para craftear celdas de almacenamiento expertas\n§o§9@UC: Digital Storage
-item.utilitycraft:ultimate_storage_part=§8Parte de Almacenamiento Definitiva\n§7- Se usa para craftear celdas de almacenamiento definitivas\n§o§9@UC: Digital Storage
-item.utilitycraft:storage_core=Núcleo de Almacenamiento\n§7- Un componente importante para máquinas y celdas de almacenamiento\n§o§9@UC: Digital Storage
-item.utilitycraft:fluxite=Fluxite\n§7- Se obtiene infundiendo cuarzo con polvo de diamante\n§o§9@UC: Digital Storage
+item.utilitycraft:cell_casing=Carcasa de Celda
+tile.utilitycraft:cell_casing.tooltip=§r§7- Carcasa vacía para celdas de almacenamiento\n§o§9@UC: Digital Storage
+item.utilitycraft:storage_cell=Celda de Almacenamiento
+tile.utilitycraft:storage_cell.tooltip=§r§7- Almacenamiento: §f1 KB\n§o§9@UC: Digital Storage
+item.utilitycraft:basic_storage_cell=§eCelda de Almacenamiento Básica
+tile.utilitycraft:basic_storage_cell.tooltip=§r§7- Almacenamiento: §f4 KB\n§o§9@UC: Digital Storage
+item.utilitycraft:advanced_storage_cell=§cCelda de Almacenamiento Avanzada
+tile.utilitycraft:advanced_storage_cell.tooltip=§r§7- Almacenamiento: §f16 KB\n§o§9@UC: Digital Storage
+item.utilitycraft:expert_storage_cell=§bCelda de Almacenamiento Experta
+tile.utilitycraft:expert_storage_cell.tooltip=§r§7- Almacenamiento: §f64 KB\n§o§9@UC: Digital Storage
+item.utilitycraft:ultimate_storage_cell=§8Celda de Almacenamiento Definitiva
+tile.utilitycraft:ultimate_storage_cell.tooltip=§r§7- Almacenamiento: §f400 KB\n§o§9@UC: Digital Storage
+item.utilitycraft:storage_part=Parte de Almacenamiento
+tile.utilitycraft:storage_part.tooltip=§r§7- Se usa para craftear celdas de almacenamiento\n§o§9@UC: Digital Storage
+item.utilitycraft:basic_storage_part=§eParte de Almacenamiento Básica
+tile.utilitycraft:basic_storage_part.tooltip=§r§7- Se usa para craftear celdas de almacenamiento básicas\n§o§9@UC: Digital Storage
+item.utilitycraft:advanced_storage_part=§cParte de Almacenamiento Avanzada
+tile.utilitycraft:advanced_storage_part.tooltip=§r§7- Se usa para craftear celdas de almacenamiento avanzadas\n§o§9@UC: Digital Storage
+item.utilitycraft:expert_storage_part=§bParte de Almacenamiento Experta
+tile.utilitycraft:expert_storage_part.tooltip=§r§7- Se usa para craftear celdas de almacenamiento expertas\n§o§9@UC: Digital Storage
+item.utilitycraft:ultimate_storage_part=§8Parte de Almacenamiento Definitiva
+tile.utilitycraft:ultimate_storage_part.tooltip=§r§7- Se usa para craftear celdas de almacenamiento definitivas\n§o§9@UC: Digital Storage
+item.utilitycraft:storage_core=Núcleo de Almacenamiento
+tile.utilitycraft:storage_core.tooltip=§r§7- Un componente importante para máquinas y celdas de almacenamiento\n§o§9@UC: Digital Storage
+item.utilitycraft:fluxite=Fluxite
+tile.utilitycraft:fluxite.tooltip=§r§7- Se obtiene infundiendo cuarzo con polvo de diamante\n§o§9@UC: Digital Storage
 item.utilitycraft:storage_filler=Relleno de Almacenamiento
-item.utilitycraft:wireless_panel_off=Panel Inalámbrico - Apagado\n§7- Interactúa con un Centro de Almacenamiento para vincularlo\n§o§9@UC: Digital Storage
-item.utilitycraft:wireless_panel_on=Panel Inalámbrico - Encendido\n§7- Sostenlo para acceder a la network vinculada\n§7- Interactúa con el Storage Center vinculado para desvincular\n§o§9@UC: Digital Storage
-item.utilitycraft:wireless_crafting_panel_off=Panel de Crafteo Inalámbrico - Apagado\n§7- Interactúa con un Centro de Almacenamiento para vincularlo\n§o§9@UC: Digital Storage
-item.utilitycraft:wireless_crafting_panel_on=Panel de Crafteo Inalámbrico - Encendido\n§7- Sostenlo para craftear y acceder al storage\n§7- Interactúa con el Storage Center vinculado para desvincular\n§o§9@UC: Digital Storage
-item.utilitycraft:dimensional_range_upgrade=§9Mejora de Rango Dimensional§r\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_panel_off=Panel Inalámbrico - Apagado
+tile.utilitycraft:wireless_panel_off.tooltip=§r§7- Interactúa con un Centro de Almacenamiento para vincularlo\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_panel_on=Panel Inalámbrico - Encendido
+tile.utilitycraft:wireless_panel_on.tooltip=§r§7- Sostenlo para acceder a la network vinculada\n§7- Interactúa con el Storage Center vinculado para desvincular\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_crafting_panel_off=Panel de Crafteo Inalámbrico - Apagado
+tile.utilitycraft:wireless_crafting_panel_off.tooltip=§r§7- Interactúa con un Centro de Almacenamiento para vincularlo\n§o§9@UC: Digital Storage
+item.utilitycraft:wireless_crafting_panel_on=Panel de Crafteo Inalámbrico - Encendido
+tile.utilitycraft:wireless_crafting_panel_on.tooltip=§r§7- Sostenlo para craftear y acceder al storage\n§7- Interactúa con el Storage Center vinculado para desvincular\n§o§9@UC: Digital Storage
+item.utilitycraft:dimensional_range_upgrade=§9Mejora de Rango Dimensional§r
+tile.utilitycraft:dimensional_range_upgrade.tooltip=§r§o§9@UC: Digital Storage
 upgrade.utilitycraft:dimensional_range_upgrade.name=§9Mejora de Rango Dimensional§r
 
 ####################
