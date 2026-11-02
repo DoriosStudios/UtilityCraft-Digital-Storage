@@ -1,0 +1,4 @@
+{
+  "description": "This update cleans up item names and interface labels while preserving descriptive tooltips in all five supported languages.",
+  "highlights": "- Cleaner item and block names across all five supported languages.\n- Removed addon signatures from internal interface placeholders."
+}
