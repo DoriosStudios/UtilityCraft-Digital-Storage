@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/DoriosStudios/Dorios-Workflows/v1.0.0/releases/schemas/project.schema.json",
+  "$schema": "https://raw.githubusercontent.com/DoriosStudios/Dorios-Workflows/v1.0.2/releases/schemas/project.schema.json",
   "schemaVersion": 1,
   "project": {
     "name": "UtilityCraft: Digital Storage",
@@ -10,7 +10,8 @@
     "bedrockManifestPaths": [
       "BP/manifest.json",
       "RP/manifest.json"
-    ]
+    ],
+    "changelogPath": ".github/release-notes.md"
   },
   "build": {
     "enabled": true,

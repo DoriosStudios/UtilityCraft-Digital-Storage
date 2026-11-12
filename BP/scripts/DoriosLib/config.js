@@ -13,12 +13,12 @@ export const ADDON_METADATA = {
   name: "UtilityCraft: Digital Storage",
   author: "Dorios Studios",
   identifier: "uc_digital_storage",
-  version: "1.0.0",
+  version: "1.1.1",
   dependencies: {
     utilitycraft: {
       name: "UtilityCraft",
-      version: "3.5.1",
-      warning: "Digital Storage requires UtilityCraft 3.5.1 or newer.",
+      version: "3.6.1",
+      warning: "Digital Storage requires UtilityCraft 3.6.1 or newer.",
     },
   },
 };

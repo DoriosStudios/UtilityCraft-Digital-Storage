@@ -53,13 +53,13 @@ permissions:
 
 jobs:
   release:
-    uses: DoriosStudios/Dorios-Workflows/.github/workflows/release-addon.yml@v1.0.0
+    uses: DoriosStudios/Dorios-Workflows/.github/workflows/release-addon.yml@v1.0.2
     with:
       operation: ${{ inputs.operation }}
       release_tag: ${{ inputs.release_tag }}
       release_channel: ${{ inputs.release_channel }}
       announcement_ping: ${{ inputs.announcement_ping }}
-      workflow_ref: v1.0.0
+      workflow_ref: v1.0.2
       preview_only: ${{ inputs.execution == 'preview' }}
       production_confirmation: ${{ inputs.production_confirmation }}
     secrets:
